@@ -4,8 +4,10 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.kotcrab.vis.ui.VisUI;
+import com.memopoly.Screens.BaseScreen;
 import com.memopoly.Screens.LobbyScreen;
 import com.memopoly.Screens.MainMenuScreen;
+import com.memopoly.Screens.ScreenManager;
 import com.memopoly.game.model.GameState;
 import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
@@ -13,7 +15,9 @@ import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
 
 public class Memopoly extends Game implements NetworkListener {
-    private SpriteBatch batch;
+    public SpriteBatch batch;
+    public ScreenManager screenManager;
+
     private GameServer gameServer;
     private GameClient gameClient;
     private boolean isHost;
@@ -23,9 +27,10 @@ public class Memopoly extends Game implements NetworkListener {
     @Override
     public void create() {
         VisUI.load();
+        screenManager = new ScreenManager(this);
         batch = new SpriteBatch();
         gameClient = new GameClient(this);
-        setScreen(new MainMenuScreen(this));
+        screenManager.set(new MainMenuScreen(this));
     }
 
     @Override
@@ -87,11 +92,12 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     public void openLobby() {
-        Gdx.app.postRunnable(() -> setScreen(new LobbyScreen(this)));
+        screenManager.push(new LobbyScreen(this));
     }
 
     public void openMenu() {
-        Gdx.app.postRunnable(() -> setScreen(new MainMenuScreen(this)));
+        screenManager.pop();
+        screenManager.push(new MainMenuScreen(this));
     }
 
     public void leaveRoomToMenu() {

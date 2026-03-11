@@ -16,12 +16,11 @@ import com.memopoly.Memopoly;
 import com.memopoly.utils.ClipboardUtils;
 import com.memopoly.utils.RoomCodeGenerator;
 
-public class MainMenuScreen implements Screen {
-    private final Memopoly game;
+public class MainMenuScreen extends BaseScreen {
     private final Stage stage;
 
     public MainMenuScreen(Memopoly game) {
-        this.game = game;
+        super(game);
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
@@ -184,31 +183,5 @@ public class MainMenuScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
         stage.draw();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void show() {
-    }
-
-    @Override
-    public void hide() {
-    }
-
-    @Override
-    public void pause() {
-    }
-
-    @Override
-    public void resume() {
-    }
-
-    @Override
-    public void dispose() {
-        stage.dispose();
     }
 }

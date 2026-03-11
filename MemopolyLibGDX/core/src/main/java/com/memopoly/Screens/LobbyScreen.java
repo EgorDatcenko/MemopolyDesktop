@@ -16,8 +16,7 @@ import com.memopoly.Memopoly;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
 
-public class LobbyScreen implements Screen {
-    private final Memopoly game;
+public class LobbyScreen extends BaseScreen {
     private final Stage stage;
     private VisLabel statusLabel;
     private Table playersTable;
@@ -25,7 +24,7 @@ public class LobbyScreen implements Screen {
     private int lastPlayersCount = -1;
 
     public LobbyScreen(Memopoly game) {
-        this.game = game;
+        super(game);
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
         createUI();
@@ -127,31 +126,5 @@ public class LobbyScreen implements Screen {
 
         stage.act(delta);
         stage.draw();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void show() {
-    }
-
-    @Override
-    public void hide() {
-    }
-
-    @Override
-    public void pause() {
-    }
-
-    @Override
-    public void resume() {
-    }
-
-    @Override
-    public void dispose() {
-        stage.dispose();
     }
 }
