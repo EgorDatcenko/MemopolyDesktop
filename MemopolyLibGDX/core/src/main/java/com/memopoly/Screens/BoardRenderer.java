@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.memopoly.Memopoly;
+import com.memopoly.game.model.BoardCell;
 
 public class BoardRenderer{
     private OrthographicCamera camera;
@@ -29,12 +30,6 @@ public class BoardRenderer{
         viewport = new FitViewport(800, 800, camera);
         viewport.apply();
         shapeRenderer = new ShapeRenderer();
-    }
-
-    public void show(){
-        camera = new OrthographicCamera();
-        viewport = new FitViewport(800, 800, camera); // 800x800 — размер виртуального мира
-        viewport.apply();
     }
 
     public static Vector2 getCellPosition(int index){
@@ -72,8 +67,10 @@ public class BoardRenderer{
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         for (int i = 0; i < 40; i++) {
+            //shapeRenderer.setColor(getCellColor(i));
             Vector2 pos = getCellPosition(i);
-            shapeRenderer.rect(pos.x, pos.y, getCellSize(i).x, getCellSize(i).y);
+            Vector2 size = getCellSize(i);
+            shapeRenderer.rect(pos.x, pos.y, size.x, size.y);
         }
         shapeRenderer.end();
     }
@@ -87,24 +84,29 @@ public class BoardRenderer{
     }
 
     // Возвращает цвет группы для клетки
-    public static Color getCellColor(int index) {
-        if(index == 1 || index == 3){
-            return Color.RED;
-        }else if(index == 6 || index == 8 || index == 9){
-            return Color.BLACK;
-        }else if(index == 11 || index == 13 || index == 14){
-            return Color.PURPLE;
-        }else if(index == 16 || index == 18 || index == 19){
-            return Color.BLUE;
-        }else if(index == 21 || index == 23 || index == 24){
-            return Color.PINK;
-        }else if(index == 26 || index == 27 || index == 29){
-            return Color.GOLD;
-        }else if(index == 31 || index == 32 || index == 34){
-            return Color.GREEN;
-        }else if(index == 37 || index == 39){
-            return Color.CYAN;
+    public static Color getCellColor(BoardCell cell) {
+        switch (cell.group) {
+            case REDDIT: return Color.RED;
+            case TIKTOK: return Color.PURPLE;
+            // ...
         }
+//        if(index == 1 || index == 3){
+//            return Color.RED;
+//        }else if(index == 6 || index == 8 || index == 9){
+//            return Color.BLACK;
+//        }else if(index == 11 || index == 13 || index == 14){
+//            return Color.PURPLE;
+//        }else if(index == 16 || index == 18 || index == 19){
+//            return Color.BLUE;
+//        }else if(index == 21 || index == 23 || index == 24){
+//            return Color.PINK;
+//        }else if(index == 26 || index == 27 || index == 29){
+//            return Color.GOLD;
+//        }else if(index == 31 || index == 32 || index == 34){
+//            return Color.GREEN;
+//        }else if(index == 37 || index == 39){
+//            return Color.CYAN;
+//        }
         return Color.NAVY;
     }
 }

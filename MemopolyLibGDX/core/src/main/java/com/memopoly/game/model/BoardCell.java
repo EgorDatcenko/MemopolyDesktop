@@ -9,11 +9,16 @@ public class BoardCell {
         REST,
         MEME_BATTLE
     }
+    public enum Group {
+        REDDIT, TIKTOK, INSTAGRAM, TWITTER,
+        TELEGRAM, DISCORD, YOUTUBE, TWITCH,
+        SPECIAL
+    }
     public int id;
     public Type type;
     public String name;
     public int price;
-    public String groupName;
+    public Group group;
     public int ownerId;
     public boolean isMortgaged;
 
@@ -28,10 +33,10 @@ public class BoardCell {
         this.isMortgaged = false;
     }
 
-    public BoardCell(int id, String name, int price, String groupName) {
+    public BoardCell(int id, String name, int price, Group group) {
         this(id, Type.SITUATION, name);
         this.price = price;
-        this.groupName = groupName;
+        this.group = group;
     }
 
     public boolean isOwned() {
