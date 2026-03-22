@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.memopoly.game.model.BoardCell;
 
+import java.awt.*;
+
 public class BoardRenderer{
     private OrthographicCamera camera;
     private FitViewport viewport;
@@ -81,27 +83,14 @@ public class BoardRenderer{
     // Возвращает цвет группы для клетки
     public static Color getCellColor(BoardCell cell) {
         switch (cell.group) {
-            case REDDIT: return Color.RED;
-            case TIKTOK: return Color.PURPLE;
-            // ...
+            case REDDIT: return Color.ORANGE;
+            case TIKTOK: return Color.BLACK;
+            case INSTAGRAM: return Color.PINK;
+            case TELEGRAM: return Color.SKY;
+            case X: return Color.WHITE;
+            case DISCORD: return Color.BLUE;
+            case TWITCH: return Color.PURPLE;
         }
-//        if(index == 1 || index == 3){
-//            return Color.RED;
-//        }else if(index == 6 || index == 8 || index == 9){
-//            return Color.BLACK;
-//        }else if(index == 11 || index == 13 || index == 14){
-//            return Color.PURPLE;
-//        }else if(index == 16 || index == 18 || index == 19){
-//            return Color.BLUE;
-//        }else if(index == 21 || index == 23 || index == 24){
-//            return Color.PINK;
-//        }else if(index == 26 || index == 27 || index == 29){
-//            return Color.GOLD;
-//        }else if(index == 31 || index == 32 || index == 34){
-//            return Color.GREEN;
-//        }else if(index == 37 || index == 39){
-//            return Color.CYAN;
-//        }
         return Color.NAVY;
     }
 }
