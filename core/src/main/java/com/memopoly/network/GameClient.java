@@ -1,5 +1,6 @@
 package com.memopoly.network;
 
+import com.badlogic.gdx.Gdx;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
@@ -17,7 +18,7 @@ import java.io.IOException;
 
 public class GameClient {
     private final Client client;
-    private GameState gameState;
+    private volatile GameState gameState;
     private final NetworkListener listener;
     private String pendingJoinPlayerName;
     private volatile boolean clientLoopRunning;
@@ -58,7 +59,9 @@ public class GameClient {
             @Override
             public void connected(Connection connection) {
                 System.out.println("Подключились к серверу! Connection ID: " + connection.getID());
-                listener.onConnected();
+                Gdx.app.postRunnable(() ->
+                listener.onConnected()
+                );
 
                 if (pendingJoinPlayerName != null) {
                     JoinRoomRequest request = new JoinRoomRequest();
@@ -71,7 +74,9 @@ public class GameClient {
             @Override
             public void disconnected(Connection connection) {
                 System.out.println("Отключились от сервера");
-                listener.onDisconnected();
+                Gdx.app.postRunnable(() ->
+                listener.onDisconnected()
+                );
             }
 
             @Override
@@ -111,15 +116,21 @@ public class GameClient {
             JoinRoomResponse response = (JoinRoomResponse) packet;
             if (response.success) {
                 System.out.println("JoinRoomResponse: успех, playerId=" + response.playerId);
-                listener.onJoinedRoom();
+                Gdx.app.postRunnable(() ->
+                    listener.onJoinedRoom()
+                );
             } else {
                 System.out.println("JoinRoomResponse: отказ во входе");
             }
         } else if (packet instanceof GameStatePacket) {
             gameState = ((GameStatePacket) packet).gameState;
-            listener.onGameStateUpdated(gameState);
+            Gdx.app.postRunnable(() ->
+                listener.onGameStateUpdated(gameState)
+            );
         } else if (packet instanceof RollDiceResponse) {
-            listener.onDiceRolled((RollDiceResponse) packet);
+            Gdx.app.postRunnable(() ->
+            listener.onDiceRolled((RollDiceResponse) packet)
+            );
         }
     }
 

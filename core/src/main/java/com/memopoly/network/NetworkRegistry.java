@@ -22,7 +22,7 @@ import java.util.HashMap;
 
 public class NetworkRegistry {
     public static void register(Kryo kryo) {
-        kryo.setRegistrationRequired(false);
+        kryo.setRegistrationRequired(true);
         kryo.setReferences(true);
 
         kryo.register(CreateRoomRequest.class);
@@ -39,6 +39,7 @@ public class NetworkRegistry {
         kryo.register(GameActionRequest.ActionType.class);
         kryo.register(GameState.GamePhase.class);
         kryo.register(BoardCell.Type.class);
+        kryo.register(BoardCell.Group.class);
         kryo.register(EventCard.EffectType.class);
 
         kryo.register(Player.class);

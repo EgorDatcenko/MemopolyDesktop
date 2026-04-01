@@ -4,6 +4,8 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.esotericsoftware.minlog.Log;
+import com.memopoly.game.model.BoardCell;
+import com.memopoly.game.model.BoardData;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
 import com.memopoly.network.packets.CreateRoomRequest;
@@ -19,14 +21,15 @@ import com.memopoly.utils.RoomCodeGenerator;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class GameServer {
     private final Server server;
     private final GameState gameState;
-    private final ArrayList<Player> connectedPlayers;
     private String hostIP;
     private String roomCode;
+    private final List<BoardCell> board = BoardData.buildCells();
 
     public GameServer() {
         Log.set(Log.LEVEL_DEBUG);
@@ -34,7 +37,6 @@ public class GameServer {
 
         server = new Server(65536, 65536);
         gameState = new GameState();
-        connectedPlayers = new ArrayList<>();
 
         System.out.println("🔧 Настраиваем сервер...");
         registerPackets();
@@ -43,7 +45,11 @@ public class GameServer {
 
         System.out.println("🔧 GameServer готов!");
     }
-
+    public BoardCell getCurrentCell() {
+        Player current = gameState.getCurrentPlayer();
+        if (current == null) return null;
+        return board.get(current.position);
+    }
     public String getHostIP() {
         return hostIP;
     }
@@ -116,31 +122,11 @@ public class GameServer {
             handleJoinRequest(connection, (JoinRoomRequest) packet);
         } else if (packet instanceof RollDiceRequest) {
             handleRollDice(connection, (RollDiceRequest) packet);
-        } else if (packet instanceof CreateRoomRequest) {
-            handleCreateRoom(connection, (CreateRoomRequest) packet);
         } else if (packet instanceof StartGameRequest) {
             startGame();
         } else {
             System.out.println("Неизвестный тип пакета: " + packet.getClass());
         }
-    }
-
-    private void handleCreateRoom(Connection connection, CreateRoomRequest request) {
-        Player newPlayer = new Player(connection.getID(), request.hostName);
-        gameState.addPlayer(newPlayer);
-        connectedPlayers.add(newPlayer);
-
-        Random random = new Random();
-        int generatedRoomCode = random.nextInt(100000, 999999);
-
-        CreateRoomResponse response = new CreateRoomResponse();
-        response.port = 54555;
-        response.roomCode = String.valueOf(generatedRoomCode);
-        response.hostIP = connection.getRemoteAddressTCP().getAddress().getHostAddress();
-        response.success = true;
-
-        sendTcpSafely(connection, response);
-        broadcastGameState();
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
@@ -161,7 +147,6 @@ public class GameServer {
 
         Player newPlayer = new Player(connection.getID(), normalizedName);
         gameState.addPlayer(newPlayer);
-        connectedPlayers.add(newPlayer);
 
         System.out.println("Игрок добавлен в игру. Всего игроков: " + gameState.players.size());
 
@@ -185,6 +170,39 @@ public class GameServer {
 
             gameState.diceValue = total;
             gameState.lastActionLog = gameState.getCurrentPlayer().name + " бросил кубики: " + total;
+
+            Player current = gameState.getCurrentPlayer();
+            int oldPosition = current.position;
+            current.position = (oldPosition + total) % 40;
+
+            // Проверка прохождения Старта
+            if (current.position < oldPosition) {
+                current.receive(200);
+                gameState.lastActionLog = current.name + " прошёл Старт и получил 200!";
+            }
+
+            BoardCell cell = getCurrentCell();
+            if (cell != null) {
+                switch (cell.type) {
+                    case START:
+                    case REST:
+                    case JAIL:
+                        gameState.nextPlayer();
+                        break;
+                    case TAX:
+                        current.pay(100);
+                        gameState.lastActionLog = current.name + " заплатил налог 100";
+                        gameState.nextPlayer();
+                        break;
+                    case SITUATION:
+                        gameState.currentPhase = GameState.GamePhase.PLAYER_ACTION;
+                        gameState.lastActionLog = current.name + " попал на " + cell.name;
+                        break;
+                    default:
+                        gameState.nextPlayer();
+                        break;
+                }
+            }
 
             RollDiceResponse response = new RollDiceResponse();
             response.playerId = connection.getID();
@@ -212,7 +230,6 @@ public class GameServer {
 
     private void removePlayer(int playerId) {
         gameState.removePlayer(playerId);
-        connectedPlayers.removeIf(p -> p.id == playerId);
         broadcastGameState();
     }
 

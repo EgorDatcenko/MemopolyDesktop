@@ -1,9 +1,12 @@
 package com.memopoly.game.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class GameState {
+    public ArrayList<Integer> cellOwners;    // index → playerId (-1 если свободна)
+    public ArrayList<Boolean> cellMortgaged;
     // Фазы игры
     public enum GamePhase {
         WAITING,       // Ожидание игроков
@@ -17,7 +20,6 @@ public class GameState {
 
     // Основные поля для KryoNet
     public ArrayList<Player> players;
-    public ArrayList<BoardCell> board;
     public int currentPlayerIndex;
     public GamePhase currentPhase;
     public int diceValue;
@@ -40,8 +42,9 @@ public class GameState {
 
     // Стандартные конструкторы
     public GameState() {
+        this.cellOwners = new ArrayList<>(Collections.nCopies(40, -1));
+        this.cellMortgaged = new ArrayList<>(Collections.nCopies(40, false));
         this.players = new ArrayList<>();
-        this.board = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;
         this.diceValue = 0;
@@ -83,12 +86,6 @@ public class GameState {
             if (p.id == id) return p;
         }
         return null;
-    }
-
-    public BoardCell getCurrentCell() {
-        Player current = getCurrentPlayer();
-        if (current == null || board.isEmpty()) return null;
-        return board.get(current.position);
     }
 
     public boolean isGameOver() {
