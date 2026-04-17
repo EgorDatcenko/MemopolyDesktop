@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
+import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.utils.ClipboardUtils;
 
 public class LobbyScreen extends BaseScreen {
     private final Stage stage;
@@ -21,7 +23,6 @@ public class LobbyScreen extends BaseScreen {
     private Table playersTable;
     private VisTextButton startButton;
     private int lastPlayersCount = -1;
-    private ScreenManager screenManager;
     private boolean gameStarted = false;
 
     public LobbyScreen(Memopoly game) {
@@ -50,7 +51,16 @@ public class LobbyScreen extends BaseScreen {
         startButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.startGameAsHost();
+                StartGameRequest request = new StartGameRequest();
+                game.getClient().sendStartGame(request);
+            }
+        });
+
+        VisTextButton copyCodeButton = new VisTextButton("Копировать код");
+        copyCodeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                ClipboardUtils.copyToClipboard(game.getRoomCode());
             }
         });
 
@@ -69,6 +79,7 @@ public class LobbyScreen extends BaseScreen {
 
         Table buttons = new Table();
         buttons.add(startButton).padRight(10);
+        buttons.add(copyCodeButton).padRight(10);
         buttons.add(backButton);
         root.add(buttons).left().padTop(12);
 
@@ -129,5 +140,10 @@ public class LobbyScreen extends BaseScreen {
 
         stage.act(delta);
         stage.draw();
+    }
+
+    @Override
+    public void dispose() {
+        stage.dispose();
     }
 }

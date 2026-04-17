@@ -5,7 +5,7 @@ public class Meme {
     public String imageUrl;
     public String description;
     public String deckName;
-
+    public int ownerId;
     public Meme(){}
 
     public Meme(int id, String imageUrl, String description){
@@ -16,8 +16,9 @@ public class Meme {
         this.deckName = "default";
     }
 
-    public Meme(int id, String imageUrl, String description, String deckName){
+    public Meme(int id, String imageUrl, String description, String deckName, int ownerId){
         this(id, imageUrl, description);
         this.deckName = deckName;
+        this.ownerId = ownerId;
     }
 }

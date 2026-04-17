@@ -6,16 +6,7 @@ import com.memopoly.game.model.EventCard;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Meme;
 import com.memopoly.game.model.Player;
-import com.memopoly.network.packets.ChatMessage;
-import com.memopoly.network.packets.CreateRoomRequest;
-import com.memopoly.network.packets.CreateRoomResponse;
-import com.memopoly.network.packets.GameActionRequest;
-import com.memopoly.network.packets.GameStatePacket;
-import com.memopoly.network.packets.JoinRoomRequest;
-import com.memopoly.network.packets.JoinRoomResponse;
-import com.memopoly.network.packets.RollDiceRequest;
-import com.memopoly.network.packets.RollDiceResponse;
-import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.network.packets.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,9 +26,13 @@ public class NetworkRegistry {
         kryo.register(ChatMessage.class);
         kryo.register(GameStatePacket.class);
         kryo.register(StartGameRequest.class);
+        kryo.register(BattleInvitePacket.class);
+        kryo.register(BattleResponsePacket.class);
 
         kryo.register(GameActionRequest.ActionType.class);
         kryo.register(GameState.GamePhase.class);
+        kryo.register(GameState.BattleType.class);
+        kryo.register(GameState.BattlePhase.class);
         kryo.register(BoardCell.Type.class);
         kryo.register(BoardCell.Group.class);
         kryo.register(EventCard.EffectType.class);

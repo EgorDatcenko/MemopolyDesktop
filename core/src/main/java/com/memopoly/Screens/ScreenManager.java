@@ -22,7 +22,7 @@ public class ScreenManager {
         game.setScreen(screen);
     }
     public void pop(){
-        if(!stack.isEmpty()) return;
+        if(stack.isEmpty()) return;
         BaseScreen current = stack.pop();
         current.dispose();
         if(!stack.isEmpty()){

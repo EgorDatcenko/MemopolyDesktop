@@ -9,4 +9,5 @@ public interface NetworkListener {
     void onConnected();
     void onJoinedRoom();
     void onDisconnected();
+    void onConnectionFailed(String reason);
 }

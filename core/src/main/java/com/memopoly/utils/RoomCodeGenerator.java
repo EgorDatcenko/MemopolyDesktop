@@ -34,7 +34,7 @@ public class RoomCodeGenerator {
             String[] parts = roomCode.split("-");
 
             if (parts.length < 4) {
-                return "127.0.0.1";
+                return null;
             }
 
             StringBuilder ip = new StringBuilder();
@@ -46,7 +46,7 @@ public class RoomCodeGenerator {
                 String[] numberAndWord = part.split("_");
 
                 if (numberAndWord.length < 2) {
-                    return "127.0.0.1";
+                    return null;
                 }
 
                 try {
@@ -54,13 +54,13 @@ public class RoomCodeGenerator {
                     int number = Integer.parseInt(base36Str, 36);
 
                     if (number < 0 || number > 255) {
-                        return "127.0.0.1";
+                        return null;
                     }
 
                     ip.append(number);
                     if (i < 3) ip.append(".");
                 } catch (NumberFormatException e) {
-                    return "127.0.0.1";
+                    return null;
                 }
             }
 
@@ -73,7 +73,7 @@ public class RoomCodeGenerator {
                     System.out.println("Неверная контрольная сумма!");
                     System.out.println("IP: " + ip);
                     System.out.println("Ожидалось: " + calculatedChecksum + ", получено: " + providedChecksum);
-                    return "127.0.0.1";
+                    return null;
                 }
             }
 
@@ -81,7 +81,7 @@ public class RoomCodeGenerator {
 
         } catch (Exception e) {
             System.out.println("Ошибка декодирования: " + e.getMessage());
-            return "127.0.0.1";
+            return null;
         }
     }
 

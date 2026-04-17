@@ -8,8 +8,7 @@ import com.memopoly.game.model.BoardCell;
 import com.memopoly.game.model.BoardData;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
-import com.memopoly.network.packets.CreateRoomRequest;
-import com.memopoly.network.packets.CreateRoomResponse;
+import com.memopoly.network.packets.GameActionRequest;
 import com.memopoly.network.packets.GameStatePacket;
 import com.memopoly.network.packets.JoinRoomRequest;
 import com.memopoly.network.packets.JoinRoomResponse;
@@ -19,37 +18,50 @@ import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.RoomCodeGenerator;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class GameServer {
+    private static final int TCP_PORT = 54555;
+    private static final int UDP_PORT = 54777;
+
     private final Server server;
     private final GameState gameState;
+    private final List<BoardCell> board = BoardData.buildCells();
+    private final Object stateLock = new Object();
+    private final ScheduledExecutorService timerExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "memopoly-server-timer");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     private String hostIP;
     private String roomCode;
-    private final List<BoardCell> board = BoardData.buildCells();
+    private int hostConnectionId = -1;
+    private ScheduledFuture<?> auctionTask;
 
     public GameServer() {
         Log.set(Log.LEVEL_DEBUG);
-        System.out.println("🔧 Создаем GameServer...");
+        System.out.println("Создаем GameServer...");
 
         server = new Server(65536, 65536);
         gameState = new GameState();
 
-        System.out.println("🔧 Настраиваем сервер...");
         registerPackets();
         setupServer();
         startServer();
 
-        System.out.println("🔧 GameServer готов!");
+        System.out.println("GameServer готов!");
     }
-    public BoardCell getCurrentCell() {
-        Player current = gameState.getCurrentPlayer();
-        if (current == null) return null;
-        return board.get(current.position);
-    }
+
     public String getHostIP() {
         return hostIP;
     }
@@ -62,7 +74,7 @@ public class GameServer {
         server.start();
 
         try {
-            hostIP = InetAddress.getLocalHost().getHostAddress();
+            hostIP = findBestIP();
             roomCode = RoomCodeGenerator.encodeIP(hostIP);
             System.out.println("Сервер IP: " + hostIP);
             System.out.println("Код комнаты: " + roomCode);
@@ -74,10 +86,10 @@ public class GameServer {
         }
 
         try {
-            server.bind(54555, 54777);
-            System.out.println("Сервер запущен на портах 54555/54777");
+            server.bind(TCP_PORT, UDP_PORT);
+            System.out.println("Сервер запущен на портах " + TCP_PORT + "/" + UDP_PORT);
         } catch (IOException e) {
-            System.err.println("Ошибка запуска сервера: " + e.getMessage());
+            throw new IllegalStateException("Не удалось запустить сервер", e);
         }
     }
 
@@ -94,14 +106,19 @@ public class GameServer {
 
             @Override
             public void disconnected(Connection connection) {
-                System.out.println("Игрок отключился: id=" + connection.getID() + ", remote=" + connection.getRemoteAddressTCP());
-                removePlayer(connection.getID());
+                synchronized (stateLock) {
+                    System.out.println("Игрок отключился: id=" + connection.getID() + ", remote=" + connection.getRemoteAddressTCP());
+                    removePlayer(connection.getID());
+                    broadcastGameStateUnsafe();
+                }
             }
 
             @Override
             public void received(Connection connection, Object object) {
                 try {
-                    handlePacket(connection, object);
+                    synchronized (stateLock) {
+                        handlePacket(connection, object);
+                    }
                 } catch (Exception e) {
                     System.err.println("Ошибка обработки пакета: type=" + object.getClass().getSimpleName() + ", connectionId=" + connection.getID() + ", reason=" + e.getMessage());
                     e.printStackTrace();
@@ -121,9 +138,11 @@ public class GameServer {
         if (packet instanceof JoinRoomRequest) {
             handleJoinRequest(connection, (JoinRoomRequest) packet);
         } else if (packet instanceof RollDiceRequest) {
-            handleRollDice(connection, (RollDiceRequest) packet);
+            handleRollDice(connection);
         } else if (packet instanceof StartGameRequest) {
-            startGame();
+            handleStartGame(connection);
+        } else if (packet instanceof GameActionRequest) {
+            handleGameAction(connection, (GameActionRequest) packet);
         } else {
             System.out.println("Неизвестный тип пакета: " + packet.getClass());
         }
@@ -133,8 +152,6 @@ public class GameServer {
         String playerName = request != null ? request.playerName : null;
 
         if (playerName == null || playerName.trim().isEmpty()) {
-            System.out.println("Отклоняем JoinRoomRequest: пустое имя, connectionId=" + connection.getID());
-
             JoinRoomResponse reject = new JoinRoomResponse();
             reject.success = false;
             reject.playerId = -1;
@@ -142,81 +159,30 @@ public class GameServer {
             return;
         }
 
-        String normalizedName = playerName.trim();
-        System.out.println("Получен JoinRoomRequest от connectionId=" + connection.getID() + ", playerName=" + normalizedName);
+        if (gameState.getPlayerById(connection.getID()) != null) {
+            return;
+        }
 
-        Player newPlayer = new Player(connection.getID(), normalizedName);
+        Player newPlayer = new Player(connection.getID(), playerName.trim());
+        if (gameState.players.isEmpty()) {
+            hostConnectionId = connection.getID();
+        }
         gameState.addPlayer(newPlayer);
-
-        System.out.println("Игрок добавлен в игру. Всего игроков: " + gameState.players.size());
 
         JoinRoomResponse response = new JoinRoomResponse();
         response.success = true;
         response.playerId = connection.getID();
 
         sendTcpSafely(connection, response);
-        broadcastGameState();
+        broadcastGameStateUnsafe();
     }
 
-    private void handleRollDice(Connection connection, RollDiceRequest request) {
-        if (gameState.players != null && !gameState.players.isEmpty()
-            && gameState.currentPlayerIndex >= 0
-            && gameState.currentPlayerIndex < gameState.players.size()
-            && gameState.players.get(gameState.currentPlayerIndex).id == connection.getID()) {
-
-            int dice1 = (int) (Math.random() * 6) + 1;
-            int dice2 = (int) (Math.random() * 6) + 1;
-            int total = dice1 + dice2;
-
-            gameState.diceValue = total;
-            gameState.lastActionLog = gameState.getCurrentPlayer().name + " бросил кубики: " + total;
-
-            Player current = gameState.getCurrentPlayer();
-            int oldPosition = current.position;
-            current.position = (oldPosition + total) % 40;
-
-            // Проверка прохождения Старта
-            if (current.position < oldPosition) {
-                current.receive(200);
-                gameState.lastActionLog = current.name + " прошёл Старт и получил 200!";
-            }
-
-            BoardCell cell = getCurrentCell();
-            if (cell != null) {
-                switch (cell.type) {
-                    case START:
-                    case REST:
-                    case JAIL:
-                        gameState.nextPlayer();
-                        break;
-                    case TAX:
-                        current.pay(100);
-                        gameState.lastActionLog = current.name + " заплатил налог 100";
-                        gameState.nextPlayer();
-                        break;
-                    case SITUATION:
-                        gameState.currentPhase = GameState.GamePhase.PLAYER_ACTION;
-                        gameState.lastActionLog = current.name + " попал на " + cell.name;
-                        break;
-                    default:
-                        gameState.nextPlayer();
-                        break;
-                }
-            }
-
-            RollDiceResponse response = new RollDiceResponse();
-            response.playerId = connection.getID();
-            response.dice1 = dice1;
-            response.dice2 = dice2;
-            response.total = total;
-
-            sendAllTcpSafely(response);
-            broadcastGameState();
+    private void handleStartGame(Connection connection) {
+        if (connection.getID() != hostConnectionId) {
+            return;
         }
-    }
 
-    public void startGame() {
-        if (gameState.players == null || gameState.players.size() < 2) {
+        if (gameState.players.size() < 2) {
             System.out.println("Нельзя запустить игру: нужно минимум 2 игрока");
             return;
         }
@@ -224,16 +190,318 @@ public class GameServer {
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         gameState.lastActionLog = "Игра началась";
         gameState.turnCount = 1;
-        broadcastGameState();
-        System.out.println("Игра запущена сервером");
+        broadcastGameStateUnsafe();
+    }
+
+    private void handleRollDice(Connection connection) {
+        if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase != GameState.GamePhase.PLAYING) {
+            return;
+        }
+
+        int dice1 = (int) (Math.random() * 6) + 1;
+        int dice2 = (int) (Math.random() * 6) + 1;
+        int total = dice1 + dice2;
+
+        Player current = gameState.getCurrentPlayer();
+        if (current == null) {
+            return;
+        }
+
+        gameState.diceValue = total;
+        current.maxAffordable = getMaxAffordable(current);
+
+        int oldPosition = current.position;
+        current.position = (oldPosition + total) % board.size();
+        gameState.lastActionLog = current.name + " бросил кубики: " + total;
+
+        if (current.position < oldPosition) {
+            current.receive(200);
+            gameState.lastActionLog = current.name + " прошёл Старт и получил 200!";
+        }
+
+        BoardCell cell = board.get(current.position);
+        handleCellLanding(current, cell);
+
+        RollDiceResponse response = new RollDiceResponse();
+        response.playerId = connection.getID();
+        response.dice1 = dice1;
+        response.dice2 = dice2;
+        response.total = total;
+        response.newPosition = current.position;
+
+        sendAllTcpSafely(response);
+        broadcastGameStateUnsafe();
+    }
+
+    private void handleCellLanding(Player current, BoardCell cell) {
+        if (cell == null) {
+            return;
+        }
+
+        switch (cell.type) {
+            case START:
+            case REST:
+            case JAIL:
+                break;
+            case TAX:
+                current.pay(100);
+                gameState.lastActionLog = current.name + " заплатил налог 100";
+                checkBankruptcy(current, true);
+                break;
+            case SITUATION:
+                int cellIndex = cell.id;
+                if (!gameState.cellOwners.containsKey(cellIndex)) {
+                    gameState.currentPhase = GameState.GamePhase.PLAYER_ACTION;
+                    gameState.lastActionLog = current.name + " попал на " + cell.name;
+                } else if (gameState.cellOwners.get(cellIndex) != current.id) {
+                    boolean mortgaged = gameState.cellMortgaged.getOrDefault(cellIndex, false);
+                    if (!mortgaged) {
+                        int fee = cell.getEntranceFee();
+                        current.pay(fee);
+                        Player owner = gameState.getPlayerById(gameState.cellOwners.get(cellIndex));
+                        if (owner != null) {
+                            owner.receive(fee);
+                        }
+                        gameState.lastActionLog = current.name + " заплатил " + fee + " игроку " + (owner != null ? owner.name : "владельцу");
+                        checkBankruptcy(current, true);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void handleGameAction(Connection connection, GameActionRequest request) {
+        Player current = gameState.getCurrentPlayer();
+        if (current == null || current.id != connection.getID() || request == null || request.actionType == null) {
+            return;
+        }
+
+        BoardCell currentCell = board.get(current.position);
+        current.maxAffordable = getMaxAffordable(current);
+
+        switch (request.actionType) {
+            case BUY_CELL:
+                if (gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION || currentCell.type != BoardCell.Type.SITUATION) {
+                    return;
+                }
+                if (!current.canAfford(currentCell.price)) {
+                    gameState.lastActionLog = current.name + " не может купить — недостаточно средств";
+                    broadcastGameStateUnsafe();
+                    return;
+                }
+                current.pay(currentCell.price);
+                gameState.cellOwners.put(currentCell.id, current.id);
+                current.ownedCells.add(currentCell.id);
+                gameState.lastActionLog = current.name + " купил " + currentCell.name;
+                gameState.nextPlayer();
+                break;
+            case PASS_BUY:
+                if (gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION || currentCell.type != BoardCell.Type.SITUATION) {
+                    return;
+                }
+                gameState.startAuction(currentCell.id);
+                gameState.auctionStarterPlayerId = current.id;
+                startAuctionTimer();
+                break;
+            case MORTGAGE_CELL:
+                handleMortgage(current, request.targetId);
+                break;
+            case BUY_BACK_CELL:
+                handleBuyBack(current, request.targetId);
+                break;
+            case PLACE_AUCTION_BID:
+                handleAuctionBid(current, request.amount);
+                break;
+            case END_TURN:
+                if (gameState.currentPhase == GameState.GamePhase.PLAYING) {
+                    gameState.nextPlayer();
+                }
+                break;
+            default:
+                return;
+        }
+
+        broadcastGameStateUnsafe();
+    }
+
+    private void handleMortgage(Player current, int cellId) {
+        if (!current.ownedCells.contains(cellId)) {
+            return;
+        }
+        if (gameState.cellMortgaged.getOrDefault(cellId, false)) {
+            return;
+        }
+
+        BoardCell targetCell = board.get(cellId);
+        current.receive(targetCell.price / 2);
+        gameState.cellMortgaged.put(cellId, true);
+        gameState.lastActionLog = current.name + " заложил " + targetCell.name;
+    }
+
+    private void handleBuyBack(Player current, int cellId) {
+        if (!current.ownedCells.contains(cellId)) {
+            return;
+        }
+        if (!gameState.cellMortgaged.getOrDefault(cellId, false)) {
+            return;
+        }
+
+        BoardCell targetCell = board.get(cellId);
+        int buyBackCost = targetCell.price / 2;
+        if (current.money < buyBackCost) {
+            return;
+        }
+
+        current.pay(buyBackCost);
+        gameState.cellMortgaged.put(cellId, false);
+        gameState.lastActionLog = current.name + " выкупил " + targetCell.name;
+    }
+
+    private void handleAuctionBid(Player current, int amount) {
+        if (!gameState.isInAuction || gameState.currentPhase != GameState.GamePhase.AUCTION) {
+            return;
+        }
+
+        int highestBid = 0;
+        for (int bid : gameState.auctionBids.values()) {
+            highestBid = Math.max(highestBid, bid);
+        }
+
+        if (amount < 10 || amount <= highestBid) {
+            return;
+        }
+
+        current.maxAffordable = getMaxAffordable(current);
+        if (current.maxAffordable < amount) {
+            return;
+        }
+
+        gameState.auctionBids.put(current.id, amount);
+        gameState.lastActionLog = current.name + " поставил " + amount + " на аукционе";
+    }
+
+    private void startAuctionTimer() {
+        cancelAuctionTimer();
+        auctionTask = timerExecutor.scheduleAtFixedRate(() -> {
+            synchronized (stateLock) {
+                if (!gameState.isInAuction) {
+                    cancelAuctionTimer();
+                    return;
+                }
+
+                gameState.currentAuctionTime--;
+                if (gameState.currentAuctionTime <= 0) {
+                    endAuctionInternal();
+                    cancelAuctionTimer();
+                }
+                broadcastGameStateUnsafe();
+            }
+        }, 1, 1, TimeUnit.SECONDS);
+    }
+
+    private void endAuctionInternal() {
+        int winnerId = -1;
+        int maxBid = 0;
+
+        for (Map.Entry<Integer, Integer> entry : gameState.auctionBids.entrySet()) {
+            if (entry.getValue() > maxBid) {
+                maxBid = entry.getValue();
+                winnerId = entry.getKey();
+            }
+        }
+
+        BoardCell auctionCell = board.get(gameState.auctionCellId);
+        if (winnerId == -1) {
+            gameState.lastActionLog = "Аукцион за " + auctionCell.name + " завершён без ставок";
+            gameState.endAuction();
+            gameState.nextPlayer();
+            return;
+        }
+
+        Player winner = gameState.getPlayerById(winnerId);
+        if (winner == null) {
+            gameState.lastActionLog = "Аукцион завершён без победителя";
+            gameState.endAuction();
+            gameState.nextPlayer();
+            return;
+        }
+
+        winner.pay(maxBid);
+        checkBankruptcy(winner, false);
+        if (!winner.isBankrupt) {
+            gameState.cellOwners.put(auctionCell.id, winner.id);
+            winner.ownedCells.add(auctionCell.id);
+            gameState.lastActionLog = winner.name + " выиграл аукцион и купил " + auctionCell.name;
+        }
+        gameState.endAuction();
+        if (gameState.isGameOver()) {
+            gameState.currentPhase = GameState.GamePhase.GAME_OVER;
+        } else {
+            gameState.nextPlayer();
+        }
+    }
+
+    private boolean checkBankruptcy(Player player, boolean advanceTurn) {
+        if (!player.isBankrupt) {
+            return false;
+        }
+
+        for (int cellIndex : player.ownedCells) {
+            gameState.cellOwners.remove(cellIndex);
+            gameState.cellMortgaged.remove(cellIndex);
+        }
+        player.ownedCells.clear();
+
+        if (gameState.isGameOver()) {
+            gameState.currentPhase = GameState.GamePhase.GAME_OVER;
+        } else if (advanceTurn) {
+            gameState.nextPlayer();
+        }
+        return true;
     }
 
     private void removePlayer(int playerId) {
         gameState.removePlayer(playerId);
-        broadcastGameState();
+        if (hostConnectionId == playerId) {
+            hostConnectionId = gameState.players.isEmpty() ? -1 : gameState.players.get(0).id;
+        }
+
+        if (gameState.players.isEmpty()) {
+            cancelAuctionTimer();
+            return;
+        }
+
+        if (gameState.currentPlayerIndex >= gameState.players.size()) {
+            gameState.currentPlayerIndex = 0;
+        }
+
+        if (gameState.isGameOver()) {
+            gameState.currentPhase = GameState.GamePhase.GAME_OVER;
+        }
     }
 
-    private void broadcastGameState() {
+    private int getMaxAffordable(Player player) {
+        int total = player.money;
+        for (int cellIndex : player.ownedCells) {
+            boolean mortgaged = gameState.cellMortgaged.getOrDefault(cellIndex, false);
+            if (!mortgaged) {
+                total += board.get(cellIndex).price / 2;
+            }
+        }
+        return total;
+    }
+
+    private boolean isCurrentPlayer(int connectionId) {
+        return gameState.players != null
+            && !gameState.players.isEmpty()
+            && gameState.currentPlayerIndex >= 0
+            && gameState.currentPlayerIndex < gameState.players.size()
+            && gameState.players.get(gameState.currentPlayerIndex).id == connectionId;
+    }
+
+    private void broadcastGameStateUnsafe() {
         GameStatePacket packet = new GameStatePacket(gameState);
         sendAllTcpSafely(packet);
     }
@@ -241,7 +509,6 @@ public class GameServer {
     private void sendTcpSafely(Connection connection, Object packet) {
         try {
             connection.sendTCP(packet);
-            System.out.println("sendTCP OK: packet=" + packet.getClass().getSimpleName() + ", connectionId=" + connection.getID());
         } catch (Exception e) {
             System.err.println("sendTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", connectionId=" + connection.getID() + ", reason=" + e.getMessage());
             e.printStackTrace();
@@ -251,14 +518,48 @@ public class GameServer {
     private void sendAllTcpSafely(Object packet) {
         try {
             server.sendToAllTCP(packet);
-            System.out.println("sendToAllTCP OK: packet=" + packet.getClass().getSimpleName() + ", recipients=" + server.getConnections().size());
         } catch (Exception e) {
             System.err.println("sendToAllTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", reason=" + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    private void cancelAuctionTimer() {
+        if (auctionTask != null) {
+            auctionTask.cancel(false);
+            auctionTask = null;
+        }
+    }
+
+    private static String findBestIP() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                if (!iface.isUp() || iface.isLoopback()) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+                    if (addr instanceof Inet4Address) {
+                        String ip = addr.getHostAddress();
+                        if (ip.startsWith("26.")) {
+                            return ip;
+                        }
+                    }
+                }
+            }
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            return "127.0.0.1";
+        }
+    }
+
     public void stop() {
+        cancelAuctionTimer();
+        timerExecutor.shutdownNow();
         server.stop();
     }
 }

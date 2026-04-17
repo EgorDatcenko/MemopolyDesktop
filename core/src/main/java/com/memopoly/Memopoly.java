@@ -10,6 +10,7 @@ import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
+import com.memopoly.network.packets.StartGameRequest;
 
 public class Memopoly extends Game implements NetworkListener {
     public SpriteBatch batch;
@@ -27,7 +28,7 @@ public class Memopoly extends Game implements NetworkListener {
         screenManager = new ScreenManager(this);
         batch = new SpriteBatch();
         gameClient = new GameClient(this);
-        screenManager.set(new GameScreen(this));
+        screenManager.set(new MainMenuScreen(this));
     }
 
     @Override
@@ -62,6 +63,9 @@ public class Memopoly extends Game implements NetworkListener {
     public void onDisconnected() {
         Gdx.app.log("Network", "Disconnected from server!");
     }
+
+    @Override
+    public void onConnectionFailed(String reason) {}
 
     @Override
     public void render() {
@@ -121,6 +125,11 @@ public class Memopoly extends Game implements NetworkListener {
         gameServer = new GameServer();
     }
 
+    public void startAsHost(String playerName) {
+        startAsHost();
+        gameClient.connectAndJoin("127.0.0.1", 54555, playerName);
+    }
+
     public void connectAsGuest(String ip, int port, String playerName) {
         isHost = false;
         lobbyOpened = false;
@@ -129,8 +138,8 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     public void startGameAsHost() {
-        if (gameServer != null) {
-            gameServer.startGame();
+        if (gameClient != null) {
+            gameClient.sendStartGame(new StartGameRequest());
         }
     }
 

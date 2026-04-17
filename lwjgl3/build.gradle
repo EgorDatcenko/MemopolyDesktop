@@ -19,7 +19,7 @@ apply plugin: 'io.github.fourlastor.construo'
 import io.github.fourlastor.construo.Target
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
-application.mainClass = 'сщьюcom.memopoly.lwjgl3.Lwjgl3Launcher'
+application.mainClass = 'com.memopoly.lwjgl3.DesktopLauncher'
 application.applicationName = appName
 eclipse.project.name = appName + '-lwjgl3'
 java.sourceCompatibility = 17
@@ -130,7 +130,7 @@ construo {
         architecture.set(Target.Architecture.AARCH64)
         jdkUrl.set("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.15_6.tar.gz")
         // macOS needs an identifier
-        identifier.set("сщьюcom.memopoly." + appName)
+        identifier.set("com.memopoly." + appName)
         // Optional: icon for macOS, as an ICNS file
         macIcon.set(project.file("icons/logo.icns"))
       }

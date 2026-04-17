@@ -12,6 +12,7 @@ public class LoadingScreen extends BaseScreen {
     private Assets assets;
     public LoadingScreen(Memopoly game) {
         super(game);
+        assets = new Assets();
     }
 
     @Override
@@ -57,6 +58,11 @@ public class LoadingScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        shapeRenderer.dispose();
+        if (shapeRenderer != null) {
+            shapeRenderer.dispose();
+        }
+        if (assets != null) {
+            assets.dispose();
+        }
     }
 }

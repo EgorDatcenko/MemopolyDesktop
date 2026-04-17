@@ -5,8 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 
 public class GameState {
-    public ArrayList<Integer> cellOwners;    // index → playerId (-1 если свободна)
-    public ArrayList<Boolean> cellMortgaged;
+    public HashMap<Integer, Integer> cellOwners;
+    public HashMap<Integer, Boolean> cellMortgaged;
     // Фазы игры
     public enum GamePhase {
         WAITING,       // Ожидание игроков
@@ -17,7 +17,18 @@ public class GameState {
         AUCTION,       // Аукцион
         GAME_OVER      // Конец игры
     }
+    public enum BattleType {
+        MEME_BATTLE_CELL,
+        SITUATION_CELL
+    }
 
+    public enum BattlePhase {
+        INVITE,
+        COLLECTING_MEMES,
+        VOTING,
+        COUNTING,
+        RESULTS
+    }
     // Основные поля для KryoNet
     public ArrayList<Player> players;
     public int currentPlayerIndex;
@@ -31,19 +42,28 @@ public class GameState {
     public int battleStakes;
     public String battleTopic;
     public ArrayList<Meme> battleMemes;
-    public HashMap<Integer, Integer> votes; // memeId -> voteCount
-    public int battleOwnerId; // Для баттла на чужой клетке
+    public HashMap<Integer, Integer> votes;
+    public int battleOwnerId;
+
+    public BattleType battleType;
+    public ArrayList<Integer> battleParticipants;
+    public ArrayList<Integer> battleInvited;
+    public HashMap<Integer, Boolean> battleAccepted;
+    public int battleTimerSeconds;
+    public BattlePhase battlePhase;
+    public int battleBank;
 
     // Аукцион состояние
     public boolean isInAuction;
     public int auctionCellId;
     public HashMap<Integer, Integer> auctionBids; // playerId -> bid
     public int currentAuctionTime;
+    public int auctionStarterPlayerId;
 
     // Стандартные конструкторы
     public GameState() {
-        this.cellOwners = new ArrayList<>(Collections.nCopies(40, -1));
-        this.cellMortgaged = new ArrayList<>(Collections.nCopies(40, false));
+        this.cellOwners = new HashMap<>();
+        this.cellMortgaged = new HashMap<>();
         this.players = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;
@@ -53,10 +73,16 @@ public class GameState {
 
         this.isInBattle = false;
         this.battleMemes = new ArrayList<>();
+        this.battleParticipants = new ArrayList<>();
+        this.battleInvited = new ArrayList<>();
+        this.battleAccepted = new HashMap<>();
         this.votes = new HashMap<>();
+        this.battleOwnerId = -1;
 
         this.isInAuction = false;
         this.auctionBids = new HashMap<>();
+        this.auctionCellId = -1;
+        this.auctionStarterPlayerId = -1;
     }
 
     // Игровые методы
@@ -66,8 +92,12 @@ public class GameState {
     }
 
     public void nextPlayer() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        do {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        } while (players.get(currentPlayerIndex).isBankrupt);
+
         turnCount++;
+        currentPhase = GamePhase.PLAYING;
         lastActionLog = "Ход переходит к " + getCurrentPlayer().name;
     }
 
@@ -138,5 +168,13 @@ public class GameState {
         currentAuctionTime = 30; // 30 секунд
         currentPhase = GamePhase.AUCTION;
         lastActionLog = "Начинается аукцион!";
+    }
+    public void endAuction(){
+        isInAuction = false;
+        auctionCellId = -1;
+        auctionBids.clear();
+        auctionStarterPlayerId = -1;
+        currentAuctionTime = 30;
+        currentPhase = GamePhase.PLAYING;
     }
 }

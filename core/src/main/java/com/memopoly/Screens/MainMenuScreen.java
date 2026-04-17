@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Timer;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
@@ -17,6 +18,7 @@ import com.memopoly.utils.RoomCodeGenerator;
 
 public class MainMenuScreen extends BaseScreen {
     private final Stage stage;
+    private boolean roomCodeShown;
 
     public MainMenuScreen(Memopoly game) {
         super(game);
@@ -34,8 +36,6 @@ public class MainMenuScreen extends BaseScreen {
         createButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Кнопка 'Создать игру' нажата!");
-                game.startAsHost();
                 showStartGameDialog();
             }
         });
@@ -66,41 +66,31 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showStartGameDialog() {
-        String roomCode = game.getRoomCode();
+        VisTextField nameField = new VisTextField();
+        nameField.setMessageText("Имя хоста");
 
         Dialog dialog = new Dialog("Создание игры", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
-                if (object.equals(true)) {
-                    System.out.println("🎮 Начинаем игру как хост!");
-                    // TODO: Переключиться на игровой экран
+                if (!Boolean.TRUE.equals(object)) {
+                    return;
                 }
+
+                String playerName = nameField.getText().trim();
+                if (playerName.isEmpty()) {
+                    return;
+                }
+
+                game.startAsHost(playerName);
             }
         };
 
-        VisLabel titleLabel = new VisLabel("Ваш код комнаты:");
-        VisTextField codeField = new VisTextField(roomCode);
-        codeField.setDisabled(true);
-        codeField.selectAll();
-
-        VisTextButton copyButton = new VisTextButton("Копировать");
-        copyButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                ClipboardUtils.copyToClipboard(roomCode);
-                showCopiedNotification();
-            }
-        });
-
-        dialog.getContentTable().add(titleLabel).pad(10);
+        dialog.getContentTable().add(new VisLabel("Введите имя для комнаты")).pad(10);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(200).pad(10);
-        dialog.row();
-        dialog.getContentTable().add(copyButton).pad(10);
-        dialog.row();
+        dialog.getContentTable().add(nameField).width(240).pad(10);
 
+        dialog.button("Создать", true);
         dialog.button("Отмена", false);
-
         dialog.show(stage);
     }
 
@@ -116,7 +106,7 @@ public class MainMenuScreen extends BaseScreen {
         Dialog dialog = new Dialog("Подключение...", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
-                if (!object.equals(true)) {
+                if (!Boolean.TRUE.equals(object)) {
                     return;
                 }
 
@@ -153,6 +143,32 @@ public class MainMenuScreen extends BaseScreen {
         dialog.show(stage);
     }
 
+    private void showRoomCodeDialog(String roomCode) {
+        Dialog dialog = new Dialog("Комната создана", VisUI.getSkin());
+
+        VisLabel titleLabel = new VisLabel("Ваш код комнаты:");
+        VisTextField codeField = new VisTextField(roomCode);
+        codeField.setDisabled(true);
+        codeField.selectAll();
+
+        VisTextButton copyButton = new VisTextButton("Копировать");
+        copyButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                ClipboardUtils.copyToClipboard(roomCode);
+                showCopiedNotification();
+            }
+        });
+
+        dialog.getContentTable().add(titleLabel).pad(10);
+        dialog.row();
+        dialog.getContentTable().add(codeField).width(220).pad(10);
+        dialog.row();
+        dialog.getContentTable().add(copyButton).pad(10);
+        dialog.button("ОК", true);
+        dialog.show(stage);
+    }
+
     private void showCopiedNotification() {
         Dialog notification = new Dialog("", VisUI.getSkin()) {
             @Override
@@ -163,24 +179,31 @@ public class MainMenuScreen extends BaseScreen {
 
         notification.getContentTable().add(new VisLabel("Код скопирован!")).pad(20);
         notification.button("ОК", true);
+        notification.show(stage);
 
-        java.util.Timer timer = new java.util.Timer();
-        timer.schedule(new java.util.TimerTask() {
+        Timer.schedule(new Timer.Task() {
             @Override
             public void run() {
                 notification.hide();
-                timer.cancel();
             }
-        }, 2000);
-
-        notification.show(stage);
+        }, 2f);
     }
 
     @Override
     public void render(float delta) {
+        if (!roomCodeShown && game.isHost() && game.getRoomCode() != null && !"UNKNOWN".equals(game.getRoomCode())) {
+            roomCodeShown = true;
+            showRoomCodeDialog(game.getRoomCode());
+        }
+
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
         stage.draw();
+    }
+
+    @Override
+    public void dispose() {
+        stage.dispose();
     }
 }

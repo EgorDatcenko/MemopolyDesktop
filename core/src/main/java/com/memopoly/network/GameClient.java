@@ -13,6 +13,7 @@ import com.memopoly.network.packets.JoinRoomResponse;
 import com.memopoly.network.packets.RollDiceRequest;
 import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.network.packets.GameActionRequest;
 
 import java.io.IOException;
 
@@ -23,6 +24,7 @@ public class GameClient {
     private String pendingJoinPlayerName;
     private volatile boolean clientLoopRunning;
     private Thread clientUpdateThread;
+    private volatile int localPlayerId = -1;
 
     public GameClient(NetworkListener listener) {
         Log.set(Log.LEVEL_DEBUG);
@@ -98,7 +100,9 @@ public class GameClient {
                 client.connect(15000, hostIP, port, 54777);
                 System.out.println("Подключение к " + hostIP + ":" + port + " завершено");
             } catch (IOException e) {
-                System.err.println("Ошибка подключения: " + e.getMessage());
+                Gdx.app.postRunnable(() ->
+                    listener.onConnectionFailed(e.getMessage())
+                );
             }
         }, "memopoly-client-connect");
 
@@ -115,6 +119,7 @@ public class GameClient {
         if (packet instanceof JoinRoomResponse) {
             JoinRoomResponse response = (JoinRoomResponse) packet;
             if (response.success) {
+                localPlayerId = response.playerId;
                 System.out.println("JoinRoomResponse: успех, playerId=" + response.playerId);
                 Gdx.app.postRunnable(() ->
                     listener.onJoinedRoom()
@@ -166,8 +171,20 @@ public class GameClient {
         client.sendTCP(request);
     }
 
+    public void sendGameAction(GameActionRequest request) {
+        if (!client.isConnected() || request == null) {
+            return;
+        }
+        client.sendTCP(request);
+    }
+
+    public int getLocalPlayerId() {
+        return localPlayerId;
+    }
+
     public void disconnect() {
         clientLoopRunning = false;
+        localPlayerId = -1;
         client.close();
     }
 }
