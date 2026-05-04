@@ -9,6 +9,10 @@ public class GameActionRequest {
         START_MEME_BATTLE,
         SUBMIT_MEME,
         VOTE_MEME,
+        MEME_BANK,
+        MEME_BANK_DEPOSIT,
+        MEME_BANK_WITHDRAW,
+        MEME_BANK_SKIP,
         PLACE_AUCTION_BID,
         END_TURN
     }

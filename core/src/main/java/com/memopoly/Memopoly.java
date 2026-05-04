@@ -13,6 +13,10 @@ import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.StartGameRequest;
 
 public class Memopoly extends Game implements NetworkListener {
+    private static final String SETTINGS_PREFS = "memopoly-settings";
+    private static final int WINDOWED_WIDTH = 1600;
+    private static final int WINDOWED_HEIGHT = 900;
+
     public SpriteBatch batch;
     public ScreenManager screenManager;
 
@@ -28,6 +32,11 @@ public class Memopoly extends Game implements NetworkListener {
         screenManager = new ScreenManager(this);
         batch = new SpriteBatch();
         gameClient = new GameClient(this);
+        applySettings(
+            Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("music_volume", 0.7f),
+            Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("sfx_volume", 0.85f),
+            Gdx.app.getPreferences(SETTINGS_PREFS).getBoolean("fullscreen", false)
+        );
         screenManager.set(new MainMenuScreen(this));
     }
 
@@ -93,14 +102,20 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     public void openLobby() {
-        screenManager.push(new LobbyScreen(this));
+        screenManager.set(new LobbyScreen(this));
     }
 
     public void openMenu() {
         screenManager.set(new MainMenuScreen(this));
     }
+    public void openSettings() {
+        screenManager.set(new SettingsScreen(this));
+    }
     public void openGame() {
         screenManager.set(new GameScreen(this));
+    }
+    public void openGameLoading() {
+        screenManager.set(new LoadingScreen(this, "Загрузка матча", () -> new GameScreen(this)));
     }
     public void leaveRoomToMenu() {
         if (gameServer != null) {
@@ -148,6 +163,25 @@ public class Memopoly extends Game implements NetworkListener {
             return gameServer.getRoomCode();
         }
         return "UNKNOWN";
+    }
+
+    public com.badlogic.gdx.Preferences getSettingsPreferences() {
+        return Gdx.app.getPreferences(SETTINGS_PREFS);
+    }
+
+    public void applySettings(float musicVolume, float sfxVolume, boolean fullscreen) {
+        com.badlogic.gdx.Preferences preferences = getSettingsPreferences();
+        preferences.putFloat("music_volume", musicVolume);
+        preferences.putFloat("sfx_volume", sfxVolume);
+        preferences.putBoolean("fullscreen", fullscreen);
+        preferences.flush();
+
+        if (fullscreen) {
+            com.badlogic.gdx.Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
+            Gdx.graphics.setFullscreenMode(displayMode);
+        } else {
+            Gdx.graphics.setWindowedMode(WINDOWED_WIDTH, WINDOWED_HEIGHT);
+        }
     }
 
     @Override

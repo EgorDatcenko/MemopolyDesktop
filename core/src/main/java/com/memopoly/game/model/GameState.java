@@ -15,7 +15,8 @@ public class GameState {
         PLAYER_ACTION, // Выбор действия (купить/отказаться)
         MEME_BATTLE,   // Мем-баттл
         AUCTION,       // Аукцион
-        GAME_OVER      // Конец игры
+        GAME_OVER,      // Конец игры
+        MEME_BANK_ACTION
     }
     public enum BattleType {
         MEME_BATTLE_CELL,
@@ -34,6 +35,7 @@ public class GameState {
     public int currentPlayerIndex;
     public GamePhase currentPhase;
     public int diceValue;
+    public boolean hasRolledThisTurn;
     public String lastActionLog;
     public int turnCount;
 
@@ -59,6 +61,9 @@ public class GameState {
     public HashMap<Integer, Integer> auctionBids; // playerId -> bid
     public int currentAuctionTime;
     public int auctionStarterPlayerId;
+    public int auctionCurrentPlayerId;
+
+    public int memeBankPlayerId = -1;
 
     // Стандартные конструкторы
     public GameState() {
@@ -68,6 +73,7 @@ public class GameState {
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;
         this.diceValue = 0;
+        this.hasRolledThisTurn = false;
         this.lastActionLog = "Игра началась";
         this.turnCount = 0;
 
@@ -83,6 +89,7 @@ public class GameState {
         this.auctionBids = new HashMap<>();
         this.auctionCellId = -1;
         this.auctionStarterPlayerId = -1;
+        this.auctionCurrentPlayerId = -1;
     }
 
     // Игровые методы
@@ -97,6 +104,9 @@ public class GameState {
         } while (players.get(currentPlayerIndex).isBankrupt);
 
         turnCount++;
+        diceValue = 0;
+        hasRolledThisTurn = false;
+        memeBankPlayerId = -1;
         currentPhase = GamePhase.PLAYING;
         lastActionLog = "Ход переходит к " + getCurrentPlayer().name;
     }
@@ -166,6 +176,7 @@ public class GameState {
         auctionCellId = cellId;
         auctionBids.clear();
         currentAuctionTime = 30; // 30 секунд
+        auctionCurrentPlayerId = -1;
         currentPhase = GamePhase.AUCTION;
         lastActionLog = "Начинается аукцион!";
     }
@@ -174,6 +185,7 @@ public class GameState {
         auctionCellId = -1;
         auctionBids.clear();
         auctionStarterPlayerId = -1;
+        auctionCurrentPlayerId = -1;
         currentAuctionTime = 30;
         currentPhase = GamePhase.PLAYING;
     }

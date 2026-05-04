@@ -30,11 +30,14 @@ public class ScreenManager {
         }
     }
     public void set(BaseScreen screen){
+        game.setScreen(screen);
         while (!stack.isEmpty()){
-            stack.pop().dispose();
+            BaseScreen oldScreen = stack.pop();
+            if (oldScreen != screen) {
+                oldScreen.dispose();
+            }
         }
         stack.push(screen);
-        game.setScreen(screen);
     }
     public BaseScreen current(){
         return stack.isEmpty() ? null : stack.peek();

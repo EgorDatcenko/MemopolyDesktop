@@ -95,12 +95,12 @@ public class GameClient {
         }
 
         Thread connectThread = new Thread(() -> {
-            try {
-                System.out.println("Пытаемся подключиться к " + hostIP + ":" + port);
-                client.connect(15000, hostIP, port, 54777);
-                System.out.println("Подключение к " + hostIP + ":" + port + " завершено");
-            } catch (IOException e) {
-                Gdx.app.postRunnable(() ->
+                try {
+                    System.out.println("Пытаемся подключиться к " + hostIP + ":" + port);
+                    client.connect(15000, hostIP, port);
+                    System.out.println("Подключение к " + hostIP + ":" + port + " завершено");
+                } catch (IOException e) {
+                    Gdx.app.postRunnable(() ->
                     listener.onConnectionFailed(e.getMessage())
                 );
             }

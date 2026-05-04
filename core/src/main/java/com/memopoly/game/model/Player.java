@@ -11,6 +11,7 @@ public class Player {
     public ArrayList<Meme> handMemes;
     public ArrayList<Integer> ownedCells;
     public int maxAffordable;
+    public int memeBankBalance;
 
     public Player(){
         this.handMemes = new ArrayList<>();
@@ -24,10 +25,11 @@ public class Player {
         this.money = 1500;
         this.position = 0;
         this.isBankrupt = false;
+        this.memeBankBalance = 0;
     }
 
     public boolean canAfford(int amount){
-        return  money >= amount;
+        return maxAffordable >= amount;
     }
 
     public void pay(int amount) {
@@ -37,7 +39,9 @@ public class Player {
             return;
         }
         money -= amount;
-        if (money <= 0) isBankrupt = true;
+        if (money < 0) {
+            money = 0;
+        }
     }
     public void receive(int amount){
         money += amount;

@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 public class GameServer {
     private static final int TCP_PORT = 54555;
-    private static final int UDP_PORT = 54777;
 
     private final Server server;
     private final GameState gameState;
@@ -86,8 +85,8 @@ public class GameServer {
         }
 
         try {
-            server.bind(TCP_PORT, UDP_PORT);
-            System.out.println("Сервер запущен на портах " + TCP_PORT + "/" + UDP_PORT);
+            server.bind(TCP_PORT);
+            System.out.println("Сервер запущен на TCP-порту " + TCP_PORT);
         } catch (IOException e) {
             throw new IllegalStateException("Не удалось запустить сервер", e);
         }
@@ -190,6 +189,10 @@ public class GameServer {
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         gameState.lastActionLog = "Игра началась";
         gameState.turnCount = 1;
+        gameState.currentPlayerIndex = 0;
+        gameState.diceValue = 0;
+        gameState.hasRolledThisTurn = false;
+        gameState.memeBankPlayerId = -1;
         broadcastGameStateUnsafe();
     }
 
@@ -208,6 +211,7 @@ public class GameServer {
         }
 
         gameState.diceValue = total;
+        gameState.hasRolledThisTurn = true;
         current.maxAffordable = getMaxAffordable(current);
 
         int oldPosition = current.position;
@@ -267,22 +271,37 @@ public class GameServer {
                     }
                 }
                 break;
+            case MEME_BANK:
+                gameState.currentPhase = GameState.GamePhase.MEME_BANK_ACTION;
+                gameState.memeBankPlayerId = current.id;
+                gameState.lastActionLog = current.name + " попал на Meme Bank";
+                break;
             default:
                 break;
         }
     }
 
     public void handleGameAction(Connection connection, GameActionRequest request) {
-        Player current = gameState.getCurrentPlayer();
-        if (current == null || current.id != connection.getID() || request == null || request.actionType == null) {
+        if (request == null || request.actionType == null) {
             return;
         }
 
-        BoardCell currentCell = board.get(current.position);
-        current.maxAffordable = getMaxAffordable(current);
+        Player actingPlayer = gameState.getPlayerById(connection.getID());
+        if (actingPlayer == null) {
+            return;
+        }
 
         switch (request.actionType) {
             case BUY_CELL:
+                if (!isCurrentPlayer(connection.getID())) {
+                    return;
+                }
+                Player current = gameState.getCurrentPlayer();
+                if (current == null) {
+                    return;
+                }
+                BoardCell currentCell = board.get(current.position);
+                current.maxAffordable = getMaxAffordable(current);
                 if (gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION || currentCell.type != BoardCell.Type.SITUATION) {
                     return;
                 }
@@ -295,27 +314,105 @@ public class GameServer {
                 gameState.cellOwners.put(currentCell.id, current.id);
                 current.ownedCells.add(currentCell.id);
                 gameState.lastActionLog = current.name + " купил " + currentCell.name;
-                gameState.nextPlayer();
+                gameState.currentPhase = GameState.GamePhase.PLAYING;
                 break;
             case PASS_BUY:
+                if (!isCurrentPlayer(connection.getID())) {
+                    return;
+                }
+                current = gameState.getCurrentPlayer();
+                if (current == null) {
+                    return;
+                }
+                currentCell = board.get(current.position);
+                current.maxAffordable = getMaxAffordable(current);
                 if (gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION || currentCell.type != BoardCell.Type.SITUATION) {
                     return;
                 }
                 gameState.startAuction(currentCell.id);
                 gameState.auctionStarterPlayerId = current.id;
+                gameState.auctionCurrentPlayerId = findNextAuctionBidderId(current.id);
+                gameState.lastActionLog = "Начинается аукцион! Первый ход: " + getPlayerName(gameState.auctionCurrentPlayerId);
                 startAuctionTimer();
                 break;
             case MORTGAGE_CELL:
-                handleMortgage(current, request.targetId);
+                if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase == GameState.GamePhase.AUCTION || gameState.currentPhase == GameState.GamePhase.MEME_BATTLE) {
+                    return;
+                }
+                actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
+                handleMortgage(actingPlayer, request.targetId);
                 break;
             case BUY_BACK_CELL:
-                handleBuyBack(current, request.targetId);
+                if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase == GameState.GamePhase.AUCTION || gameState.currentPhase == GameState.GamePhase.MEME_BATTLE) {
+                    return;
+                }
+                actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
+                handleBuyBack(actingPlayer, request.targetId);
+                break;
+            case MEME_BANK_DEPOSIT:
+                if (!canUseMemeBank(connection.getID())) {
+                    return;
+                }
+                current = gameState.getCurrentPlayer();
+                if (current == null) {
+                    return;
+                }
+                if (request.amount <= 0 || request.amount > 500) {
+                    gameState.lastActionLog = current.name + " не может внести такую сумму в Meme Bank";
+                    break;
+                }
+                if (request.amount > current.money) {
+                    gameState.lastActionLog = current.name + " не хватает наличных для вклада в Meme Bank";
+                    break;
+                }
+                current.money -= request.amount;
+                current.memeBankBalance += request.amount;
+                gameState.lastActionLog = current.name + " внёс " + request.amount + " в Meme Bank";
+                finishMemeBankAction();
+                break;
+            case MEME_BANK_WITHDRAW:
+                if (!canUseMemeBank(connection.getID())) {
+                    return;
+                }
+                current = gameState.getCurrentPlayer();
+                if (current == null) {
+                    return;
+                }
+                if (current.memeBankBalance <= 0) {
+                    gameState.lastActionLog = current.name + " попытался снять деньги из пустого Meme Bank";
+                    break;
+                }
+                int withdrawnAmount = current.memeBankBalance;
+                current.money += withdrawnAmount;
+                current.memeBankBalance = 0;
+                gameState.lastActionLog = current.name + " снял " + withdrawnAmount + " из Meme Bank";
+                finishMemeBankAction();
+                break;
+            case MEME_BANK_SKIP:
+                if (!canUseMemeBank(connection.getID())) {
+                    return;
+                }
+                current = gameState.getCurrentPlayer();
+                if (current != null) {
+                    gameState.lastActionLog = current.name + " пропустил действие на Meme Bank";
+                }
+                finishMemeBankAction();
                 break;
             case PLACE_AUCTION_BID:
-                handleAuctionBid(current, request.amount);
+                if (gameState.currentPhase != GameState.GamePhase.AUCTION || !gameState.isInAuction) {
+                    return;
+                }
+                if (actingPlayer.id != gameState.auctionCurrentPlayerId) {
+                    return;
+                }
+                actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
+                handleAuctionBid(actingPlayer, request.amount);
                 break;
             case END_TURN:
-                if (gameState.currentPhase == GameState.GamePhase.PLAYING) {
+                if (!isCurrentPlayer(connection.getID())) {
+                    return;
+                }
+                if (gameState.currentPhase == GameState.GamePhase.PLAYING && gameState.hasRolledThisTurn) {
                     gameState.nextPlayer();
                 }
                 break;
@@ -379,7 +476,9 @@ public class GameServer {
         }
 
         gameState.auctionBids.put(current.id, amount);
-        gameState.lastActionLog = current.name + " поставил " + amount + " на аукционе";
+        gameState.currentAuctionTime = 30;
+        gameState.auctionCurrentPlayerId = findNextAuctionBidderId(current.id);
+        gameState.lastActionLog = current.name + " поставил " + amount + " на аукционе. Ход: " + getPlayerName(gameState.auctionCurrentPlayerId);
     }
 
     private void startAuctionTimer() {
@@ -499,6 +598,49 @@ public class GameServer {
             && gameState.currentPlayerIndex >= 0
             && gameState.currentPlayerIndex < gameState.players.size()
             && gameState.players.get(gameState.currentPlayerIndex).id == connectionId;
+    }
+
+    private boolean canUseMemeBank(int connectionId) {
+        return gameState.currentPhase == GameState.GamePhase.MEME_BANK_ACTION
+            && gameState.memeBankPlayerId == connectionId
+            && isCurrentPlayer(connectionId);
+    }
+
+    private void finishMemeBankAction() {
+        gameState.currentPhase = GameState.GamePhase.PLAYING;
+        gameState.memeBankPlayerId = -1;
+    }
+
+    private int findNextAuctionBidderId(int afterPlayerId) {
+        if (gameState.players == null || gameState.players.isEmpty()) {
+            return -1;
+        }
+
+        int startIndex = -1;
+        for (int i = 0; i < gameState.players.size(); i++) {
+            if (gameState.players.get(i).id == afterPlayerId) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        if (startIndex == -1) {
+            return -1;
+        }
+
+        for (int offset = 1; offset <= gameState.players.size(); offset++) {
+            Player candidate = gameState.players.get((startIndex + offset) % gameState.players.size());
+            if (!candidate.isBankrupt) {
+                return candidate.id;
+            }
+        }
+
+        return afterPlayerId;
+    }
+
+    private String getPlayerName(int playerId) {
+        Player player = gameState.getPlayerById(playerId);
+        return player == null ? "—" : player.name;
     }
 
     private void broadcastGameStateUnsafe() {
