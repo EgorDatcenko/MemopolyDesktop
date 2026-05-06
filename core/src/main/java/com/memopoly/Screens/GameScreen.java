@@ -21,10 +21,8 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
-import com.memopoly.game.model.BoardCell;
-import com.memopoly.game.model.BoardData;
-import com.memopoly.game.model.GameState;
-import com.memopoly.game.model.Player;
+import com.memopoly.game.model.*;
+import com.memopoly.network.packets.BattleResponsePacket;
 import com.memopoly.network.packets.GameActionRequest;
 import com.memopoly.network.packets.RollDiceRequest;
 
@@ -93,6 +91,18 @@ public class GameScreen extends BaseScreen {
     private String lastPlayersSignature = "";
     private String lastOwnedCellsSignature = "";
 
+    private Table battleOverlay;
+    private VisLabel battleTitleLabel;
+    private VisLabel battleTimerLabel;
+    private VisLabel battleTopicLabel;
+    private Table battleContentTable;
+    private VisTextButton battleYesButton;
+    private VisTextButton battleNoButton;
+
+    private enum BattleContentMode {
+        INVITE, MEME_SELECTION, WAITING, VOTING, RESULTS
+    }
+
     public GameScreen(Memopoly game) {
         super(game);
         boardRenderer = new BoardRenderer(game);
@@ -142,6 +152,7 @@ public class GameScreen extends BaseScreen {
         memeBankSkipButton = new VisTextButton("Пропустить");
 
         createUi();
+        createBattleOverlay();
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -328,6 +339,199 @@ public class GameScreen extends BaseScreen {
         layoutBoardOverlays();
     }
 
+    private void createBattleOverlay() {
+        battleOverlay = new Table();
+        battleOverlay.setFillParent(true);
+        battleOverlay.setBackground(panel(new Color(0f, 0f, 0f, 0.75f))); // затемнение
+
+        Table panel = new Table();
+        panel.setBackground(panel(new Color(0.18f, 0.16f, 0.27f, 0.98f)));
+        panel.pad(24f);
+
+        battleTitleLabel = new VisLabel("Мем-баттл!");
+        battleTitleLabel.setColor(TITLE_COLOR);
+        battleTitleLabel.setFontScale(1.8f);
+
+        battleTimerLabel = new VisLabel("30");
+        battleTimerLabel.setColor(Color.RED);
+        battleTimerLabel.setFontScale(1.6f);
+
+        battleTopicLabel = new VisLabel("");
+        battleTopicLabel.setColor(Color.WHITE);
+        battleTopicLabel.setWrap(true);
+        battleTopicLabel.setFontScale(1.3f);
+
+        battleContentTable = new Table();
+
+        battleYesButton = new VisTextButton("Участвовать");
+        battleNoButton = new VisTextButton("Отказаться");
+
+        battleYesButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                BattleResponsePacket packet = new BattleResponsePacket();
+                packet.playerId = game.getClient().getLocalPlayerId();
+                packet.accepted = true;
+                game.getClient().sendBattleResponse(packet);
+            }
+        });
+
+        battleNoButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                BattleResponsePacket packet = new BattleResponsePacket();
+                packet.playerId = game.getClient().getLocalPlayerId();
+                packet.accepted = false;
+                game.getClient().sendBattleResponse(packet);
+            }
+        });
+
+        panel.add(battleTitleLabel).colspan(2).center().padBottom(12f).row();
+        panel.add(new VisLabel("Осталось:")).padRight(8f);
+        panel.add(battleTimerLabel).left().row();
+        panel.add(battleTopicLabel).colspan(2).width(600f).padBottom(16f).row();
+        panel.add(battleContentTable).colspan(2).width(700f).row();
+
+        Table buttons = new Table();
+        buttons.add(battleYesButton).width(180f).height(52f).padRight(16f);
+        buttons.add(battleNoButton).width(180f).height(52f);
+        panel.add(buttons).colspan(2).center().padTop(16f);
+
+        battleOverlay.add(panel).center();
+        battleOverlay.setVisible(false);
+
+        stage.addActor(battleOverlay);
+    }
+
+    private void rebuildBattleContent(GameState state, BattleContentMode mode) {
+        battleContentTable.clearChildren();
+        int localId = game.getClient().getLocalPlayerId();
+        Player localPlayer = state.getPlayerById(localId);
+
+        switch (mode) {
+            case INVITE:
+                VisLabel inviteLabel = new VisLabel("Тебя приглашают на мем-баттл!");
+                inviteLabel.setColor(Color.WHITE);
+                battleContentTable.add(inviteLabel).center();
+                break;
+
+            case WAITING:
+                VisLabel waitLabel = new VisLabel("Ждём пока все выберут мемы...");
+                waitLabel.setColor(Color.WHITE);
+                battleContentTable.add(waitLabel).center();
+                break;
+
+            case MEME_SELECTION:
+                if (localPlayer == null || localPlayer.handMemes.isEmpty()) {
+                    battleContentTable.add(new VisLabel("Нет мемов в руке!")).center();
+                    break;
+                }
+                // Сетка мемов из руки
+                for (Meme meme : localPlayer.handMemes) {
+                    VisTextButton memeButton = new VisTextButton(meme.description);
+                    memeButton.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent event, Actor actor) {
+                            sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0);
+                        }
+                    });
+                    battleContentTable.add(memeButton).width(200f).height(60f).pad(8f);
+                }
+                break;
+
+            case VOTING:
+                if (state.battleMemes == null || state.battleMemes.isEmpty()) {
+                    battleContentTable.add(new VisLabel("Мемы загружаются...")).center();
+                    break;
+                }
+                boolean hasVoted = state.battleVoters != null && state.battleVoters.contains(localId);
+                if (hasVoted) {
+                    battleContentTable.add(new VisLabel("Ты уже проголосовал. Ждём остальных...")).center();
+                    break;
+                }
+                // Анонимные карточки мемов
+                for (int i = 0; i < state.battleMemes.size(); i++) {
+                    Meme meme = state.battleMemes.get(i);
+                    final int memeId = meme.id;
+                    Table memeCard = new Table();
+                    memeCard.setBackground(panel(new Color(0.25f, 0.22f, 0.36f, 1f)));
+                    memeCard.pad(12f);
+                    VisLabel memeNum = new VisLabel("Мем #" + (i + 1));
+                    memeNum.setColor(Color.WHITE);
+                    VisTextButton voteButton = new VisTextButton("Голосовать");
+                    voteButton.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent event, Actor actor) {
+                            sendAction(GameActionRequest.ActionType.VOTE_MEME, memeId, 0);
+                        }
+                    });
+                    memeCard.add(memeNum).row();
+                    memeCard.add(voteButton).width(140f).height(44f).padTop(8f);
+                    battleContentTable.add(memeCard).width(180f).pad(8f);
+                }
+                break;
+
+            case RESULTS:
+                VisLabel resultsLabel = new VisLabel(state.lastActionLog == null ? "Баттл завершён!" : state.lastActionLog);
+                resultsLabel.setColor(ACCENT_GOLD);
+                resultsLabel.setWrap(true);
+                battleContentTable.add(resultsLabel).width(600f).center();
+                break;
+        }
+    }
+
+    private void refreshBattleOverlay(GameState state) {
+        if (state == null || state.currentPhase != GameState.GamePhase.MEME_BATTLE) {
+            battleOverlay.setVisible(false);
+            return;
+        }
+
+        battleOverlay.setVisible(true);
+        battleTimerLabel.setText(String.valueOf(state.battleTimerSeconds));
+        battleTopicLabel.setText("Тема: " + (state.battleTopic == null ? "—" : state.battleTopic));
+
+        int localId = game.getClient().getLocalPlayerId();
+        boolean isParticipant = state.battleParticipants.contains(localId);
+        boolean isInvited = state.battleInvited != null && state.battleInvited.contains(localId);
+
+        switch (state.battlePhase) {
+            case INVITE:
+                battleTitleLabel.setText("Мем-баттл! Ставка: " + state.battleStakes);
+                battleYesButton.setVisible(isInvited);
+                battleNoButton.setVisible(isInvited);
+                rebuildBattleContent(state, BattleContentMode.INVITE);
+                break;
+
+            case COLLECTING_MEMES:
+                battleTitleLabel.setText("Выбери мем!");
+                battleYesButton.setVisible(false);
+                battleNoButton.setVisible(false);
+                if (isParticipant) {
+                    rebuildBattleContent(state, BattleContentMode.MEME_SELECTION);
+                } else {
+                    rebuildBattleContent(state, BattleContentMode.WAITING);
+                }
+                break;
+
+            case VOTING:
+                battleTitleLabel.setText("Голосование!");
+                battleYesButton.setVisible(false);
+                battleNoButton.setVisible(false);
+                rebuildBattleContent(state, BattleContentMode.VOTING);
+                break;
+
+            case RESULTS:
+                battleTitleLabel.setText("Результаты!");
+                battleYesButton.setVisible(false);
+                battleNoButton.setVisible(false);
+                rebuildBattleContent(state, BattleContentMode.RESULTS);
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private int parseBid() {
         try {
             return Integer.parseInt(bidField.getText().trim());
@@ -367,6 +571,7 @@ public class GameScreen extends BaseScreen {
             rebuildOwnedCellsIfNeeded(null, null, false, GameState.GamePhase.WAITING);
             setButtonsEnabled(false, false, false, false, false);
             auctionLabel.setText("");
+            refreshBattleOverlay(state);
             return;
         }
 

@@ -79,11 +79,9 @@ public class BattleManager {
             }
         }
 
-        // игрок ответил — убираем из списка ожидания
         battleInvited.remove(Integer.valueOf(packet.playerId));
         gameState.battleInvited = battleInvited;
 
-        // все ответили → следующая фаза
         if (battleInvited.isEmpty()) {
             startCollecting();
         }

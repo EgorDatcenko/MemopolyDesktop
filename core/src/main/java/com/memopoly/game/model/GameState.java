@@ -54,7 +54,7 @@ public class GameState {
     public int battleTimerSeconds;
     public BattlePhase battlePhase;
     public int battleBank;
-
+    public ArrayList<Integer> battleVoters;
     // Аукцион состояние
     public boolean isInAuction;
     public int auctionCellId;
@@ -84,7 +84,7 @@ public class GameState {
         this.battleAccepted = new HashMap<>();
         this.votes = new HashMap<>();
         this.battleOwnerId = -1;
-
+        this.battleVoters = new ArrayList<>();
         this.isInAuction = false;
         this.auctionBids = new HashMap<>();
         this.auctionCellId = -1;
@@ -160,6 +160,24 @@ public class GameState {
         lastActionLog = "Начинается мем-баттл! Тема: " + topic;
     }
 
+    public boolean containsMeme(int targetId){
+        for(Meme i : battleMemes){
+            if(i.id == targetId){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isMemeOwnedBy(int memeId, int ownerId) {
+        for (Meme meme : battleMemes) {
+            if (meme.id == memeId && meme.ownerId == ownerId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void endMemeBattle() {
         isInBattle = false;
         battleStakes = 0;
@@ -168,6 +186,7 @@ public class GameState {
         battleMemes.clear();
         votes.clear();
         currentPhase = GamePhase.PLAYING;
+        battleVoters.clear();
     }
 
     // Методы для аукциона

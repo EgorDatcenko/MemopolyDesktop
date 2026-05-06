@@ -43,6 +43,15 @@ public class Player {
             money = 0;
         }
     }
+
+    public boolean containsMeme(int targetId){
+        for(Meme i : handMemes){
+            if(i.id == targetId){
+                return true;
+            }
+        }
+        return false;
+    }
     public void receive(int amount){
         money += amount;
     }

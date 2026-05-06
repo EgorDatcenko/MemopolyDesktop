@@ -6,14 +6,7 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.minlog.Log;
 import com.memopoly.game.model.GameState;
-import com.memopoly.network.packets.CreateRoomRequest;
-import com.memopoly.network.packets.GameStatePacket;
-import com.memopoly.network.packets.JoinRoomRequest;
-import com.memopoly.network.packets.JoinRoomResponse;
-import com.memopoly.network.packets.RollDiceRequest;
-import com.memopoly.network.packets.RollDiceResponse;
-import com.memopoly.network.packets.StartGameRequest;
-import com.memopoly.network.packets.GameActionRequest;
+import com.memopoly.network.packets.*;
 
 import java.io.IOException;
 
@@ -186,5 +179,10 @@ public class GameClient {
         clientLoopRunning = false;
         localPlayerId = -1;
         client.close();
+    }
+
+    public void sendBattleResponse(BattleResponsePacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
     }
 }

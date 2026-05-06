@@ -1,26 +1,19 @@
 package com.memopoly.network;
 
+import com.badlogic.gdx.Game;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.esotericsoftware.minlog.Log;
-import com.memopoly.game.model.BoardCell;
-import com.memopoly.game.model.BoardData;
-import com.memopoly.game.model.GameState;
-import com.memopoly.game.model.Player;
-import com.memopoly.network.packets.GameActionRequest;
-import com.memopoly.network.packets.GameStatePacket;
-import com.memopoly.network.packets.JoinRoomRequest;
-import com.memopoly.network.packets.JoinRoomResponse;
-import com.memopoly.network.packets.RollDiceRequest;
-import com.memopoly.network.packets.RollDiceResponse;
-import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.game.model.*;
+import com.memopoly.network.packets.*;
 import com.memopoly.utils.RoomCodeGenerator;
 
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +22,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.memopoly.network.packets.GameActionRequest.ActionType.SUBMIT_MEME;
+import static com.memopoly.network.packets.GameActionRequest.ActionType.VOTE_MEME;
+
 public class GameServer {
     private static final int TCP_PORT = 54555;
 
@@ -36,6 +32,8 @@ public class GameServer {
     private final GameState gameState;
     private final List<BoardCell> board = BoardData.buildCells();
     private final Object stateLock = new Object();
+    private final BattleManager battleManager;
+
     private final ScheduledExecutorService timerExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r, "memopoly-server-timer");
         thread.setDaemon(true);
@@ -53,6 +51,7 @@ public class GameServer {
 
         server = new Server(65536, 65536);
         gameState = new GameState();
+        battleManager = new BattleManager(gameState, board, this::broadcastGameStateUnsafe);
 
         registerPackets();
         setupServer();
@@ -142,6 +141,10 @@ public class GameServer {
             handleStartGame(connection);
         } else if (packet instanceof GameActionRequest) {
             handleGameAction(connection, (GameActionRequest) packet);
+        } else if (packet instanceof BattleResponsePacket) {
+            synchronized (stateLock) {
+                battleManager.handleBattleResponse((BattleResponsePacket) packet);
+            }
         } else {
             System.out.println("Неизвестный тип пакета: " + packet.getClass());
         }
@@ -221,6 +224,14 @@ public class GameServer {
         if (current.position < oldPosition) {
             current.receive(200);
             gameState.lastActionLog = current.name + " прошёл Старт и получил 200!";
+
+            for (Player p : gameState.players) {
+                if (p.memeBankBalance > 0) {
+                    int interest = p.memeBankBalance / 10;
+                    p.memeBankBalance += interest;
+                    gameState.lastActionLog += " | " + p.name + " получил " + interest + " % по вкладу";
+                }
+            }
         }
 
         BoardCell cell = board.get(current.position);
@@ -275,6 +286,10 @@ public class GameServer {
                 gameState.currentPhase = GameState.GamePhase.MEME_BANK_ACTION;
                 gameState.memeBankPlayerId = current.id;
                 gameState.lastActionLog = current.name + " попал на Meme Bank";
+                break;
+            case MEME_BATTLE:
+                gameState.battleType = GameState.BattleType.MEME_BATTLE_CELL;
+                battleManager.startBattle(current.id, cell.id, 0);
                 break;
             default:
                 break;
@@ -414,6 +429,34 @@ public class GameServer {
                 }
                 if (gameState.currentPhase == GameState.GamePhase.PLAYING && gameState.hasRolledThisTurn) {
                     gameState.nextPlayer();
+                }
+                break;
+            case SUBMIT_MEME:
+                current = gameState.getCurrentPlayer();
+                Meme meme = new Meme();
+                if (gameState.battleParticipants.contains(actingPlayer.id)
+                    && actingPlayer.containsMeme(request.targetId)
+                    && gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES){
+                    ArrayList<Meme> memes = current.handMemes;
+                    for(Meme i : memes) {
+                        if (i.id == request.targetId) {
+                            meme = i;
+                            gameState.battleMemes.add(meme);
+                            current.handMemes.remove(i);
+                        }
+                    }
+                }
+                break;
+
+            case VOTE_MEME:
+                current = gameState.getCurrentPlayer();
+                if (gameState.battlePhase == GameState.BattlePhase.VOTING
+                    && gameState.containsMeme(request.targetId)          // мем существует
+                    && !gameState.battleVoters.contains(current.id)      // ещё не голосовал
+                    && !gameState.isMemeOwnedBy(current.id, request.targetId)) { // не свой мем
+                    int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
+                    gameState.votes.put(request.targetId, currentVotes + 1);
+                    gameState.battleVoters.add(current.id);
                 }
                 break;
             default:
