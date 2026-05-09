@@ -21,6 +21,8 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
+import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.game.model.*;
 import com.memopoly.network.packets.BattleResponsePacket;
 import com.memopoly.network.packets.GameActionRequest;
@@ -105,6 +107,7 @@ public class GameScreen extends BaseScreen {
 
     public GameScreen(Memopoly game) {
         super(game);
+        Language language = game.getLanguageManager().getLanguage();
         boardRenderer = new BoardRenderer(game);
         stage = new Stage(new FitViewport(WORLD_WIDTH, WORLD_HEIGHT));
         boardCells = BoardData.buildCells();
@@ -112,12 +115,12 @@ public class GameScreen extends BaseScreen {
         diceButtonTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         moneyTexture = new Texture(MONEY_TEXTURE_PATH);
         moneyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        buyButtonTexture = loadTexture(BUY_BUTTON_TEXTURE_PATH);
-        passButtonTexture = loadTexture(PASS_BUTTON_TEXTURE_PATH);
-        endTurnButtonTexture = loadTexture(END_TURN_BUTTON_TEXTURE_PATH);
-        placeBidButtonTexture = loadTexture(PLACE_BID_BUTTON_TEXTURE_PATH);
-        mortgageButtonTexture = loadTexture(MORTGAGE_BUTTON_TEXTURE_PATH);
-        buyBackButtonTexture = loadTexture(BUY_BACK_BUTTON_TEXTURE_PATH);
+        buyButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(BUY_BUTTON_TEXTURE_PATH, language));
+        passButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(PASS_BUTTON_TEXTURE_PATH, language));
+        endTurnButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(END_TURN_BUTTON_TEXTURE_PATH, language));
+        placeBidButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(PLACE_BID_BUTTON_TEXTURE_PATH, language));
+        mortgageButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(MORTGAGE_BUTTON_TEXTURE_PATH, language));
+        buyBackButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(BUY_BACK_BUTTON_TEXTURE_PATH, language));
         cellTextures = loadCellTextures();
 
         titleLabel = new VisLabel("Мемополия");

@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.memopoly.Memopoly;
+import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.game.model.BoardCell;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
@@ -42,7 +43,7 @@ public class BoardRenderer {
 
     public BoardRenderer(Memopoly game) {
         this.game = game;
-        boardTexture = new Texture(MAP_TEXTURE_PATH);
+        boardTexture = new Texture(TexturePathResolver.resolveBoardMapTexture(game.getLanguageManager().getLanguage()));
         boardTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         activeOutlineSquareTexture = loadTexture(ACTIVE_OUTLINE_SQUARE_TEXTURE_PATH);
         activeOutlineHorizontalTexture = loadTexture(ACTIVE_OUTLINE_HORIZONTAL_TEXTURE_PATH);
