@@ -11,6 +11,7 @@ import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.utils.LanguageManager;
 
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
@@ -25,6 +26,7 @@ public class Memopoly extends Game implements NetworkListener {
     private boolean isHost;
     private volatile GameState latestGameState;
     private boolean lobbyOpened;
+    private LanguageManager languageManager;
 
     @Override
     public void create() {
@@ -32,6 +34,7 @@ public class Memopoly extends Game implements NetworkListener {
         screenManager = new ScreenManager(this);
         batch = new SpriteBatch();
         gameClient = new GameClient(this);
+        languageManager = new LanguageManager(getSettingsPreferences());
         applySettings(
             Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("music_volume", 0.7f),
             Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("sfx_volume", 0.85f),
@@ -126,6 +129,7 @@ public class Memopoly extends Game implements NetworkListener {
             gameClient.disconnect();
         }
         gameClient = new GameClient(this);
+        languageManager = new LanguageManager(getSettingsPreferences());
 
         latestGameState = null;
         isHost = false;
@@ -167,6 +171,10 @@ public class Memopoly extends Game implements NetworkListener {
 
     public com.badlogic.gdx.Preferences getSettingsPreferences() {
         return Gdx.app.getPreferences(SETTINGS_PREFS);
+    }
+
+    public LanguageManager getLanguageManager() {
+        return languageManager;
     }
 
     public void applySettings(float musicVolume, float sfxVolume, boolean fullscreen) {

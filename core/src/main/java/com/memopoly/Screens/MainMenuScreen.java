@@ -22,6 +22,8 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.ClipboardUtils;
 import com.memopoly.utils.RoomCodeGenerator;
+import com.memopoly.utils.TexturePathResolver;
+import com.memopoly.utils.LanguageManager.Language;
 
 public class MainMenuScreen extends BaseScreen {
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
@@ -50,15 +52,16 @@ public class MainMenuScreen extends BaseScreen {
     public MainMenuScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
+        Language language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
-        createButtonTexture = loadTexture(CREATE_BUTTON_TEXTURE_PATH);
-        connectButtonTexture = loadTexture(CONNECT_BUTTON_TEXTURE_PATH);
-        settingsButtonTexture = loadTexture(SETTINGS_BUTTON_TEXTURE_PATH);
-        exitButtonTexture = loadTexture(EXIT_BUTTON_TEXTURE_PATH);
-        createDialogButtonTexture = loadTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH);
-        connectDialogButtonTexture = loadTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH);
-        cancelButtonTexture = loadTexture(CANCEL_BUTTON_TEXTURE_PATH);
-        copyCodeButtonTexture = loadTexture(COPY_CODE_BUTTON_TEXTURE_PATH);
+        createButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CREATE_BUTTON_TEXTURE_PATH, language));
+        connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
+        settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
+        exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
+        connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
+        cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         Gdx.input.setInputProcessor(stage);
 
         createUI();

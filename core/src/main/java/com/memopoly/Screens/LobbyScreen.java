@@ -18,6 +18,8 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.memopoly.Memopoly;
+import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
 import com.memopoly.network.packets.StartGameRequest;
@@ -53,11 +55,12 @@ public class LobbyScreen extends BaseScreen {
     public LobbyScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
+        Language language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
-        startButtonTexture = loadTexture(START_BUTTON_TEXTURE_PATH);
-        copyButtonTexture = loadTexture(COPY_BUTTON_TEXTURE_PATH);
-        backButtonTexture = loadTexture(BACK_BUTTON_TEXTURE_PATH);
-        cancelButtonTexture = loadTexture(CANCEL_BUTTON_TEXTURE_PATH);
+        startButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(START_BUTTON_TEXTURE_PATH, language));
+        copyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_BUTTON_TEXTURE_PATH, language));
+        backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         Gdx.input.setInputProcessor(stage);
         createUI();
     }
