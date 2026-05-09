@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BoardRenderer {
-    private static final String MAP_TEXTURE_PATH = "gamescreen_ui_en/map.png";
+    private static final String MAP_TEXTURE_PATH = "map.png";
     private static final String ACTIVE_OUTLINE_SQUARE_TEXTURE_PATH = "green(1x1).png";
     private static final String ACTIVE_OUTLINE_HORIZONTAL_TEXTURE_PATH = "green(horizontal).png";
     private static final String ACTIVE_OUTLINE_VERTICAL_TEXTURE_PATH = "green(vertical).png";
