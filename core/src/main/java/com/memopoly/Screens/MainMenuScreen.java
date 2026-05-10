@@ -114,7 +114,9 @@ public class MainMenuScreen extends BaseScreen {
         buttonStack.add(settingsButton).size(270f, 80f).row();
         buttonStack.add(exitButton).size(270f, 80f);
 
-        root.add(buttonStack).expand().center().padTop(120f);
+        root.add(buttonStack).expand().center().padTop(120f).row();
+        Actor languageButton = createLanguageButton();
+        root.add(languageButton).expandX().left().bottom().padLeft(20f).padBottom(20f);
         stage.addActor(root);
 
         Table languageAnchor = new Table();
