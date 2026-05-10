@@ -19,6 +19,7 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
+import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.ClipboardUtils;
 import com.memopoly.utils.RoomCodeGenerator;
@@ -36,6 +37,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CONNECT_DIALOG_BUTTON_TEXTURE_PATH = "connect_btn_for_window.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
     private static final String COPY_CODE_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
+    private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -47,6 +49,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture connectDialogButtonTexture;
     private final Texture cancelButtonTexture;
     private final Texture copyCodeButtonTexture;
+    private final Texture changeLanguageButtonTexture;
     private boolean roomCodeShown;
 
     public MainMenuScreen(Memopoly game) {
@@ -62,6 +65,7 @@ public class MainMenuScreen extends BaseScreen {
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
+        changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
 
         createUI();
@@ -112,6 +116,12 @@ public class MainMenuScreen extends BaseScreen {
 
         root.add(buttonStack).expand().center().padTop(120f);
         stage.addActor(root);
+
+        Table languageAnchor = new Table();
+        languageAnchor.setFillParent(true);
+        Actor languageButton = createLanguageButton();
+        languageAnchor.add(languageButton).size(80f, 80f).expand().left().bottom().padLeft(20f).padBottom(20f);
+        stage.addActor(languageAnchor);
     }
 
     private void showStartGameDialog() {
@@ -321,6 +331,64 @@ public class MainMenuScreen extends BaseScreen {
         }, 2f);
     }
 
+    private Actor createLanguageButton() {
+        if (changeLanguageButtonTexture != null) {
+            ImageButton button = createImageButton(changeLanguageButtonTexture);
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    showLanguageDialog();
+                }
+            });
+            return button;
+        }
+
+        VisTextButton button = new VisTextButton("Language");
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                showLanguageDialog();
+            }
+        });
+        return button;
+    }
+
+    private void showLanguageDialog() {
+        Dialog dialog = new Dialog("Select language", VisUI.getSkin());
+
+        VisTextButton english = new VisTextButton("English");
+        VisTextButton russian = new VisTextButton("Русский");
+
+        english.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getLanguageManager().setLanguage(LanguageManager.Language.EN);
+                dialog.hide();
+                game.openMenu();
+            }
+        });
+        russian.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getLanguageManager().setLanguage(LanguageManager.Language.RU);
+                dialog.hide();
+                game.openMenu();
+            }
+        });
+
+        dialog.getContentTable().add("Select game language").pad(10).row();
+        dialog.getButtonTable().add(english).width(160f).pad(8f);
+        dialog.getButtonTable().add(russian).width(160f).pad(8f);
+        dialog.show(stage);
+    }
+
+    private Texture loadTextureIfExists(String path) {
+        if (!Gdx.files.internal(path).exists()) {
+            return null;
+        }
+        return loadTexture(path);
+    }
+
     @Override
     public void render(float delta) {
         if (!roomCodeShown && game.isHost() && game.getRoomCode() != null && !"UNKNOWN".equals(game.getRoomCode())) {
@@ -367,6 +435,9 @@ public class MainMenuScreen extends BaseScreen {
         connectDialogButtonTexture.dispose();
         cancelButtonTexture.dispose();
         copyCodeButtonTexture.dispose();
+        if (changeLanguageButtonTexture != null) {
+            changeLanguageButtonTexture.dispose();
+        }
         stage.dispose();
     }
 }

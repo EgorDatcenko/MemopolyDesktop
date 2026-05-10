@@ -1,6 +1,5 @@
 package com.memopoly.network;
 
-import com.badlogic.gdx.graphics.g3d.particles.influencers.DynamicsModifier;
 import com.memopoly.game.model.BoardCell;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Meme;
@@ -59,6 +58,9 @@ public class BattleManager {
         gameState.battleParticipants.add(organizerId); // организатор участвует всегда
         gameState.battleMemes.clear();
         gameState.votes.clear();
+        if (gameState.battleVoters == null) {
+            gameState.battleVoters = new ArrayList<>();
+        }
         gameState.battleVoters.clear();
 
         onBroadcast.run();
@@ -156,7 +158,7 @@ public class BattleManager {
         } else {
             gameState.battleMemes.removeIf(meme -> !winners.contains(meme.id));
             gameState.votes.clear();
-        gameState.battleVoters.clear();
+            gameState.battleVoters.clear();
             startVoting();
         }
     }
