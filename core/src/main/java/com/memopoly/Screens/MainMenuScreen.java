@@ -38,6 +38,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
     private static final String COPY_CODE_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
+    private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -50,6 +51,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture cancelButtonTexture;
     private final Texture copyCodeButtonTexture;
     private final Texture changeLanguageButtonTexture;
+    private final Texture notificationWindowTexture;
     private boolean roomCodeShown;
 
     public MainMenuScreen(Memopoly game) {
@@ -66,6 +68,7 @@ public class MainMenuScreen extends BaseScreen {
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
+        notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
 
         createUI();
@@ -148,6 +151,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
+        applyDialogTexture(dialog, notificationWindowTexture);
         dialog.getContentTable().add(new VisLabel("Введите имя для комнаты")).pad(10);
         dialog.row();
         dialog.getContentTable().add(nameField).width(240).pad(10);
@@ -219,6 +223,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
+        applyDialogTexture(dialog, notificationWindowTexture);
         dialog.getContentTable().add(statusLabel).pad(10);
         dialog.row();
         dialog.getContentTable().add(nameField).width(300).pad(10);
@@ -265,6 +270,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showErrorDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
+        applyDialogTexture(dialog, notificationWindowTexture);
         dialog.text(message == null || message.isBlank() ? "Произошла неизвестная ошибка." : message);
         dialog.button("ОК", true);
         dialog.show(stage);
@@ -272,6 +278,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showInfoDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
+        applyDialogTexture(dialog, notificationWindowTexture);
         dialog.text(message);
         dialog.button("ОК", true);
         dialog.show(stage);
@@ -280,6 +287,7 @@ public class MainMenuScreen extends BaseScreen {
     private void showRoomCodeDialog(String roomCode) {
         Dialog dialog = new Dialog("Комната создана", VisUI.getSkin());
 
+        applyDialogTexture(dialog, notificationWindowTexture);
         VisLabel titleLabel = new VisLabel("Ваш код комнаты:");
         VisTextField codeField = new VisTextField(roomCode);
         codeField.setDisabled(true);
@@ -319,6 +327,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
+        applyDialogTexture(notification, notificationWindowTexture);
         notification.getContentTable().add(new VisLabel("Код скопирован!")).pad(20);
         notification.button("ОК", true);
         notification.show(stage);
@@ -356,6 +365,7 @@ public class MainMenuScreen extends BaseScreen {
     private void showLanguageDialog() {
         Dialog dialog = new Dialog("Select language", VisUI.getSkin());
 
+        applyDialogTexture(dialog, notificationWindowTexture);
         VisTextButton english = new VisTextButton("English");
         VisTextButton russian = new VisTextButton("Русский");
 
@@ -380,6 +390,10 @@ public class MainMenuScreen extends BaseScreen {
         dialog.getButtonTable().add(english).width(160f).pad(8f);
         dialog.getButtonTable().add(russian).width(160f).pad(8f);
         dialog.show(stage);
+    }
+
+    private void applyDialogTexture(Dialog dialog, Texture texture) {
+        dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -435,6 +449,7 @@ public class MainMenuScreen extends BaseScreen {
         connectDialogButtonTexture.dispose();
         cancelButtonTexture.dispose();
         copyCodeButtonTexture.dispose();
+        notificationWindowTexture.dispose();
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();
         }

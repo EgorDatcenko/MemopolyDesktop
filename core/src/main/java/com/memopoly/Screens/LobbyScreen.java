@@ -39,6 +39,7 @@ public class LobbyScreen extends BaseScreen {
     private static final String COPY_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
+    private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -46,6 +47,7 @@ public class LobbyScreen extends BaseScreen {
     private final Texture copyButtonTexture;
     private final Texture backButtonTexture;
     private final Texture cancelButtonTexture;
+    private final Texture lobbyWindowTexture;
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
@@ -61,6 +63,7 @@ public class LobbyScreen extends BaseScreen {
         copyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_BUTTON_TEXTURE_PATH, language));
         backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
         createUI();
     }
@@ -75,7 +78,7 @@ public class LobbyScreen extends BaseScreen {
         shadowPanel.pad(18f);
 
         Table panel = new Table();
-        panel.setBackground(panel(PANEL_COLOR));
+        panel.setBackground(window(lobbyWindowTexture));
         panel.pad(24f, 28f, 24f, 28f);
 
         VisLabel title = new VisLabel("Комната ожидания");
@@ -153,6 +156,7 @@ public class LobbyScreen extends BaseScreen {
             }
         };
 
+        dialog.setBackground(window(lobbyWindowTexture));
         dialog.text("Вы точно хотите выйти из комнаты?");
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().pad(10f);
@@ -234,6 +238,10 @@ public class LobbyScreen extends BaseScreen {
         return VisUI.getSkin().newDrawable("white", color);
     }
 
+    private Drawable window(Texture texture) {
+        return new TextureRegionDrawable(new TextureRegion(texture));
+    }
+
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -262,6 +270,7 @@ public class LobbyScreen extends BaseScreen {
         copyButtonTexture.dispose();
         backButtonTexture.dispose();
         cancelButtonTexture.dispose();
+        lobbyWindowTexture.dispose();
         stage.dispose();
     }
 }
