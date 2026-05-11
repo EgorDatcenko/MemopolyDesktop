@@ -70,9 +70,9 @@ public class RoomCodeGenerator {
                 String calculatedChecksum = generateSimpleChecksum(ip.toString());
 
                 if (!providedChecksum.equals(calculatedChecksum)) {
-                    System.out.println("Неверная контрольная сумма!");
-                    System.out.println("IP: " + ip);
-                    System.out.println("Ожидалось: " + calculatedChecksum + ", получено: " + providedChecksum);
+                    AppLog.warn("RoomCode", "Неверная контрольная сумма!");
+                    AppLog.warn("RoomCode", "IP: " + ip);
+                    AppLog.warn("RoomCode", "Ожидалось: " + calculatedChecksum + ", получено: " + providedChecksum);
                     return null;
                 }
             }
@@ -80,7 +80,7 @@ public class RoomCodeGenerator {
             return ip.toString();
 
         } catch (Exception e) {
-            System.out.println("Ошибка декодирования: " + e.getMessage());
+            AppLog.warn("RoomCode", "Ошибка декодирования: " + e.getMessage());
             return null;
         }
     }
@@ -106,13 +106,13 @@ public class RoomCodeGenerator {
         String code = encodeIP(ip);
         String decoded = decodeRoomCode(code);
 
-        System.out.println("IP: " + ip);
-        System.out.println("Code: " + code);
-        System.out.println("Decoded: " + decoded);
-        System.out.println("Correct: " + ip.equals(decoded));
+        AppLog.info("RoomCode", "IP: " + ip);
+        AppLog.info("RoomCode", "Code: " + code);
+        AppLog.info("RoomCode", "Decoded: " + decoded);
+        AppLog.info("RoomCode", "Correct: " + ip.equals(decoded));
 
         // Тест с другими IP
-        System.out.println("\nДополнительные тесты:");
+        AppLog.info("RoomCode", "Дополнительные тесты:");
         testIP("127.0.0.1");
         testIP("10.0.0.1");
         testIP("255.255.255.255");
@@ -121,6 +121,6 @@ public class RoomCodeGenerator {
     private static void testIP(String ip) {
         String code = encodeIP(ip);
         String decoded = decodeRoomCode(code);
-        System.out.println(ip + " -> " + code + " -> " + decoded + " [" + ip.equals(decoded) + "]");
+        AppLog.info("RoomCode", ip + " -> " + code + " -> " + decoded + " [" + ip.equals(decoded) + "]");
     }
 }

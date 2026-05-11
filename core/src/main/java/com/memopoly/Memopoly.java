@@ -21,6 +21,7 @@ import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
 
 public class Memopoly extends Game implements NetworkListener {
@@ -58,7 +59,7 @@ public class Memopoly extends Game implements NetworkListener {
     @Override
     public void onGameStateUpdated(GameState gameState) {
         latestGameState = gameState;
-        Gdx.app.log("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
+        AppLog.info("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
 
         if (isHost && !lobbyOpened && gameState != null && gameState.players != null && !gameState.players.isEmpty()) {
             lobbyOpened = true; // ставим флаг ДО postRunnable
@@ -68,13 +69,13 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDiceRolled(RollDiceResponse response) {
-        Gdx.app.log("Network", response.playerId + " rolled " + response.total);
+        AppLog.info("Network", response.playerId + " rolled " + response.total);
     }
 
     @Override
     public void onConnected() {
-        System.out.println("Подключено успешно!");
-        Gdx.app.log("Network", "Connected to server!");
+        AppLog.info("Network", "Подключено успешно!");
+        AppLog.info("Network", "Connected to server!");
     }
 
     @Override
@@ -85,11 +86,16 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDisconnected() {
-        Gdx.app.log("Network", "Disconnected from server!");
+        AppLog.info("Network", "Disconnected from server!");
     }
 
     @Override
     public void onConnectionFailed(String reason) {}
+
+    @Override
+    public void onActionRejected(String actionType, String reasonCode, String reason) {
+        AppLog.warn("Network", "Action rejected: " + actionType + " | " + reasonCode + " | " + reason);
+    }
 
     @Override
     public void render() {
@@ -218,7 +224,7 @@ public class Memopoly extends Game implements NetworkListener {
             newFont = tryGenerateFontFromTtf(fontPath);
         }
         if (newFont == null) {
-            Gdx.app.log("Fonts", "No font at " + fontPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
+            AppLog.info("Fonts", "No font at " + fontPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
             return;
         }
         if (localizedUiFont != null) {
