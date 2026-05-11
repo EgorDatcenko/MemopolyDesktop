@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
@@ -101,6 +102,11 @@ public class GameScreen extends BaseScreen {
     private VisTextButton battleYesButton;
     private VisTextButton battleNoButton;
 
+    private Table turnNotificationOverlay;
+    private VisLabel turnNotificationLabel;
+    private String lastTurnNotificationKey = "";
+    private Timer.Task hideTurnNotificationTask;
+
     private enum BattleContentMode {
         INVITE, MEME_SELECTION, WAITING, VOTING, RESULTS
     }
@@ -156,6 +162,7 @@ public class GameScreen extends BaseScreen {
 
         createUi();
         createBattleOverlay();
+        createTurnNotificationOverlay();
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -535,6 +542,52 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+
+    private void createTurnNotificationOverlay() {
+        turnNotificationOverlay = new Table();
+        turnNotificationOverlay.setFillParent(true);
+        turnNotificationOverlay.setVisible(false);
+
+        Table notificationCard = new Table();
+        notificationCard.setBackground(panel(new Color(0.10f, 0.08f, 0.18f, 0.96f)));
+        notificationCard.pad(24f, 28f, 24f, 28f);
+
+        turnNotificationLabel = new VisLabel("Ход игрока");
+        turnNotificationLabel.setColor(Color.WHITE);
+        turnNotificationLabel.setFontScale(1.5f);
+        notificationCard.add(turnNotificationLabel).center();
+
+        turnNotificationOverlay.add(notificationCard).center().width(520f).height(130f);
+        stage.addActor(turnNotificationOverlay);
+    }
+
+    private void showTurnNotification(GameState state, Player current) {
+        if (state == null || current == null) {
+            return;
+        }
+
+        String key = state.turnCount + ":" + current.id;
+        if (key.equals(lastTurnNotificationKey)) {
+            return;
+        }
+        lastTurnNotificationKey = key;
+
+        turnNotificationLabel.setText("Сейчас ходит: " + current.name);
+        turnNotificationOverlay.setVisible(true);
+        turnNotificationOverlay.toFront();
+
+        if (hideTurnNotificationTask != null) {
+            hideTurnNotificationTask.cancel();
+        }
+        hideTurnNotificationTask = new Timer.Task() {
+            @Override
+            public void run() {
+                turnNotificationOverlay.setVisible(false);
+            }
+        };
+        Timer.schedule(hideTurnNotificationTask, 2.0f);
+    }
+
     private int parseBid() {
         try {
             return Integer.parseInt(bidField.getText().trim());
@@ -575,6 +628,7 @@ public class GameScreen extends BaseScreen {
             setButtonsEnabled(false, false, false, false, false);
             auctionLabel.setText("");
             refreshBattleOverlay(state);
+            turnNotificationOverlay.setVisible(false);
             return;
         }
 
@@ -583,6 +637,8 @@ public class GameScreen extends BaseScreen {
         Player localPlayer = state.getPlayerById(localPlayerId);
         boolean myTurn = current != null && current.id == localPlayerId;
         BoardCell currentCell = current != null ? boardCells.get(current.position) : null;
+
+        showTurnNotification(state, current);
 
         phaseLabel.setText("Фаза: " + state.currentPhase);
         turnLabel.setText(current == null ? "Ход: -" : "Ход: " + current.name + " | ход №" + state.turnCount);
