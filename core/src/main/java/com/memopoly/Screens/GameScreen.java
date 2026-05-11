@@ -51,6 +51,7 @@ public class GameScreen extends BaseScreen {
     private static final String BUY_AND_AUCTION_WINDOW_TEXTURE_PATH = "buy_and_auction_window.png";
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
+    private static final String BACKGROUND_TEXTURE_PATH = "background.png";
 
     private final Stage stage;
     private final BoardRenderer boardRenderer;
@@ -67,6 +68,7 @@ public class GameScreen extends BaseScreen {
     private final Texture buyAndAuctionWindowTexture;
     private final Texture auctionOrMemeBankWindowTexture;
     private final Texture inputTexture;
+    private final Texture backgroundTexture;
     private final Texture[] cellTextures;
 
     private final VisLabel titleLabel;
@@ -141,6 +143,7 @@ public class GameScreen extends BaseScreen {
         buyAndAuctionWindowTexture = loadTexture(BUY_AND_AUCTION_WINDOW_TEXTURE_PATH);
         auctionOrMemeBankWindowTexture = loadTexture(AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
+        backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         cellTextures = loadCellTextures();
 
         titleLabel = new VisLabel("Мемополия");
@@ -627,6 +630,7 @@ public class GameScreen extends BaseScreen {
         rebuildPlayersIfNeeded(state, current, localPlayerId);
         rebuildOwnedCellsIfNeeded(state, localPlayer, myTurn, state.currentPhase);
         refreshActions(state, myTurn, currentCell);
+        refreshBattleOverlay(state);
     }
 
     private void rebuildPlayersIfNeeded(GameState state, Player current, int localPlayerId) {
@@ -770,12 +774,21 @@ public class GameScreen extends BaseScreen {
         Gdx.gl.glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        renderBackground();
+
         GameState state = game.getLatestGameState();
         boardRenderer.render(boardCells, state);
         refreshUi(state);
 
         stage.act(delta);
         stage.draw();
+    }
+
+    private void renderBackground() {
+        game.getBatch().setProjectionMatrix(stage.getCamera().combined);
+        game.getBatch().begin();
+        game.getBatch().draw(backgroundTexture, 0f, 0f, WORLD_WIDTH, WORLD_HEIGHT);
+        game.getBatch().end();
     }
 
     @Override
@@ -800,6 +813,7 @@ public class GameScreen extends BaseScreen {
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
         inputTexture.dispose();
+        backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
             cellTexture.dispose();
         }
@@ -939,7 +953,7 @@ public class GameScreen extends BaseScreen {
 
     private void configureModal(Table modal, Texture texture, VisLabel contentLabel) {
         modal.setVisible(false);
-        modal.top();
+        modal.center();
         Table window = new Table();
         window.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
         window.pad(20f);
