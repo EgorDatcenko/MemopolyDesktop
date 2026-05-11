@@ -10,9 +10,9 @@ public class ClipboardUtils {
             StringSelection stringSelection = new StringSelection(text);
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, null);
-            System.out.println("Скопировано в буфер обмена: " + text);
+            AppLog.info("Clipboard", "Скопировано в буфер обмена: " + text);
         } catch (Exception e) {
-            System.out.println("Ошибка копирования: " + e.getMessage());
+            AppLog.warn("Clipboard", "Ошибка копирования: " + e.getMessage());
         }
     }
 }

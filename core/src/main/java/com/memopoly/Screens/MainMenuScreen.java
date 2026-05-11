@@ -2,12 +2,14 @@ package com.memopoly.Screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
@@ -19,12 +21,17 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
+import com.kotcrab.vis.ui.widget.file.FileChooser;
+import com.badlogic.gdx.utils.Array;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
+import com.memopoly.modding.DeckRepository;
+import com.memopoly.game.model.MemeDeck;
 import com.memopoly.utils.ClipboardUtils;
 import com.memopoly.utils.RoomCodeGenerator;
 import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.AppLog;
 
 public class MainMenuScreen extends BaseScreen {
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
@@ -33,6 +40,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CONNECT_BUTTON_TEXTURE_PATH = "connect_btn.png";
     private static final String SETTINGS_BUTTON_TEXTURE_PATH = "settings_btn.png";
     private static final String EXIT_BUTTON_TEXTURE_PATH = "exit_btn.png";
+    private static final String DECKS_BUTTON_TEXTURE_PATH = "decks_btn.png";
     private static final String CREATE_DIALOG_BUTTON_TEXTURE_PATH = "create_btn.png";
     private static final String CONNECT_DIALOG_BUTTON_TEXTURE_PATH = "connect_btn_for_window.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
@@ -46,6 +54,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture connectButtonTexture;
     private final Texture settingsButtonTexture;
     private final Texture exitButtonTexture;
+    private final Texture decksButtonTexture;
     private final Texture createDialogButtonTexture;
     private final Texture connectDialogButtonTexture;
     private final Texture cancelButtonTexture;
@@ -53,6 +62,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture changeLanguageButtonTexture;
     private final Texture notificationWindowTexture;
     private boolean roomCodeShown;
+    private final DeckRepository deckRepository = new DeckRepository();
 
     public MainMenuScreen(Memopoly game) {
         super(game);
@@ -63,6 +73,7 @@ public class MainMenuScreen extends BaseScreen {
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
@@ -109,11 +120,13 @@ public class MainMenuScreen extends BaseScreen {
                 Gdx.app.exit();
             }
         });
+        Actor decksButton = createDecksButton();
 
         Table buttonStack = new Table();
         buttonStack.defaults().left().padBottom(18f);
         buttonStack.add(createButton).size(270f, 80f).row();
         buttonStack.add(joinButton).size(270f, 80f).row();
+        buttonStack.add(decksButton).size(270f, 80f).row();
         buttonStack.add(settingsButton).size(270f, 80f).row();
         buttonStack.add(exitButton).size(270f, 80f);
 
@@ -125,6 +138,151 @@ public class MainMenuScreen extends BaseScreen {
         Actor languageButton = createLanguageButton();
         languageAnchor.add(languageButton).size(80f, 80f).expand().left().bottom().padLeft(20f).padBottom(20f);
         stage.addActor(languageAnchor);
+    }
+
+    private Actor createDecksButton() {
+        if (decksButtonTexture != null) {
+            ImageButton button = createImageButton(decksButtonTexture);
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    showDecksDialog();
+                }
+            });
+            return button;
+        }
+
+        VisTextButton button = new VisTextButton("Колоды");
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                showDecksDialog();
+            }
+        });
+        return button;
+    }
+
+    private void showDecksDialog() {
+        Array<Texture> previewTextures = new Array<>();
+        Runnable disposePreviews = () -> {
+            for (Texture texture : previewTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+            previewTextures.clear();
+        };
+        Dialog dialog = new Dialog("Колоды", VisUI.getSkin()) {
+            private boolean cleanedUp;
+
+            @Override
+            public void hide() {
+                if (!cleanedUp) {
+                    disposePreviews.run();
+                    cleanedUp = true;
+                }
+                super.hide();
+            }
+        };
+        applyDialogTexture(dialog, notificationWindowTexture);
+        Table decksTable = new Table();
+        Array<MemeDeck> decks = deckRepository.loadDecks();
+        if (decks.isEmpty()) {
+            decksTable.add(new VisLabel("Пока нет колод")).left().pad(8f);
+        } else {
+            for (MemeDeck deck : decks) {
+                Table row = new Table();
+                String previewPath = deck.getPreviewImagePath();
+                FileHandle previewFile = resolveDeckImage(previewPath);
+                if (previewFile != null && previewFile.exists()) {
+                    Texture previewTexture = new Texture(previewFile);
+                    previewTextures.add(previewTexture);
+                    row.add(new Image(previewTexture)).size(56f, 56f).padRight(10f);
+                }
+                row.add(new VisLabel(deck.name == null ? "Без названия" : deck.name)).left();
+                decksTable.add(row).left().padBottom(8f).row();
+            }
+        }
+        dialog.getContentTable().add(decksTable).left().pad(10f).row();
+        VisTextButton createDeck = new VisTextButton("Создать колоду");
+        createDeck.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+                showCreateDeckDialog();
+            }
+        });
+        dialog.getButtonTable().add(createDeck).width(220f).pad(8f);
+        VisTextButton closeButton = new VisTextButton("Закрыть");
+        closeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        dialog.getButtonTable().add(closeButton).width(220f).pad(8f);
+        dialog.show(stage);
+    }
+
+    private FileHandle resolveDeckImage(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+        FileHandle localFile = Gdx.files.local(imagePath);
+        if (localFile.exists()) {
+            return localFile;
+        }
+        FileHandle absoluteFile = Gdx.files.absolute(imagePath);
+        return absoluteFile.exists() ? absoluteFile : null;
+    }
+
+    private void showCreateDeckDialog() {
+        Dialog dialog = new Dialog("Создание колоды", VisUI.getSkin());
+        applyDialogTexture(dialog, notificationWindowTexture);
+        VisTextField deckName = new VisTextField();
+        deckName.setMessageText("Название колоды");
+        Array<String> selectedFiles = new Array<>();
+        VisLabel filesCount = new VisLabel("Файлов: 0");
+        VisTextButton uploadButton = new VisTextButton("Загрузить изображения");
+        uploadButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
+                chooser.setMultiSelectionEnabled(true);
+                chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
+                chooser.setListener(new FileChooser.Adapter() {
+                    @Override
+                    public void selected(Array<FileHandle> files) {
+                        selectedFiles.clear();
+                        for (FileHandle file : files) {
+                            selectedFiles.add(file.file().getAbsolutePath());
+                        }
+                        filesCount.setText("Файлов: " + selectedFiles.size);
+                    }
+                });
+                stage.addActor(chooser.fadeIn());
+            }
+        });
+        dialog.getContentTable().add(new VisLabel("Название:")).left().pad(8f).row();
+        dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
+        dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
+        dialog.getContentTable().add(filesCount).left().pad(8f).row();
+        VisTextButton saveButton = new VisTextButton("Сохранить");
+        saveButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String name = deckName.getText().trim();
+                if (name.isEmpty() || selectedFiles.isEmpty()) {
+                    return;
+                }
+                deckRepository.createDeck(name, selectedFiles);
+                dialog.hide();
+                showDecksDialog();
+            }
+        });
+        dialog.getButtonTable().add(saveButton).width(150f).pad(8f);
+        dialog.button("Отмена", true);
+        dialog.show(stage);
     }
 
     private void showStartGameDialog() {
@@ -217,7 +375,7 @@ public class MainMenuScreen extends BaseScreen {
                 }
 
                 statusLabel.setText("Подключение...");
-                System.out.println("Расшифрованный IP: " + ip + ", имя=" + playerName);
+                AppLog.info("Menu", "Расшифрованный IP: " + ip + ", имя=" + playerName);
 
                 game.connectAsGuest(ip, 54555, playerName);
             }
@@ -452,6 +610,9 @@ public class MainMenuScreen extends BaseScreen {
         notificationWindowTexture.dispose();
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();
+        }
+        if (decksButtonTexture != null) {
+            decksButtonTexture.dispose();
         }
         stage.dispose();
     }
