@@ -259,7 +259,12 @@ public class Memopoly extends Game implements NetworkListener {
         if (!file.exists() || !"fnt".equalsIgnoreCase(file.extension())) {
             return null;
         }
-        return new BitmapFont(file, false);
+        try {
+            return new BitmapFont(file, false);
+        } catch (Throwable throwable) {
+            Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            return null;
+        }
     }
 
     private BitmapFont tryGenerateFontFromTtf(String fontPath) {
@@ -272,15 +277,23 @@ public class Memopoly extends Game implements NetworkListener {
             return null;
         }
 
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
-        FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        param.size = 30;
-        param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
-            + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-            + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
-        BitmapFont font = generator.generateFont(param);
-        generator.dispose();
-        return font;
+        FreeTypeFontGenerator generator = null;
+        try {
+            generator = new FreeTypeFontGenerator(file);
+            FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            param.size = 30;
+            param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
+                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+                + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+            return generator.generateFont(param);
+        } catch (Throwable throwable) {
+            Gdx.app.error("Fonts", "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            return null;
+        } finally {
+            if (generator != null) {
+                generator.dispose();
+            }
+        }
     }
 
     @Override
