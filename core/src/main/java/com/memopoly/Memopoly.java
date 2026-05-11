@@ -3,6 +3,7 @@ package com.memopoly;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
@@ -254,13 +255,20 @@ public class Memopoly extends Game implements NetworkListener {
         }
     }
 
+    private void applyPixelFontFiltering(BitmapFont font) {
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        font.setUseIntegerPositions(true);
+    }
+
     private BitmapFont tryLoadBitmapFont(String fontPath) {
         FileHandle file = Gdx.files.internal(fontPath);
         if (!file.exists() || !"fnt".equalsIgnoreCase(file.extension())) {
             return null;
         }
         try {
-            return new BitmapFont(file, false);
+            BitmapFont font = new BitmapFont(file, false);
+            applyPixelFontFiltering(font);
+            return font;
         } catch (Throwable throwable) {
             Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.", throwable);
             return null;
@@ -282,10 +290,15 @@ public class Memopoly extends Game implements NetworkListener {
             generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
             param.size = 30;
+            param.minFilter = Texture.TextureFilter.Nearest;
+            param.magFilter = Texture.TextureFilter.Nearest;
+            param.mono = true;
             param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
                 + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
                 + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
-            return generator.generateFont(param);
+            BitmapFont font = generator.generateFont(param);
+            applyPixelFontFiltering(font);
+            return font;
         } catch (Throwable throwable) {
             Gdx.app.error("Fonts", "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
             return null;
