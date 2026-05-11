@@ -30,10 +30,12 @@ public class SettingsScreen extends BaseScreen {
     private static final Color TITLE_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
+    private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
     private final Texture backButtonTexture;
+    private final Texture lobbyWindowTexture;
     private final Preferences preferences;
 
     private final VisSlider musicSlider;
@@ -50,6 +52,7 @@ public class SettingsScreen extends BaseScreen {
         Language language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         preferences = game.getSettingsPreferences();
         musicSlider = new VisSlider(0f, 1f, 0.01f, false);
         sfxSlider = new VisSlider(0f, 1f, 0.01f, false);
@@ -74,7 +77,7 @@ public class SettingsScreen extends BaseScreen {
         shadowPanel.pad(18f);
 
         Table panel = new Table();
-        panel.setBackground(panel(PANEL_COLOR));
+        panel.setBackground(window(lobbyWindowTexture));
         panel.pad(26f, 30f, 26f, 30f);
         panel.top().left();
         panel.defaults().left().padBottom(16f);
@@ -188,6 +191,10 @@ public class SettingsScreen extends BaseScreen {
         stage.draw();
     }
 
+    private Drawable window(Texture texture) {
+        return new TextureRegionDrawable(new TextureRegion(texture));
+    }
+
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -220,6 +227,7 @@ public class SettingsScreen extends BaseScreen {
     public void dispose() {
         backgroundTexture.dispose();
         backButtonTexture.dispose();
+        lobbyWindowTexture.dispose();
         stage.dispose();
     }
 }

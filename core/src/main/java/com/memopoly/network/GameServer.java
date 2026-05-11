@@ -432,31 +432,27 @@ public class GameServer {
                 }
                 break;
             case SUBMIT_MEME:
-                current = gameState.getCurrentPlayer();
-                Meme meme = new Meme();
                 if (gameState.battleParticipants.contains(actingPlayer.id)
                     && actingPlayer.containsMeme(request.targetId)
-                    && gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES){
-                    ArrayList<Meme> memes = current.handMemes;
-                    for(Meme i : memes) {
-                        if (i.id == request.targetId) {
-                            meme = i;
+                    && gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES) {
+                    for (Meme meme : new ArrayList<>(actingPlayer.handMemes)) {
+                        if (meme.id == request.targetId) {
                             gameState.battleMemes.add(meme);
-                            current.handMemes.remove(i);
+                            actingPlayer.handMemes.remove(meme);
+                            break;
                         }
                     }
                 }
                 break;
 
             case VOTE_MEME:
-                current = gameState.getCurrentPlayer();
                 if (gameState.battlePhase == GameState.BattlePhase.VOTING
                     && gameState.containsMeme(request.targetId)          // мем существует
-                    && !gameState.battleVoters.contains(current.id)      // ещё не голосовал
-                    && !gameState.isMemeOwnedBy(current.id, request.targetId)) { // не свой мем
+                    && !gameState.battleVoters.contains(actingPlayer.id) // ещё не голосовал
+                    && !gameState.isMemeOwnedBy(actingPlayer.id, request.targetId)) { // не свой мем
                     int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
                     gameState.votes.put(request.targetId, currentVotes + 1);
-                    gameState.battleVoters.add(current.id);
+                    gameState.battleVoters.add(actingPlayer.id);
                 }
                 break;
             default:
