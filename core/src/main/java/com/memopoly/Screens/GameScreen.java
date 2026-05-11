@@ -1000,7 +1000,7 @@ public class GameScreen extends BaseScreen {
         VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
         style.background = new TextureRegionDrawable(new TextureRegion(inputTexture));
         style.backgroundOver = style.background;
-        style.backgroundFocused = style.background;
+        style.focusedBackground = style.background;
         style.disabledBackground = style.background;
         field.setStyle(style);
     }
