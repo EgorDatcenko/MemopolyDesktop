@@ -52,6 +52,9 @@ public class GameScreen extends BaseScreen {
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
+    private static final float BUY_AND_AUCTION_MODAL_SCALE = 0.90f;
+    private static final float AUCTION_OR_MEME_BANK_MODAL_SCALE = 0.90f;
+    private static final float NOTIFICATION_MODAL_SCALE = 0.50f;
 
     private final Stage stage;
     private final BoardRenderer boardRenderer;
@@ -357,10 +360,10 @@ public class GameScreen extends BaseScreen {
         root.add(sidePanel).width(416).top().right();
 
 
-        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel);
-        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel);
-        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel);
-        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel);
+        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE);
+        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel, BUY_AND_AUCTION_MODAL_SCALE);
+        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE);
+        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE);
         setupModalControls();
 
         stage.addActor(root);
@@ -951,7 +954,7 @@ public class GameScreen extends BaseScreen {
         memeBankModal.setFillParent(true);
     }
 
-    private void configureModal(Table modal, Texture texture, VisLabel contentLabel) {
+    private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float scale) {
         modal.setVisible(false);
         modal.center();
         Table window = new Table();
@@ -959,9 +962,11 @@ public class GameScreen extends BaseScreen {
         window.pad(20f);
         window.top().left();
         modal.clearChildren();
+        float modalWidth = texture.getWidth() * scale;
+        float modalHeight = texture.getHeight() * scale;
         contentLabel.setWrap(true);
-        window.add(contentLabel).width(520f).left().top().pad(12f).row();
-        modal.add(window).size(640f, 360f).center();
+        window.add(contentLabel).width(modalWidth * 0.8f).left().top().pad(12f).row();
+        modal.add(window).size(modalWidth, modalHeight).center();
     }
 
     private void setupModalControls() {
