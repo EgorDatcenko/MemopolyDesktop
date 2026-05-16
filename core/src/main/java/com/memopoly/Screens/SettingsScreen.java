@@ -18,7 +18,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSlider;
-import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
@@ -30,11 +29,13 @@ public class SettingsScreen extends BaseScreen {
     private static final Color TITLE_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
+    private static final String APPLY_BUTTON_TEXTURE_PATH = "apply_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
     private final Texture backButtonTexture;
+    private final Texture applyButtonTexture;
     private final Texture lobbyWindowTexture;
     private final Preferences preferences;
 
@@ -51,7 +52,9 @@ public class SettingsScreen extends BaseScreen {
         stage = new Stage(new ScreenViewport());
         Language language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
-        backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
+        backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        applyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(APPLY_BUTTON_TEXTURE_PATH, oppositeLanguage));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         preferences = game.getSettingsPreferences();
         musicSlider = new VisSlider(0f, 1f, 0.01f, false);
@@ -107,7 +110,7 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        VisTextButton applyButton = new VisTextButton("Применить");
+        ImageButton applyButton = createImageButton(applyButtonTexture);
         applyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -227,6 +230,7 @@ public class SettingsScreen extends BaseScreen {
     public void dispose() {
         backgroundTexture.dispose();
         backButtonTexture.dispose();
+        applyButtonTexture.dispose();
         lobbyWindowTexture.dispose();
         stage.dispose();
     }
