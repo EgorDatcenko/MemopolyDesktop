@@ -26,6 +26,9 @@ import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 
 public class LobbyScreen extends BaseScreen {
+    private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
+    private static final float LOBBY_WINDOW_WIDTH = 1116f;
+    private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
@@ -140,7 +143,7 @@ public class LobbyScreen extends BaseScreen {
         buttons.add(backButton).width(170f).height(64f);
         panel.add(buttons).left().padTop(18f);
 
-        shadowPanel.add(panel);
+        shadowPanel.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT);
         root.add(shadowPanel).center();
 
         stage.addActor(root);

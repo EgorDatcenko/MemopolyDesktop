@@ -47,6 +47,12 @@ public class MainMenuScreen extends BaseScreen {
     private static final String COPY_CODE_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
     private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
+    private static final String INPUT_TEXTURE_PATH = "input.png";
+    private static final float NOTIFICATION_DIALOG_SCALE = 0.5f;
+    private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
+    private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
+    private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
+    private static final String RUSSIAN_BUTTON_TEXTURE_PATH = "russian.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -61,6 +67,11 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture copyCodeButtonTexture;
     private final Texture changeLanguageButtonTexture;
     private final Texture notificationWindowTexture;
+    private final Texture inputTexture;
+    private final Texture createDeckButtonTexture;
+    private final Texture closeDialogButtonTexture;
+    private final Texture englishButtonTexture;
+    private final Texture russianButtonTexture;
     private boolean roomCodeShown;
     private final DeckRepository deckRepository = new DeckRepository();
 
@@ -73,6 +84,7 @@ public class MainMenuScreen extends BaseScreen {
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
         decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
@@ -80,6 +92,11 @@ public class MainMenuScreen extends BaseScreen {
         copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
         notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
+        inputTexture = loadTexture(INPUT_TEXTURE_PATH);
+        createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, oppositeLanguage));
         Gdx.input.setInputProcessor(stage);
 
         createUI();
@@ -204,7 +221,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         }
         dialog.getContentTable().add(decksTable).left().pad(10f).row();
-        VisTextButton createDeck = new VisTextButton("Создать колоду");
+        ImageButton createDeck = createImageButton(createDeckButtonTexture);
         createDeck.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -212,15 +229,15 @@ public class MainMenuScreen extends BaseScreen {
                 showCreateDeckDialog();
             }
         });
-        dialog.getButtonTable().add(createDeck).width(220f).pad(8f);
-        VisTextButton closeButton = new VisTextButton("Закрыть");
+        dialog.getButtonTable().add(createDeck).size(220f, 64f).pad(8f);
+        ImageButton closeButton = createImageButton(closeDialogButtonTexture);
         closeButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(closeButton).width(220f).pad(8f);
+        dialog.getButtonTable().add(closeButton).size(220f, 64f).pad(8f);
         dialog.show(stage);
     }
 
@@ -288,6 +305,7 @@ public class MainMenuScreen extends BaseScreen {
     private void showStartGameDialog() {
         VisTextField nameField = new VisTextField();
         nameField.setMessageText("Имя хоста");
+        applyInputFieldStyle(nameField);
 
         Dialog dialog = new Dialog("Создание игры", VisUI.getSkin()) {
             @Override
@@ -309,13 +327,14 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        applyDialogTexture(dialog, notificationWindowTexture);
-        dialog.getContentTable().add(new VisLabel("Введите имя для комнаты")).pad(10);
+        applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
+        dialog.getContentTable().add(new VisLabel("Создание игры")).center().padTop(6f).padBottom(4f).row();
+        dialog.getContentTable().add(new VisLabel("Введите имя для комнаты")).padBottom(8f);
         dialog.row();
-        dialog.getContentTable().add(nameField).width(240).pad(10);
+        dialog.getContentTable().add(nameField).width(280).padBottom(8f);
 
         dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().pad(10f);
+        dialog.getButtonTable().defaults().padTop(4f).padBottom(4f).padLeft(8f).padRight(8f);
         ImageButton createActionButton = createImageButton(createDialogButtonTexture);
         createActionButton.addListener(new ChangeListener() {
             @Override
@@ -347,9 +366,11 @@ public class MainMenuScreen extends BaseScreen {
     private void showConnectDialog() {
         VisTextField nameField = new VisTextField();
         nameField.setMessageText("Имя игрока");
+        applyInputFieldStyle(nameField);
 
         VisTextField codeField = new VisTextField();
         codeField.setMessageText("Код комнаты");
+        applyInputFieldStyle(codeField);
 
         VisLabel statusLabel = new VisLabel("");
 
@@ -381,15 +402,16 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        applyDialogTexture(dialog, notificationWindowTexture);
-        dialog.getContentTable().add(statusLabel).pad(10);
+        applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
+        dialog.getContentTable().add(new VisLabel("Подключение")).center().padTop(6f).padBottom(4f).row();
+        dialog.getContentTable().add(statusLabel).padBottom(8f);
         dialog.row();
-        dialog.getContentTable().add(nameField).width(300).pad(10);
+        dialog.getContentTable().add(nameField).width(300).padBottom(6f);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(300).pad(10);
+        dialog.getContentTable().add(codeField).width(300).padBottom(8f);
 
         dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().pad(10f);
+        dialog.getButtonTable().defaults().padTop(4f).padBottom(4f).padLeft(8f).padRight(8f);
         ImageButton connectActionButton = createImageButton(connectDialogButtonTexture);
         connectActionButton.addListener(new ChangeListener() {
             @Override
@@ -524,8 +546,8 @@ public class MainMenuScreen extends BaseScreen {
         Dialog dialog = new Dialog("Select language", VisUI.getSkin());
 
         applyDialogTexture(dialog, notificationWindowTexture);
-        VisTextButton english = new VisTextButton("English");
-        VisTextButton russian = new VisTextButton("Русский");
+        ImageButton english = createImageButton(englishButtonTexture);
+        ImageButton russian = createImageButton(russianButtonTexture);
 
         english.addListener(new ChangeListener() {
             @Override
@@ -545,13 +567,28 @@ public class MainMenuScreen extends BaseScreen {
         });
 
         dialog.getContentTable().add("Select game language").pad(10).row();
-        dialog.getButtonTable().add(english).width(160f).pad(8f);
-        dialog.getButtonTable().add(russian).width(160f).pad(8f);
+        dialog.getButtonTable().add(english).size(160f, 56f).pad(8f);
+        dialog.getButtonTable().add(russian).size(160f, 56f).pad(8f);
         dialog.show(stage);
     }
 
     private void applyDialogTexture(Dialog dialog, Texture texture) {
+        applyDialogTexture(dialog, texture, 1f);
+    }
+
+    private void applyDialogTexture(Dialog dialog, Texture texture, float scale) {
         dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
+        dialog.setSize(texture.getWidth() * scale, texture.getHeight() * scale);
+    }
+
+    private void applyInputFieldStyle(VisTextField field) {
+        VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
+        TextureRegionDrawable inputBg = new TextureRegionDrawable(new TextureRegion(inputTexture));
+        style.background = inputBg;
+        style.backgroundOver = inputBg;
+        style.focusedBackground = inputBg;
+        style.disabledBackground = inputBg;
+        field.setStyle(style);
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -608,6 +645,11 @@ public class MainMenuScreen extends BaseScreen {
         cancelButtonTexture.dispose();
         copyCodeButtonTexture.dispose();
         notificationWindowTexture.dispose();
+        inputTexture.dispose();
+        createDeckButtonTexture.dispose();
+        closeDialogButtonTexture.dispose();
+        englishButtonTexture.dispose();
+        russianButtonTexture.dispose();
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();
         }
