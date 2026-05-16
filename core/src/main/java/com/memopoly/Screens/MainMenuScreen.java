@@ -85,7 +85,7 @@ public class MainMenuScreen extends BaseScreen {
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
         Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
-        decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
