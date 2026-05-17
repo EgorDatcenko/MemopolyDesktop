@@ -23,6 +23,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Vector2;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
 import com.memopoly.modding.DeckRepository;
@@ -72,13 +73,14 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture closeDialogButtonTexture;
     private final Texture englishButtonTexture;
     private final Texture russianButtonTexture;
+    private final Language language;
     private boolean roomCodeShown;
     private final DeckRepository deckRepository = new DeckRepository();
 
     public MainMenuScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
-        Language language = game.getLanguageManager().getLanguage();
+        language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         createButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CREATE_BUTTON_TEXTURE_PATH, language));
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
@@ -169,7 +171,7 @@ public class MainMenuScreen extends BaseScreen {
             return button;
         }
 
-        VisTextButton button = new VisTextButton("Колоды");
+        VisTextButton button = new VisTextButton(t("decks"));
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -189,7 +191,7 @@ public class MainMenuScreen extends BaseScreen {
             }
             previewTextures.clear();
         };
-        Dialog dialog = new Dialog("Колоды", VisUI.getSkin()) {
+        Dialog dialog = new Dialog(t("decks"), VisUI.getSkin()) {
             private boolean cleanedUp;
 
             @Override
@@ -205,7 +207,7 @@ public class MainMenuScreen extends BaseScreen {
         Table decksTable = new Table();
         Array<MemeDeck> decks = deckRepository.loadDecks();
         if (decks.isEmpty()) {
-            decksTable.add(new VisLabel("Пока нет колод")).left().pad(8f);
+            decksTable.add(new VisLabel(t("no_decks"))).left().pad(8f);
         } else {
             for (MemeDeck deck : decks) {
                 Table row = new Table();
@@ -216,7 +218,7 @@ public class MainMenuScreen extends BaseScreen {
                     previewTextures.add(previewTexture);
                     row.add(new Image(previewTexture)).size(56f, 56f).padRight(10f);
                 }
-                row.add(new VisLabel(deck.name == null ? "Без названия" : deck.name)).left();
+                row.add(new VisLabel(deck.name == null ? t("unnamed") : deck.name)).left();
                 decksTable.add(row).left().padBottom(8f).row();
             }
         }
@@ -238,7 +240,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         dialog.getButtonTable().add(closeButton).size(220f, 64f).pad(8f);
-        dialog.show(stage);
+        showDialog(dialog);
     }
 
     private FileHandle resolveDeckImage(String imagePath) {
@@ -254,13 +256,13 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showCreateDeckDialog() {
-        Dialog dialog = new Dialog("Создание колоды", VisUI.getSkin());
+        Dialog dialog = new Dialog(t("create_deck"), VisUI.getSkin());
         applyDialogTexture(dialog, notificationWindowTexture);
         VisTextField deckName = new VisTextField();
-        deckName.setMessageText("Название колоды");
+        deckName.setMessageText(t("deck_name"));
         Array<String> selectedFiles = new Array<>();
-        VisLabel filesCount = new VisLabel("Файлов: 0");
-        VisTextButton uploadButton = new VisTextButton("Загрузить изображения");
+        VisLabel filesCount = new VisLabel(t("files_count") + ": 0");
+        VisTextButton uploadButton = new VisTextButton(t("upload_images"));
         uploadButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -274,17 +276,17 @@ public class MainMenuScreen extends BaseScreen {
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
-                        filesCount.setText("Файлов: " + selectedFiles.size);
+                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
                     }
                 });
                 stage.addActor(chooser.fadeIn());
             }
         });
-        dialog.getContentTable().add(new VisLabel("Название:")).left().pad(8f).row();
+        dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
         dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
         dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
         dialog.getContentTable().add(filesCount).left().pad(8f).row();
-        VisTextButton saveButton = new VisTextButton("Сохранить");
+        VisTextButton saveButton = new VisTextButton(t("save"));
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -298,16 +300,16 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         dialog.getButtonTable().add(saveButton).width(150f).pad(8f);
-        dialog.button("Отмена", true);
-        dialog.show(stage);
+        dialog.button(t("cancel"), true);
+        showDialog(dialog);
     }
 
     private void showStartGameDialog() {
         VisTextField nameField = new VisTextField();
-        nameField.setMessageText("Имя хоста");
+        nameField.setMessageText(t("host_name"));
         applyInputFieldStyle(nameField);
 
-        Dialog dialog = new Dialog("Создание игры", VisUI.getSkin()) {
+        Dialog dialog = new Dialog(t("create_game"), VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (!Boolean.TRUE.equals(object)) {
@@ -322,14 +324,14 @@ public class MainMenuScreen extends BaseScreen {
                 try {
                     game.startAsHost(playerName);
                 } catch (RuntimeException e) {
-                    showErrorDialog("Не удалось создать комнату", e.getMessage());
+                    showErrorDialog(t("create_room_failed"), e.getMessage());
                 }
             }
         };
 
         applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
-        dialog.getContentTable().add(new VisLabel("Создание игры")).center().padTop(6f).padBottom(4f).row();
-        dialog.getContentTable().add(new VisLabel("Введите имя для комнаты")).padBottom(8f);
+        dialog.getContentTable().add(new VisLabel(t("create_game"))).center().padTop(6f).padBottom(4f).row();
+        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).padBottom(8f);
         dialog.row();
         dialog.getContentTable().add(nameField).width(280).padBottom(8f);
 
@@ -347,7 +349,7 @@ public class MainMenuScreen extends BaseScreen {
                     game.startAsHost(playerName);
                     dialog.hide();
                 } catch (RuntimeException e) {
-                    showErrorDialog("Не удалось создать комнату", e.getMessage());
+                    showErrorDialog(t("create_room_failed"), e.getMessage());
                 }
             }
         });
@@ -360,21 +362,21 @@ public class MainMenuScreen extends BaseScreen {
         });
         dialog.getButtonTable().add(createActionButton).size(176f, 58f);
         dialog.getButtonTable().add(cancelActionButton).size(176f, 58f);
-        dialog.show(stage);
+        showDialog(dialog);
     }
 
     private void showConnectDialog() {
         VisTextField nameField = new VisTextField();
-        nameField.setMessageText("Имя игрока");
+        nameField.setMessageText(t("player_name"));
         applyInputFieldStyle(nameField);
 
         VisTextField codeField = new VisTextField();
-        codeField.setMessageText("Код комнаты");
+        codeField.setMessageText(t("room_code"));
         applyInputFieldStyle(codeField);
 
         VisLabel statusLabel = new VisLabel("");
 
-        Dialog dialog = new Dialog("Подключение...", VisUI.getSkin()) {
+        Dialog dialog = new Dialog(t("connecting") + "...", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (!Boolean.TRUE.equals(object)) {
@@ -385,17 +387,17 @@ public class MainMenuScreen extends BaseScreen {
                 String roomCode = codeField.getText().trim();
 
                 if (playerName.isEmpty()) {
-                    statusLabel.setText("Введите имя игрока");
+                    statusLabel.setText(t("enter_player_name"));
                     return;
                 }
 
                 String ip = RoomCodeGenerator.decodeRoomCode(roomCode);
                 if (ip == null || ip.isEmpty()) {
-                    statusLabel.setText("Неверный код комнаты");
+                    statusLabel.setText(t("invalid_room_code"));
                     return;
                 }
 
-                statusLabel.setText("Подключение...");
+                statusLabel.setText(t("connecting") + "...");
                 AppLog.info("Menu", "Расшифрованный IP: " + ip + ", имя=" + playerName);
 
                 game.connectAsGuest(ip, 54555, playerName);
@@ -403,7 +405,7 @@ public class MainMenuScreen extends BaseScreen {
         };
 
         applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
-        dialog.getContentTable().add(new VisLabel("Подключение")).center().padTop(6f).padBottom(4f).row();
+        dialog.getContentTable().add(new VisLabel(t("connect"))).center().padTop(6f).padBottom(4f).row();
         dialog.getContentTable().add(statusLabel).padBottom(8f);
         dialog.row();
         dialog.getContentTable().add(nameField).width(300).padBottom(6f);
@@ -420,17 +422,17 @@ public class MainMenuScreen extends BaseScreen {
                 String roomCode = codeField.getText().trim();
 
                 if (playerName.isEmpty()) {
-                    statusLabel.setText("Введите имя игрока");
+                    statusLabel.setText(t("enter_player_name"));
                     return;
                 }
 
                 String ip = RoomCodeGenerator.decodeRoomCode(roomCode);
                 if (ip == null || ip.isEmpty()) {
-                    statusLabel.setText("Неверный код комнаты");
+                    statusLabel.setText(t("invalid_room_code"));
                     return;
                 }
 
-                statusLabel.setText("Подключение...");
+                statusLabel.setText(t("connecting") + "...");
                 game.connectAsGuest(ip, 54555, playerName);
                 dialog.hide();
             }
@@ -445,30 +447,30 @@ public class MainMenuScreen extends BaseScreen {
         dialog.getButtonTable().add(connectActionButton).size(196f, 58f);
         dialog.getButtonTable().add(cancelActionButton).size(176f, 58f);
 
-        dialog.show(stage);
+        showDialog(dialog);
     }
 
     private void showErrorDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
         applyDialogTexture(dialog, notificationWindowTexture);
-        dialog.text(message == null || message.isBlank() ? "Произошла неизвестная ошибка." : message);
-        dialog.button("ОК", true);
-        dialog.show(stage);
+        dialog.text(message == null || message.isBlank() ? t("unknown_error") : message);
+        dialog.button("OK", true);
+        showDialog(dialog);
     }
 
     private void showInfoDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
         applyDialogTexture(dialog, notificationWindowTexture);
         dialog.text(message);
-        dialog.button("ОК", true);
-        dialog.show(stage);
+        dialog.button("OK", true);
+        showDialog(dialog);
     }
 
     private void showRoomCodeDialog(String roomCode) {
-        Dialog dialog = new Dialog("Комната создана", VisUI.getSkin());
+        Dialog dialog = new Dialog(t("room_created"), VisUI.getSkin());
 
         applyDialogTexture(dialog, notificationWindowTexture);
-        VisLabel titleLabel = new VisLabel("Ваш код комнаты:");
+        VisLabel titleLabel = new VisLabel(t("your_room_code") + ":");
         VisTextField codeField = new VisTextField(roomCode);
         codeField.setDisabled(true);
         codeField.selectAll();
@@ -496,7 +498,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         dialog.getButtonTable().add(cancelActionButton).size(176f, 58f).pad(10f);
-        dialog.show(stage);
+        showDialog(dialog);
     }
 
     private void showCopiedNotification() {
@@ -508,9 +510,9 @@ public class MainMenuScreen extends BaseScreen {
         };
 
         applyDialogTexture(notification, notificationWindowTexture);
-        notification.getContentTable().add(new VisLabel("Код скопирован!")).pad(20);
-        notification.button("ОК", true);
-        notification.show(stage);
+        notification.getContentTable().add(new VisLabel(t("code_copied"))).pad(20);
+        notification.button("OK", true);
+        showDialog(notification);
 
         Timer.schedule(new Timer.Task() {
             @Override
@@ -532,7 +534,7 @@ public class MainMenuScreen extends BaseScreen {
             return button;
         }
 
-        VisTextButton button = new VisTextButton("Language");
+        VisTextButton button = new VisTextButton(t("language"));
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -543,7 +545,7 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showLanguageDialog() {
-        Dialog dialog = new Dialog("Select language", VisUI.getSkin());
+        Dialog dialog = new Dialog(t("select_language"), VisUI.getSkin());
 
         applyDialogTexture(dialog, notificationWindowTexture);
         ImageButton english = createImageButton(englishButtonTexture);
@@ -566,10 +568,10 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        dialog.getContentTable().add("Select game language").pad(10).row();
+        dialog.getContentTable().add(t("select_game_language")).pad(10).row();
         dialog.getButtonTable().add(english).size(160f, 56f).pad(8f);
         dialog.getButtonTable().add(russian).size(160f, 56f).pad(8f);
-        dialog.show(stage);
+        showDialog(dialog);
     }
 
     private void applyDialogTexture(Dialog dialog, Texture texture) {
@@ -578,7 +580,19 @@ public class MainMenuScreen extends BaseScreen {
 
     private void applyDialogTexture(Dialog dialog, Texture texture, float scale) {
         dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
-        dialog.setSize(texture.getWidth() * scale, texture.getHeight() * scale);
+        dialog.setUserObject(new Vector2(texture.getWidth() * scale, texture.getHeight() * scale));
+    }
+
+    private void showDialog(Dialog dialog) {
+        dialog.show(stage);
+        Object userObject = dialog.getUserObject();
+        if (userObject instanceof Vector2 size) {
+            dialog.setSize(size.x, size.y);
+            dialog.setPosition(
+                (stage.getWidth() - size.x) * 0.5f,
+                (stage.getHeight() - size.y) * 0.5f
+            );
+        }
     }
 
     private void applyInputFieldStyle(VisTextField field) {
@@ -596,6 +610,40 @@ public class MainMenuScreen extends BaseScreen {
             return null;
         }
         return loadTexture(path);
+    }
+
+    private String t(String key) {
+        boolean ru = language == Language.RU;
+        return switch (key) {
+            case "decks" -> ru ? "Колоды" : "Decks";
+            case "no_decks" -> ru ? "Пока нет колод" : "No decks yet";
+            case "unnamed" -> ru ? "Без названия" : "Untitled";
+            case "create_deck" -> ru ? "Создание колоды" : "Create deck";
+            case "deck_name" -> ru ? "Название колоды" : "Deck name";
+            case "files_count" -> ru ? "Файлов" : "Files";
+            case "upload_images" -> ru ? "Загрузить изображения" : "Upload images";
+            case "name" -> ru ? "Название" : "Name";
+            case "save" -> ru ? "Сохранить" : "Save";
+            case "cancel" -> ru ? "Отмена" : "Cancel";
+            case "host_name" -> ru ? "Имя хоста" : "Host name";
+            case "create_game" -> ru ? "Создание игры" : "Create game";
+            case "create_room_failed" -> ru ? "Не удалось создать комнату" : "Failed to create room";
+            case "enter_room_name" -> ru ? "Введите имя для комнаты" : "Enter room name";
+            case "player_name" -> ru ? "Имя игрока" : "Player name";
+            case "room_code" -> ru ? "Код комнаты" : "Room code";
+            case "connecting" -> ru ? "Подключение" : "Connecting";
+            case "connect" -> ru ? "Подключение" : "Connect";
+            case "enter_player_name" -> ru ? "Введите имя игрока" : "Enter player name";
+            case "invalid_room_code" -> ru ? "Неверный код комнаты" : "Invalid room code";
+            case "unknown_error" -> ru ? "Произошла неизвестная ошибка." : "Unknown error occurred.";
+            case "room_created" -> ru ? "Комната создана" : "Room created";
+            case "your_room_code" -> ru ? "Ваш код комнаты" : "Your room code";
+            case "code_copied" -> ru ? "Код скопирован!" : "Code copied!";
+            case "language" -> "Language";
+            case "select_language" -> ru ? "Выбор языка" : "Select language";
+            case "select_game_language" -> ru ? "Выберите язык игры" : "Select game language";
+            default -> key;
+        };
     }
 
     @Override
