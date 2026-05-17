@@ -6,6 +6,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -23,7 +24,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Vector2;
+import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
 import com.memopoly.modding.DeckRepository;
@@ -41,7 +42,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CONNECT_BUTTON_TEXTURE_PATH = "connect_btn.png";
     private static final String SETTINGS_BUTTON_TEXTURE_PATH = "settings_btn.png";
     private static final String EXIT_BUTTON_TEXTURE_PATH = "exit_btn.png";
-    private static final String DECKS_BUTTON_TEXTURE_PATH = "decks.png";
+    private static final String DECKS_BUTTON_TEXTURE_PATH = "decks_btn.png";
     private static final String CREATE_DIALOG_BUTTON_TEXTURE_PATH = "create_btn.png";
     private static final String CONNECT_DIALOG_BUTTON_TEXTURE_PATH = "connect_btn_for_window.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
@@ -269,14 +270,22 @@ public class MainMenuScreen extends BaseScreen {
                 FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
                 chooser.setMultiSelectionEnabled(true);
                 chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
-                chooser.setListener(new FileChooser.Adapter() {
+                chooser.setListener(new FileChooserListener() {
+
                     @Override
                     public void selected(Array<FileHandle> files) {
                         selectedFiles.clear();
+
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
-                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
+
+                        filesCount.setText("Файлов: " + selectedFiles.size);
+                    }
+
+                    @Override
+                    public void canceled() {
+
                     }
                 });
                 stage.addActor(chooser.fadeIn());
