@@ -41,7 +41,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CONNECT_BUTTON_TEXTURE_PATH = "connect_btn.png";
     private static final String SETTINGS_BUTTON_TEXTURE_PATH = "settings_btn.png";
     private static final String EXIT_BUTTON_TEXTURE_PATH = "exit_btn.png";
-    private static final String DECKS_BUTTON_TEXTURE_PATH = "decks_btn.png";
+    private static final String DECKS_BUTTON_TEXTURE_PATH = "decks.png";
     private static final String CREATE_DIALOG_BUTTON_TEXTURE_PATH = "create_btn.png";
     private static final String CONNECT_DIALOG_BUTTON_TEXTURE_PATH = "connect_btn_for_window.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
