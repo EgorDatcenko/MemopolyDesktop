@@ -18,11 +18,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.math.Vector2;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
+import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Vector2;
 import com.memopoly.utils.LanguageManager;
@@ -271,7 +273,6 @@ public class MainMenuScreen extends BaseScreen {
                 chooser.setMultiSelectionEnabled(true);
                 chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
                 chooser.setListener(new FileChooserListener() {
-
                     @Override
                     public void selected(Array<FileHandle> files) {
                         selectedFiles.clear();
@@ -281,11 +282,8 @@ public class MainMenuScreen extends BaseScreen {
                         }
                         filesCount.setText(t("files_count") + ": " + selectedFiles.size);
                     }
-
                     @Override
-                    public void canceled() {
-
-                    }
+                    public void canceled() {}
                 });
                 stage.addActor(chooser.fadeIn());
             }
@@ -317,7 +315,7 @@ public class MainMenuScreen extends BaseScreen {
         nameField.setMessageText(t("host_name"));
         applyInputFieldStyle(nameField);
 
-        Dialog dialog = new Dialog(t("create_game"), VisUI.getSkin()) {
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (!Boolean.TRUE.equals(object)) {
@@ -338,13 +336,16 @@ public class MainMenuScreen extends BaseScreen {
         };
 
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        dialog.getContentTable().add(new VisLabel(t("create_game"))).center().padTop(6f).padBottom(4f).row();
-        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).padBottom(8f);
+        VisLabel title = new VisLabel(t("create_game"));
+        title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
+        title.setFontScale(1.25f);
+        dialog.getContentTable().add(title).left().padBottom(90f).padRight(230f).row();
+        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(120f).padRight(120f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).padBottom(8f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(120f);
 
         dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().padTop(4f).padBottom(4f).padLeft(8f).padRight(8f);
+        dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
         ImageButton createActionButton = createImageButton(createDialogButtonTexture);
         createActionButton.addListener(new ChangeListener() {
             @Override
@@ -384,7 +385,7 @@ public class MainMenuScreen extends BaseScreen {
 
         VisLabel statusLabel = new VisLabel("");
 
-        Dialog dialog = new Dialog(t("connecting") + "...", VisUI.getSkin()) {
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (!Boolean.TRUE.equals(object)) {
@@ -413,15 +414,18 @@ public class MainMenuScreen extends BaseScreen {
         };
 
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        dialog.getContentTable().add(new VisLabel(t("connect"))).center().padTop(6f).padBottom(4f).row();
-        dialog.getContentTable().add(statusLabel).padBottom(8f);
+        VisLabel title = new VisLabel(t("connect"));
+        title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
+        title.setFontScale(1.25f);
+        dialog.getContentTable().add(title).left().padBottom(60f).padRight(230f).row();
+        dialog.getContentTable().add(statusLabel).left().padBottom(24f).padRight(150f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(300).padBottom(6f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(40f);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(300).padBottom(8f);
+        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(40f);
 
         dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().padTop(4f).padBottom(4f).padLeft(8f).padRight(8f);
+        dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
         ImageButton connectActionButton = createImageButton(connectDialogButtonTexture);
         connectActionButton.addListener(new ChangeListener() {
             @Override
@@ -610,8 +614,11 @@ public class MainMenuScreen extends BaseScreen {
         style.backgroundOver = inputBg;
         style.focusedBackground = inputBg;
         style.disabledBackground = inputBg;
+        style.selection = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
+        style.cursor = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
+        inputBg.setLeftWidth(12f);
         field.setStyle(style);
-        field.setHeight(16f);
+        field.setTextFieldFilter((textField, c) -> c != '\n' && c != '\r');
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -653,6 +660,11 @@ public class MainMenuScreen extends BaseScreen {
             case "select_game_language" -> ru ? "Выберите язык игры" : "Select game language";
             default -> key;
         };
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
     }
 
     @Override

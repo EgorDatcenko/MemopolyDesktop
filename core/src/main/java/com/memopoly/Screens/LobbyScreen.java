@@ -238,6 +238,11 @@ public class LobbyScreen extends BaseScreen {
         stage.draw();
     }
 
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+    }
+
     private Drawable panel(Color color) {
         return VisUI.getSkin().newDrawable("white", color);
     }
