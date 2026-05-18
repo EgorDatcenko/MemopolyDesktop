@@ -6,6 +6,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -86,6 +87,7 @@ public class MainMenuScreen extends BaseScreen {
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
         decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
@@ -268,14 +270,21 @@ public class MainMenuScreen extends BaseScreen {
                 FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
                 chooser.setMultiSelectionEnabled(true);
                 chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
-                chooser.setListener(new FileChooser.Adapter() {
+                chooser.setListener(new FileChooserListener() {
+
                     @Override
                     public void selected(Array<FileHandle> files) {
                         selectedFiles.clear();
+
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
                         filesCount.setText(t("files_count") + ": " + selectedFiles.size);
+                    }
+
+                    @Override
+                    public void canceled() {
+
                     }
                 });
                 stage.addActor(chooser.fadeIn());
