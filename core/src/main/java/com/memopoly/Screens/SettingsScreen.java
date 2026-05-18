@@ -24,7 +24,7 @@ import com.memopoly.utils.TexturePathResolver;
 
 public class SettingsScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
-    private static final float SETTINGS_WINDOW_SCALE = 0.82f;
+    private static final float SETTINGS_WINDOW_SCALE = 0.5f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);

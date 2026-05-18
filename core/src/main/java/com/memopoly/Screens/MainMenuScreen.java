@@ -426,7 +426,6 @@ public class MainMenuScreen extends BaseScreen {
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
-
         ImageButton connectActionButton = createImageButton(connectDialogButtonTexture);
         connectActionButton.addListener(new ChangeListener() {
             @Override
@@ -615,14 +614,18 @@ public class MainMenuScreen extends BaseScreen {
         style.backgroundOver = inputBg;
         style.focusedBackground = inputBg;
         style.disabledBackground = inputBg;
-        style.selection = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
-        style.cursor = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
+        Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
+        style.selection = transparent;
+        style.cursor = transparent;
         style.messageFont = style.font;
         style.messageFontColor = new Color(0.52f, 0.16f, 0.16f, 1f);
-        inputBg.setLeftWidth(24f);
+        style.fontColor = Color.WHITE;
+        inputBg.setLeftWidth(36f);
         field.setStyle(style);
         field.setTextFieldFilter((textField, c) -> c != '\n' && c != '\r');
         field.setFocusTraversal(false);
+        field.getStyle().focusedBackground = field.getStyle().background;
+        field.getStyle().backgroundOver = field.getStyle().background;
     }
 
     private Texture loadTextureIfExists(String path) {
