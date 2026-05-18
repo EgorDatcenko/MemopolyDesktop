@@ -26,6 +26,7 @@ import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 
 public class LobbyScreen extends BaseScreen {
+    private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
     private static final float LOBBY_WINDOW_WIDTH = 1116f;
     private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
@@ -179,8 +180,8 @@ public class LobbyScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(backButton).size(170f, 58f);
-        dialog.getButtonTable().add(cancelButton).size(176f, 58f);
+        dialog.getButtonTable().add(backButton).size(170f, COMMON_BUTTON_HEIGHT);
+        dialog.getButtonTable().add(cancelButton).size(176f, COMMON_BUTTON_HEIGHT);
         dialog.show(stage);
     }
 
