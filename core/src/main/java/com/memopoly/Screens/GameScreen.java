@@ -992,7 +992,7 @@ public class GameScreen extends BaseScreen {
     private void addAuctionControls() {
         Table window = (Table) auctionModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(bidField).width(220f).height(58f).padRight(10f);
+        controls.add(bidField).width(220f).height(18f).padRight(10f);
         controls.add(placeBidButton).size(180, 64);
         window.add(controls).left().padTop(16f);
     }
@@ -1000,7 +1000,7 @@ public class GameScreen extends BaseScreen {
     private void addMemeBankControls() {
         Table window = (Table) memeBankModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(memeBankAmountField).width(220f).height(58f).padRight(10f);
+        controls.add(memeBankAmountField).width(220f).height(18f).padRight(10f);
         controls.add(memeBankDepositButton).width(180f).height(46f).row();
         controls.add(memeBankWithdrawButton).width(180f).height(46f).padTop(10f).left();
         controls.add(memeBankSkipButton).width(180f).height(46f).padTop(10f).left();

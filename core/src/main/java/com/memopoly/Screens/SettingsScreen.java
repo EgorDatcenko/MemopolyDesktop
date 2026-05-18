@@ -46,24 +46,24 @@ public class SettingsScreen extends BaseScreen {
     private final VisLabel musicValueLabel;
     private final VisLabel sfxValueLabel;
     private final VisLabel statusLabel;
+    private final Language language;
 
     public SettingsScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
-        Language language = game.getLanguageManager().getLanguage();
+        language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
-        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
-        backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, oppositeLanguage));
-        applyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(APPLY_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        applyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(APPLY_BUTTON_TEXTURE_PATH, language));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         preferences = game.getSettingsPreferences();
         musicSlider = new VisSlider(0f, 1f, 0.01f, false);
         sfxSlider = new VisSlider(0f, 1f, 0.01f, false);
-        fullscreenCheckBox = new CheckBox(" Полноэкранный режим", VisUI.getSkin());
-        russianLanguageCheckBox = new CheckBox(" Русский язык", VisUI.getSkin());
+        fullscreenCheckBox = new CheckBox(" " + t("fullscreen"), VisUI.getSkin());
+        russianLanguageCheckBox = new CheckBox(" " + t("russian"), VisUI.getSkin());
         musicValueLabel = new VisLabel();
         sfxValueLabel = new VisLabel();
-        statusLabel = new VisLabel("Изменения сохраняются после нажатия \"Применить\"");
+        statusLabel = new VisLabel(t("status_hint"));
 
         Gdx.input.setInputProcessor(stage);
         createUi();
@@ -85,12 +85,12 @@ public class SettingsScreen extends BaseScreen {
         panel.top().left();
         panel.defaults().left().padBottom(16f);
 
-        VisLabel titleLabel = new VisLabel("Настройки");
+        VisLabel titleLabel = new VisLabel(t("settings"));
         titleLabel.setFontScale(1.8f);
         titleLabel.setColor(TITLE_COLOR);
 
-        VisLabel musicLabel = new VisLabel("Музыка");
-        VisLabel sfxLabel = new VisLabel("Эффекты");
+        VisLabel musicLabel = new VisLabel(t("music"));
+        VisLabel sfxLabel = new VisLabel(t("effects"));
         musicValueLabel.setColor(Color.WHITE);
         sfxValueLabel.setColor(Color.WHITE);
         statusLabel.setColor(new Color(0.94f, 0.91f, 0.76f, 1f));
@@ -179,7 +179,7 @@ public class SettingsScreen extends BaseScreen {
         preferences.flush();
 
         game.applySettings(musicVolume, sfxVolume, fullscreen);
-        statusLabel.setText("Настройки сохранены");
+        statusLabel.setText(t("saved"));
         game.openSettings();
     }
 
@@ -233,5 +233,19 @@ public class SettingsScreen extends BaseScreen {
         applyButtonTexture.dispose();
         lobbyWindowTexture.dispose();
         stage.dispose();
+    }
+
+    private String t(String key) {
+        boolean ru = language == Language.RU;
+        return switch (key) {
+            case "fullscreen" -> ru ? "Полноэкранный режим" : "Fullscreen mode";
+            case "russian" -> ru ? "Русский язык" : "Russian language";
+            case "status_hint" -> ru ? "Изменения сохраняются после нажатия \"Применить\"" : "Changes are saved after pressing \"Apply\"";
+            case "settings" -> ru ? "Настройки" : "Settings";
+            case "music" -> ru ? "Музыка" : "Music";
+            case "effects" -> ru ? "Эффекты" : "Effects";
+            case "saved" -> ru ? "Настройки сохранены" : "Settings saved";
+            default -> key;
+        };
     }
 }

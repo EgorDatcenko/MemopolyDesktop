@@ -24,7 +24,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.badlogic.gdx.utils.Array;
-import com.kotcrab.vis.ui.widget.file.FileChooserListener;
+import com.badlogic.gdx.utils.Vector2;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
 import com.memopoly.modding.DeckRepository;
@@ -48,9 +48,9 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
     private static final String COPY_CODE_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
-    private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
+    private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
-    private static final float NOTIFICATION_DIALOG_SCALE = 0.5f;
+    private static final float MENU_DIALOG_SCALE = 0.88f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
@@ -68,7 +68,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture cancelButtonTexture;
     private final Texture copyCodeButtonTexture;
     private final Texture changeLanguageButtonTexture;
-    private final Texture notificationWindowTexture;
+    private final Texture lobbyWindowTexture;
     private final Texture inputTexture;
     private final Texture createDeckButtonTexture;
     private final Texture closeDialogButtonTexture;
@@ -94,12 +94,12 @@ public class MainMenuScreen extends BaseScreen {
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
-        notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
+        lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
-        createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, oppositeLanguage));
-        closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, oppositeLanguage));
-        englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, oppositeLanguage));
-        russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, oppositeLanguage));
+        createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
+        closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
+        russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
         Gdx.input.setInputProcessor(stage);
 
         createUI();
@@ -204,7 +204,7 @@ public class MainMenuScreen extends BaseScreen {
                 super.hide();
             }
         };
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         Table decksTable = new Table();
         Array<MemeDeck> decks = deckRepository.loadDecks();
         if (decks.isEmpty()) {
@@ -258,7 +258,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showCreateDeckDialog() {
         Dialog dialog = new Dialog(t("create_deck"), VisUI.getSkin());
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         VisTextField deckName = new VisTextField();
         deckName.setMessageText(t("deck_name"));
         Array<String> selectedFiles = new Array<>();
@@ -279,8 +279,7 @@ public class MainMenuScreen extends BaseScreen {
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
-
-                        filesCount.setText("Файлов: " + selectedFiles.size);
+                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
                     }
 
                     @Override
@@ -338,7 +337,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         dialog.getContentTable().add(new VisLabel(t("create_game"))).center().padTop(6f).padBottom(4f).row();
         dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).padBottom(8f);
         dialog.row();
@@ -413,7 +412,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        applyDialogTexture(dialog, notificationWindowTexture, NOTIFICATION_DIALOG_SCALE);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         dialog.getContentTable().add(new VisLabel(t("connect"))).center().padTop(6f).padBottom(4f).row();
         dialog.getContentTable().add(statusLabel).padBottom(8f);
         dialog.row();
@@ -461,7 +460,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showErrorDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         dialog.text(message == null || message.isBlank() ? t("unknown_error") : message);
         dialog.button("OK", true);
         showDialog(dialog);
@@ -469,7 +468,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showInfoDialog(String title, String message) {
         Dialog dialog = new Dialog(title, VisUI.getSkin());
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         dialog.text(message);
         dialog.button("OK", true);
         showDialog(dialog);
@@ -478,7 +477,7 @@ public class MainMenuScreen extends BaseScreen {
     private void showRoomCodeDialog(String roomCode) {
         Dialog dialog = new Dialog(t("room_created"), VisUI.getSkin());
 
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         VisLabel titleLabel = new VisLabel(t("your_room_code") + ":");
         VisTextField codeField = new VisTextField(roomCode);
         codeField.setDisabled(true);
@@ -518,7 +517,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         };
 
-        applyDialogTexture(notification, notificationWindowTexture);
+        applyDialogTexture(notification, lobbyWindowTexture, MENU_DIALOG_SCALE);
         notification.getContentTable().add(new VisLabel(t("code_copied"))).pad(20);
         notification.button("OK", true);
         showDialog(notification);
@@ -556,7 +555,7 @@ public class MainMenuScreen extends BaseScreen {
     private void showLanguageDialog() {
         Dialog dialog = new Dialog(t("select_language"), VisUI.getSkin());
 
-        applyDialogTexture(dialog, notificationWindowTexture);
+        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         ImageButton english = createImageButton(englishButtonTexture);
         ImageButton russian = createImageButton(russianButtonTexture);
 
@@ -612,6 +611,7 @@ public class MainMenuScreen extends BaseScreen {
         style.focusedBackground = inputBg;
         style.disabledBackground = inputBg;
         field.setStyle(style);
+        field.setHeight(16f);
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -701,7 +701,7 @@ public class MainMenuScreen extends BaseScreen {
         connectDialogButtonTexture.dispose();
         cancelButtonTexture.dispose();
         copyCodeButtonTexture.dispose();
-        notificationWindowTexture.dispose();
+        lobbyWindowTexture.dispose();
         inputTexture.dispose();
         createDeckButtonTexture.dispose();
         closeDialogButtonTexture.dispose();

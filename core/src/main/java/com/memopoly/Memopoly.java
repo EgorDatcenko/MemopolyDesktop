@@ -264,7 +264,7 @@ public class Memopoly extends Game implements NetworkListener {
     private void applyPixelFontFiltering(BitmapFont font) {
         font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         font.setUseIntegerPositions(true);
-        font.getData().setScale(0.65f);
+        font.getData().setScale(0.7f);
     }
 
     private BitmapFont tryLoadBitmapFont(String fontPath) {
@@ -296,7 +296,7 @@ public class Memopoly extends Game implements NetworkListener {
         try {
             generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            param.size = 18;
+            param.size = 20;
             param.minFilter = Texture.TextureFilter.Nearest;
             param.magFilter = Texture.TextureFilter.Nearest;
             param.mono = true;
