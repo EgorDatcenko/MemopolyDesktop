@@ -83,7 +83,7 @@ public class SettingsScreen extends BaseScreen {
 
         Table panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
-        panel.pad(26f, 30f, 26f, 30f);
+        panel.pad(35f, 35f, 26f, 30f);
         panel.top().left();
         panel.defaults().left().padBottom(16f);
 

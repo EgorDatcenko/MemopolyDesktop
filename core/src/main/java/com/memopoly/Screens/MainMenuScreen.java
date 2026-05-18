@@ -6,6 +6,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -51,7 +52,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
-    private static final float MENU_DIALOG_SCALE = 0.88f;
+    private static final float MENU_DIALOG_SCALE = 0.4f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
@@ -88,6 +89,7 @@ public class MainMenuScreen extends BaseScreen {
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
         decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
@@ -274,6 +276,7 @@ public class MainMenuScreen extends BaseScreen {
                     @Override
                     public void selected(Array<FileHandle> files) {
                         selectedFiles.clear();
+
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
@@ -336,10 +339,10 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("create_game"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(90f).padRight(230f).row();
-        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(120f).padRight(120f).row();
+        dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
+        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(120f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
@@ -414,15 +417,16 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("connect"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(60f).padRight(230f).row();
+        dialog.getContentTable().add(title).left().padBottom(70f).padLeft(70f).row();
         dialog.getContentTable().add(statusLabel).left().padBottom(24f).padRight(150f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(40f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f).padLeft(80f);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(40f);
+        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(10f).padRight(80f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
+
         ImageButton connectActionButton = createImageButton(connectDialogButtonTexture);
         connectActionButton.addListener(new ChangeListener() {
             @Override
