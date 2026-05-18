@@ -23,7 +23,7 @@ import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
 
 public class SettingsScreen extends BaseScreen {
-    private static final float SETTINGS_WINDOW_SCALE = 0.82f;
+    private static final float SETTINGS_WINDOW_SCALE = 0.5f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
@@ -82,7 +82,7 @@ public class SettingsScreen extends BaseScreen {
 
         Table panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
-        panel.pad(26f, 30f, 26f, 30f);
+        panel.pad(35f, 35f, 26f, 30f);
         panel.top().left();
         panel.defaults().left().padBottom(16f);
 

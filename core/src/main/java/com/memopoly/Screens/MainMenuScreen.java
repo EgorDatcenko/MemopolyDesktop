@@ -26,7 +26,6 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Vector2;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
 import com.memopoly.modding.DeckRepository;
@@ -52,7 +51,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
-    private static final float MENU_DIALOG_SCALE = 0.88f;
+    private static final float MENU_DIALOG_SCALE = 0.4f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
@@ -339,10 +338,10 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("create_game"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(90f).padRight(230f).row();
-        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(120f).padRight(120f).row();
+        dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
+        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(120f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
@@ -417,15 +416,16 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("connect"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(60f).padRight(230f).row();
+        dialog.getContentTable().add(title).left().padBottom(70f).padLeft(70f).row();
         dialog.getContentTable().add(statusLabel).left().padBottom(24f).padRight(150f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(40f);
+        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f).padLeft(80f);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(40f);
+        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(10f).padRight(80f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
+
         ImageButton connectActionButton = createImageButton(connectDialogButtonTexture);
         connectActionButton.addListener(new ChangeListener() {
             @Override
