@@ -31,6 +31,7 @@ import com.memopoly.network.packets.RollDiceRequest;
 import java.util.List;
 
 public class GameScreen extends BaseScreen {
+    private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float WORLD_WIDTH = 1920f;
     private static final float WORLD_HEIGHT = 1080f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
@@ -42,7 +43,7 @@ public class GameScreen extends BaseScreen {
     private static final String DICE_BUTTON_TEXTURE_PATH = "button_dice.png";
     private static final String MONEY_TEXTURE_PATH = "money.png";
     private static final String BUY_BUTTON_TEXTURE_PATH = "buy_btn.png";
-    private static final String PASS_BUTTON_TEXTURE_PATH = "pass_btn.png";
+    private static final String PASS_BUTTON_TEXTURE_PATH = "auction_btn.png";
     private static final String END_TURN_BUTTON_TEXTURE_PATH = "end_of_turn_btn.png";
     private static final String PLACE_BID_BUTTON_TEXTURE_PATH = "make_a_bet_btn.png";
     private static final String MORTGAGE_BUTTON_TEXTURE_PATH = "mortgage_btn.png";
@@ -52,6 +53,9 @@ public class GameScreen extends BaseScreen {
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
+    private static final float BUY_AND_AUCTION_MODAL_SCALE = 0.50f;
+    private static final float AUCTION_OR_MEME_BANK_MODAL_SCALE = 0.50f;
+    private static final float NOTIFICATION_MODAL_SCALE = 0.50f;
 
     private final Stage stage;
     private final BoardRenderer boardRenderer;
@@ -345,7 +349,7 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        actionsTable.add(endTurnButton).size(126, 48);
+        actionsTable.add(endTurnButton).size(126, COMMON_BUTTON_HEIGHT);
         actionsTable.add().width(120);
         bidField.setMessageText("Ставка");
 
@@ -357,10 +361,10 @@ public class GameScreen extends BaseScreen {
         root.add(sidePanel).width(416).top().right();
 
 
-        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel);
-        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel);
-        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel);
-        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel);
+        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
+        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel, BUY_AND_AUCTION_MODAL_SCALE, false);
+        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE, false);
+        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE, false);
         setupModalControls();
 
         stage.addActor(root);
@@ -428,8 +432,8 @@ public class GameScreen extends BaseScreen {
         panel.add(battleContentTable).colspan(2).width(700f).row();
 
         Table buttons = new Table();
-        buttons.add(battleYesButton).width(180f).height(52f).padRight(16f);
-        buttons.add(battleNoButton).width(180f).height(52f);
+        buttons.add(battleYesButton).width(180f).height(COMMON_BUTTON_HEIGHT).padRight(16f);
+        buttons.add(battleNoButton).width(180f).height(COMMON_BUTTON_HEIGHT);
         panel.add(buttons).colspan(2).center().padTop(16f);
 
         battleOverlay.add(panel).center();
@@ -470,7 +474,7 @@ public class GameScreen extends BaseScreen {
                             sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0);
                         }
                     });
-                    battleContentTable.add(memeButton).width(200f).height(60f).pad(8f);
+                    battleContentTable.add(memeButton).width(200f).height(COMMON_BUTTON_HEIGHT).pad(8f);
                 }
                 break;
 
@@ -705,7 +709,7 @@ public class GameScreen extends BaseScreen {
                 }
             });
 
-            row.add(actionButton).size(110, 42);
+            row.add(actionButton).size(110, COMMON_BUTTON_HEIGHT);
             ownedCellsTable.add(row).width(340).left().padBottom(8).row();
         }
     }
@@ -951,7 +955,7 @@ public class GameScreen extends BaseScreen {
         memeBankModal.setFillParent(true);
     }
 
-    private void configureModal(Table modal, Texture texture, VisLabel contentLabel) {
+    private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float scale, boolean centerText) {
         modal.setVisible(false);
         modal.center();
         Table window = new Table();
@@ -959,9 +963,17 @@ public class GameScreen extends BaseScreen {
         window.pad(20f);
         window.top().left();
         modal.clearChildren();
+        float modalWidth = texture.getWidth() * scale;
+        float modalHeight = texture.getHeight() * scale;
         contentLabel.setWrap(true);
-        window.add(contentLabel).width(520f).left().top().pad(12f).row();
-        modal.add(window).size(640f, 360f).center();
+        if (centerText) {
+            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+            window.add(contentLabel).width(modalWidth * 0.8f).expand().center().pad(12f).row();
+        } else {
+            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.left);
+            window.add(contentLabel).width(modalWidth * 0.8f).left().top().pad(12f).row();
+        }
+        modal.add(window).size(modalWidth, modalHeight).center();
     }
 
     private void setupModalControls() {
@@ -973,26 +985,26 @@ public class GameScreen extends BaseScreen {
     private void addBuyAuctionControls() {
         Table window = (Table) buyOrAuctionModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(buyButton).size(180, 64).padRight(12f);
-        controls.add(passButton).size(180, 64);
+        controls.add(buyButton).size(180, COMMON_BUTTON_HEIGHT).padRight(12f);
+        controls.add(passButton).size(180, COMMON_BUTTON_HEIGHT);
         window.add(controls).left().padTop(16f);
     }
 
     private void addAuctionControls() {
         Table window = (Table) auctionModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(bidField).width(220f).height(58f).padRight(10f);
-        controls.add(placeBidButton).size(180, 64);
+        controls.add(bidField).width(220f).height(18f).padRight(10f);
+        controls.add(placeBidButton).size(180, COMMON_BUTTON_HEIGHT);
         window.add(controls).left().padTop(16f);
     }
 
     private void addMemeBankControls() {
         Table window = (Table) memeBankModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(memeBankAmountField).width(220f).height(58f).padRight(10f);
-        controls.add(memeBankDepositButton).width(180f).height(46f).row();
-        controls.add(memeBankWithdrawButton).width(180f).height(46f).padTop(10f).left();
-        controls.add(memeBankSkipButton).width(180f).height(46f).padTop(10f).left();
+        controls.add(memeBankAmountField).width(220f).height(18f).padRight(10f);
+        controls.add(memeBankDepositButton).width(180f).height(COMMON_BUTTON_HEIGHT).row();
+        controls.add(memeBankWithdrawButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
+        controls.add(memeBankSkipButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
         window.add(controls).left().padTop(16f);
     }
 
