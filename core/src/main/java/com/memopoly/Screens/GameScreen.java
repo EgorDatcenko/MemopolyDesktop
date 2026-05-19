@@ -709,7 +709,7 @@ public class GameScreen extends BaseScreen {
                 }
             });
 
-            row.add(actionButton).size(110, 42);
+            row.add(actionButton).size(110, COMMON_BUTTON_HEIGHT);
             ownedCellsTable.add(row).width(340).left().padBottom(8).row();
         }
     }

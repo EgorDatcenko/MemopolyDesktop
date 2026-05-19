@@ -146,11 +146,11 @@ public class MainMenuScreen extends BaseScreen {
 
         Table buttonStack = new Table();
         buttonStack.defaults().left().padBottom(18f);
-        buttonStack.add(createButton).size(270f, 80f).row();
-        buttonStack.add(joinButton).size(270f, 80f).row();
-        buttonStack.add(decksButton).size(270f, 80f).row();
-        buttonStack.add(settingsButton).size(270f, 80f).row();
-        buttonStack.add(exitButton).size(270f, 80f);
+        buttonStack.add(createButton).size(270f, COMMON_BUTTON_HEIGHT).row();
+        buttonStack.add(joinButton).size(270f, COMMON_BUTTON_HEIGHT).row();
+        buttonStack.add(decksButton).size(270f, COMMON_BUTTON_HEIGHT).row();
+        buttonStack.add(settingsButton).size(270f, COMMON_BUTTON_HEIGHT).row();
+        buttonStack.add(exitButton).size(270f, COMMON_BUTTON_HEIGHT);
 
         root.add(buttonStack).expand().center().padTop(120f);
         stage.addActor(root);
@@ -194,7 +194,7 @@ public class MainMenuScreen extends BaseScreen {
             }
             previewTextures.clear();
         };
-        Dialog dialog = new Dialog(t("decks"), VisUI.getSkin()) {
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
             private boolean cleanedUp;
 
             @Override
@@ -259,7 +259,7 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showCreateDeckDialog() {
-        Dialog dialog = new Dialog(t("create_deck"), VisUI.getSkin());
+        Dialog dialog = new Dialog("", VisUI.getSkin());
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         VisTextField deckName = new VisTextField();
         deckName.setMessageText(t("deck_name"));
@@ -479,7 +479,7 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showRoomCodeDialog(String roomCode) {
-        Dialog dialog = new Dialog(t("room_created"), VisUI.getSkin());
+        Dialog dialog = new Dialog("", VisUI.getSkin());
 
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         VisLabel titleLabel = new VisLabel(t("your_room_code") + ":");
@@ -557,7 +557,7 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showLanguageDialog() {
-        Dialog dialog = new Dialog(t("select_language"), VisUI.getSkin());
+        Dialog dialog = new Dialog("", VisUI.getSkin());
 
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         ImageButton english = createImageButton(englishButtonTexture);
@@ -620,7 +620,7 @@ public class MainMenuScreen extends BaseScreen {
         style.messageFont = style.font;
         style.messageFontColor = new Color(0.52f, 0.16f, 0.16f, 1f);
         style.fontColor = Color.WHITE;
-        inputBg.setLeftWidth(36f);
+        inputBg.setLeftWidth(28f);
         field.setStyle(style);
         field.setTextFieldFilter((textField, c) -> c != '\n' && c != '\r');
         field.setFocusTraversal(false);
