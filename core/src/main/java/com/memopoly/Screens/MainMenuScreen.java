@@ -10,10 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -39,7 +36,9 @@ import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.AppLog;
 
 public class MainMenuScreen extends BaseScreen {
-    private static final float COMMON_BUTTON_HEIGHT = 64f;
+    private static final float BUTTON_HEIGHT_MENU = 72f;
+    private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
+    private static final float BUTTON_HEIGHT_WINDOW_EN = 72f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CREATE_BUTTON_TEXTURE_PATH = "create_game_btn.png";
@@ -54,7 +53,7 @@ public class MainMenuScreen extends BaseScreen {
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
-    private static final float MENU_DIALOG_SCALE = 0.4f;
+    private static final float MENU_DIALOG_SCALE = 0.5f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
@@ -149,11 +148,11 @@ public class MainMenuScreen extends BaseScreen {
 
         Table buttonStack = new Table();
         buttonStack.defaults().left().padBottom(18f);
-        buttonStack.add(createButton).size(270f, COMMON_BUTTON_HEIGHT).row();
-        buttonStack.add(joinButton).size(270f, COMMON_BUTTON_HEIGHT).row();
-        buttonStack.add(decksButton).size(270f, COMMON_BUTTON_HEIGHT).row();
-        buttonStack.add(settingsButton).size(270f, COMMON_BUTTON_HEIGHT).row();
-        buttonStack.add(exitButton).size(270f, COMMON_BUTTON_HEIGHT);
+        buttonStack.add(createButton).size(270f, BUTTON_HEIGHT_MENU).row();
+        buttonStack.add(joinButton).size(270f, BUTTON_HEIGHT_MENU).row();
+        buttonStack.add(decksButton).size(270f, BUTTON_HEIGHT_MENU).row();
+        buttonStack.add(settingsButton).size(270f, BUTTON_HEIGHT_MENU).row();
+        buttonStack.add(exitButton).size(270f, BUTTON_HEIGHT_MENU);
 
         root.add(buttonStack).expand().center().padTop(120f);
         stage.addActor(root);
@@ -246,6 +245,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         dialog.getButtonTable().add(closeButton).size(220f, 64f).pad(8f);
+        dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
     }
 
@@ -310,6 +310,7 @@ public class MainMenuScreen extends BaseScreen {
         });
         dialog.getButtonTable().add(saveButton).width(150f).pad(8f);
         dialog.button(t("cancel"), true);
+        dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
     }
 
@@ -345,7 +346,7 @@ public class MainMenuScreen extends BaseScreen {
         dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
         dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f);
+        dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
@@ -372,8 +373,8 @@ public class MainMenuScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(createActionButton).size(176f, COMMON_BUTTON_HEIGHT);
-        dialog.getButtonTable().add(cancelActionButton).size(176f, COMMON_BUTTON_HEIGHT);
+        dialog.getButtonTable().add(createActionButton).size(176f, getButtonHeightWindow());
+        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow());
         showDialog(dialog);
     }
 
@@ -423,9 +424,9 @@ public class MainMenuScreen extends BaseScreen {
         dialog.getContentTable().add(title).left().padBottom(70f).padLeft(70f).row();
         dialog.getContentTable().add(statusLabel).left().padBottom(24f).padRight(150f).row();
         dialog.row();
-        dialog.getContentTable().add(nameField).width(280).height(50).padBottom(10f).padLeft(80f);
+        dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f).padLeft(80f);
         dialog.row();
-        dialog.getContentTable().add(codeField).width(280).height(50).padBottom(10f).padRight(80f);
+        dialog.getContentTable().add(codeField).width(322).height(58).padBottom(10f).padRight(80f);
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
@@ -459,8 +460,8 @@ public class MainMenuScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(connectActionButton).size(196f, COMMON_BUTTON_HEIGHT);
-        dialog.getButtonTable().add(cancelActionButton).size(176f, COMMON_BUTTON_HEIGHT);
+        dialog.getButtonTable().add(connectActionButton).size(196f, getButtonHeightWindow());
+        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow());
 
         showDialog(dialog);
     }
@@ -503,7 +504,7 @@ public class MainMenuScreen extends BaseScreen {
         dialog.row();
         dialog.getContentTable().add(codeField).width(220).pad(10);
         dialog.row();
-        dialog.getContentTable().add(copyButton).size(220f, COMMON_BUTTON_HEIGHT).pad(10);
+        dialog.getContentTable().add(copyButton).size(220f, getButtonHeightWindow()).pad(10);
         dialog.getButtonTable().clearChildren();
         ImageButton cancelActionButton = createImageButton(cancelButtonTexture);
         cancelActionButton.addListener(new ChangeListener() {
@@ -512,7 +513,7 @@ public class MainMenuScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(cancelActionButton).size(176f, COMMON_BUTTON_HEIGHT).pad(10f);
+        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow()).pad(10f);
         showDialog(dialog);
     }
 
@@ -584,8 +585,9 @@ public class MainMenuScreen extends BaseScreen {
         });
 
         dialog.getContentTable().add(t("select_game_language")).pad(10).row();
-        dialog.getButtonTable().add(english).size(160f, COMMON_BUTTON_HEIGHT).pad(8f);
-        dialog.getButtonTable().add(russian).size(160f, COMMON_BUTTON_HEIGHT).pad(8f);
+        dialog.getButtonTable().add(english).size(160f, 84f).pad(8f);
+        dialog.getButtonTable().add(russian).size(160f, 84f).pad(8f);
+        dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
     }
 
@@ -620,6 +622,9 @@ public class MainMenuScreen extends BaseScreen {
         style.backgroundOver = inputBg;
         style.focusedBackground = inputBg;
         style.disabledBackground = inputBg;
+
+        style.focusBorder = null;
+
         Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
         style.selection = transparent;
         style.cursor = transparent;
@@ -629,14 +634,12 @@ public class MainMenuScreen extends BaseScreen {
         } else {
             style.messageFont = style.font;
         }
-        style.messageFontColor = new Color(0.52f, 0.16f, 0.16f, 1f);
+        style.messageFontColor = new Color(23f, 23f, 12f, 2f);
         style.fontColor = Color.WHITE;
         inputBg.setLeftWidth(28f);
         field.setStyle(style);
         field.setTextFieldFilter((textField, c) -> c != '\n' && c != '\r');
         field.setFocusTraversal(false);
-        field.getStyle().focusedBackground = field.getStyle().background;
-        field.getStyle().backgroundOver = field.getStyle().background;
     }
 
     private BitmapFont loadInputFont() {
@@ -647,7 +650,7 @@ public class MainMenuScreen extends BaseScreen {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
         try {
             FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 18;
+            parameter.size = 20;
             parameter.minFilter = Texture.TextureFilter.Nearest;
             parameter.magFilter = Texture.TextureFilter.Nearest;
             parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS
@@ -667,6 +670,10 @@ public class MainMenuScreen extends BaseScreen {
             return null;
         }
         return loadTexture(path);
+    }
+
+    private float getButtonHeightWindow() {
+        return language == Language.RU ? BUTTON_HEIGHT_WINDOW_RU : BUTTON_HEIGHT_WINDOW_EN;
     }
 
     private String t(String key) {

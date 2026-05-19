@@ -294,20 +294,6 @@ public class LobbyScreen extends BaseScreen {
         };
     }
 
-    private String t(String key) {
-        boolean ru = language == Language.RU;
-        return switch (key) {
-            case "lobby" -> ru ? "Комната ожидания" : "Lobby";
-            case "room_code" -> ru ? "Код комнаты" : "Room code";
-            case "waiting_players" -> ru ? "Ожидаем игроков..." : "Waiting for players...";
-            case "players" -> ru ? "Игроки" : "Players";
-            case "leave_room" -> ru ? "Выйти из комнаты?" : "Leave room?";
-            case "leave_room_confirm" -> ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
-            case "players_in_room" -> ru ? "Игроков в комнате" : "Players in room";
-            default -> key;
-        };
-    }
-
     @Override
     public void dispose() {
         backgroundTexture.dispose();

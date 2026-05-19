@@ -296,7 +296,7 @@ public class Memopoly extends Game implements NetworkListener {
         try {
             generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            param.size = 20;
+            param.size = fontPath.contains("fonts_EN") ? 22 : 20;
             param.minFilter = Texture.TextureFilter.Nearest;
             param.magFilter = Texture.TextureFilter.Nearest;
             param.mono = true;
