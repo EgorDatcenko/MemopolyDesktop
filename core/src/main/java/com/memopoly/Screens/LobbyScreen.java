@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
@@ -148,7 +149,7 @@ public class LobbyScreen extends BaseScreen {
     }
 
     private void showExitDialog() {
-        Dialog dialog = new Dialog(t("leave_room"), VisUI.getSkin()) {
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (Boolean.TRUE.equals(object)) {
@@ -178,8 +179,14 @@ public class LobbyScreen extends BaseScreen {
         });
         dialog.getButtonTable().add(backButton).size(170f, COMMON_BUTTON_HEIGHT);
         dialog.getButtonTable().add(cancelButton).size(176f, COMMON_BUTTON_HEIGHT);
-        dialog.setSize(lobbyWindowTexture.getWidth() * EXIT_DIALOG_SCALE, lobbyWindowTexture.getHeight() * EXIT_DIALOG_SCALE);
         dialog.show(stage);
+        float dialogWidth = lobbyWindowTexture.getWidth() * EXIT_DIALOG_SCALE;
+        float dialogHeight = lobbyWindowTexture.getHeight() * EXIT_DIALOG_SCALE;
+        dialog.setSize(dialogWidth, dialogHeight);
+        dialog.setPosition(
+            (stage.getWidth() - dialogWidth) * 0.5f,
+            (stage.getHeight() - dialogHeight) * 0.5f
+        );
     }
 
     private void rebuildPlayers(GameState state) {
@@ -267,7 +274,24 @@ public class LobbyScreen extends BaseScreen {
         style.over = transparent;
         style.down = transparent;
         style.disabled = transparent;
-        return new ImageButton(style);
+        ImageButton button = new ImageButton(style);
+        button.getImage().setScaling(Scaling.stretch);
+        button.getImageCell().grow();
+        return button;
+    }
+
+    private String t(String key) {
+        boolean ru = language == Language.RU;
+        return switch (key) {
+            case "lobby" -> ru ? "Комната ожидания" : "Lobby";
+            case "room_code" -> ru ? "Код комнаты" : "Room code";
+            case "waiting_players" -> ru ? "Ожидаем игроков..." : "Waiting for players...";
+            case "players" -> ru ? "Игроки" : "Players";
+            case "leave_room" -> ru ? "Выйти из комнаты?" : "Leave room?";
+            case "leave_room_confirm" -> ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
+            case "players_in_room" -> ru ? "Игроков в комнате" : "Players in room";
+            default -> key;
+        };
     }
 
     private String t(String key) {

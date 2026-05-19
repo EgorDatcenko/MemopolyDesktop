@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
@@ -76,10 +77,6 @@ public class SettingsScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
         root.pad(28f);
-
-        Table shadowPanel = new Table();
-        shadowPanel.setBackground(panel(PANEL_SHADOW));
-        shadowPanel.pad(18f);
 
         Table panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
@@ -151,8 +148,7 @@ public class SettingsScreen extends BaseScreen {
         buttonRow.add(backButton).width(170f).height(COMMON_BUTTON_HEIGHT);
         panel.add(buttonRow).left().padTop(8f);
 
-        shadowPanel.add(panel).size(lobbyWindowTexture.getWidth() * SETTINGS_WINDOW_SCALE, lobbyWindowTexture.getHeight() * SETTINGS_WINDOW_SCALE);
-        root.add(shadowPanel).expand().center();
+        root.add(panel).size(lobbyWindowTexture.getWidth() * SETTINGS_WINDOW_SCALE, lobbyWindowTexture.getHeight() * SETTINGS_WINDOW_SCALE).expand().center();
         stage.addActor(root);
     }
 
@@ -220,7 +216,10 @@ public class SettingsScreen extends BaseScreen {
         style.up = transparent;
         style.over = transparent;
         style.down = transparent;
-        return new ImageButton(style);
+        ImageButton button = new ImageButton(style);
+        button.getImage().setScaling(Scaling.stretch);
+        button.getImageCell().grow();
+        return button;
     }
 
     @Override

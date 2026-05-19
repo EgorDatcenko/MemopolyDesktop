@@ -6,7 +6,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -17,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.math.Vector2;
 import com.kotcrab.vis.ui.VisUI;
@@ -76,6 +78,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture closeDialogButtonTexture;
     private final Texture englishButtonTexture;
     private final Texture russianButtonTexture;
+    private BitmapFont inputFieldFont;
     private final Language language;
     private boolean roomCodeShown;
     private final DeckRepository deckRepository = new DeckRepository();
@@ -609,6 +612,9 @@ public class MainMenuScreen extends BaseScreen {
 
     private void applyInputFieldStyle(VisTextField field) {
         VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
+        if (inputFieldFont == null) {
+            inputFieldFont = loadInputFont();
+        }
         TextureRegionDrawable inputBg = new TextureRegionDrawable(new TextureRegion(inputTexture));
         style.background = inputBg;
         style.backgroundOver = inputBg;
@@ -617,7 +623,12 @@ public class MainMenuScreen extends BaseScreen {
         Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
         style.selection = transparent;
         style.cursor = transparent;
-        style.messageFont = style.font;
+        if (inputFieldFont != null) {
+            style.font = inputFieldFont;
+            style.messageFont = inputFieldFont;
+        } else {
+            style.messageFont = style.font;
+        }
         style.messageFontColor = new Color(0.52f, 0.16f, 0.16f, 1f);
         style.fontColor = Color.WHITE;
         inputBg.setLeftWidth(28f);
@@ -626,6 +637,29 @@ public class MainMenuScreen extends BaseScreen {
         field.setFocusTraversal(false);
         field.getStyle().focusedBackground = field.getStyle().background;
         field.getStyle().backgroundOver = field.getStyle().background;
+    }
+
+    private BitmapFont loadInputFont() {
+        FileHandle file = Gdx.files.internal("fonts_ru/PressStart2P-Regular.ttf");
+        if (!file.exists()) {
+            return null;
+        }
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
+        try {
+            FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.size = 18;
+            parameter.minFilter = Texture.TextureFilter.Nearest;
+            parameter.magFilter = Texture.TextureFilter.Nearest;
+            parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS
+                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+                + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+            BitmapFont font = generator.generateFont(parameter);
+            font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            font.setUseIntegerPositions(true);
+            return font;
+        } finally {
+            generator.dispose();
+        }
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -706,7 +740,10 @@ public class MainMenuScreen extends BaseScreen {
         style.up = transparent;
         style.over = transparent;
         style.down = transparent;
-        return new ImageButton(style);
+        ImageButton button = new ImageButton(style);
+        button.getImage().setScaling(Scaling.stretch);
+        button.getImageCell().grow();
+        return button;
     }
 
     @Override
@@ -726,6 +763,9 @@ public class MainMenuScreen extends BaseScreen {
         closeDialogButtonTexture.dispose();
         englishButtonTexture.dispose();
         russianButtonTexture.dispose();
+        if (inputFieldFont != null) {
+            inputFieldFont.dispose();
+        }
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();
         }
