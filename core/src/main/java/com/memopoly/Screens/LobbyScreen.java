@@ -30,6 +30,7 @@ public class LobbyScreen extends BaseScreen {
     private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
     private static final float LOBBY_WINDOW_WIDTH = 1116f;
     private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
+    private static final float EXIT_DIALOG_SCALE = 0.4f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
@@ -77,10 +78,6 @@ public class LobbyScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
         root.pad(28);
-
-        Table shadowPanel = new Table();
-        shadowPanel.setBackground(panel(PANEL_SHADOW));
-        shadowPanel.pad(18f);
 
         Table panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
@@ -145,8 +142,7 @@ public class LobbyScreen extends BaseScreen {
         buttons.add(backButton).width(170f).height(64f);
         panel.add(buttons).left().padTop(18f);
 
-        shadowPanel.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT);
-        root.add(shadowPanel).center();
+        root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
 
         stage.addActor(root);
     }
@@ -182,6 +178,7 @@ public class LobbyScreen extends BaseScreen {
         });
         dialog.getButtonTable().add(backButton).size(170f, COMMON_BUTTON_HEIGHT);
         dialog.getButtonTable().add(cancelButton).size(176f, COMMON_BUTTON_HEIGHT);
+        dialog.setSize(lobbyWindowTexture.getWidth() * EXIT_DIALOG_SCALE, lobbyWindowTexture.getHeight() * EXIT_DIALOG_SCALE);
         dialog.show(stage);
     }
 
