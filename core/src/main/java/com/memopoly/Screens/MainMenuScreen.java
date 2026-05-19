@@ -92,6 +92,7 @@ public class MainMenuScreen extends BaseScreen {
         connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
         settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
+        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
         decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
         createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
         connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
@@ -278,6 +279,7 @@ public class MainMenuScreen extends BaseScreen {
                     @Override
                     public void selected(Array<FileHandle> files) {
                         selectedFiles.clear();
+
                         for (FileHandle file : files) {
                             selectedFiles.add(file.file().getAbsolutePath());
                         }
