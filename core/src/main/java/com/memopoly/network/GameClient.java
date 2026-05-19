@@ -7,6 +7,7 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.minlog.Log;
 import com.memopoly.game.model.GameState;
 import com.memopoly.network.packets.*;
+import com.memopoly.utils.AppLog;
 
 import java.io.IOException;
 
@@ -37,7 +38,7 @@ public class GameClient {
                 try {
                     client.update(16);
                 } catch (IOException e) {
-                    System.err.println("Ошибка update-клиента: " + e.getMessage());
+                    AppLog.warn("Network", "Ошибка update-клиента: " + e.getMessage());
                 }
             }
         }, "memopoly-client-update");
@@ -53,7 +54,7 @@ public class GameClient {
         client.addListener(new Listener() {
             @Override
             public void connected(Connection connection) {
-                System.out.println("Подключились к серверу! Connection ID: " + connection.getID());
+                AppLog.info("Network", "Подключились к серверу! Connection ID: " + connection.getID());
                 Gdx.app.postRunnable(() ->
                 listener.onConnected()
                 );
@@ -68,7 +69,7 @@ public class GameClient {
 
             @Override
             public void disconnected(Connection connection) {
-                System.out.println("Отключились от сервера");
+                AppLog.info("Network", "Отключились от сервера");
                 Gdx.app.postRunnable(() ->
                 listener.onDisconnected()
                 );
@@ -83,15 +84,15 @@ public class GameClient {
 
     public void connect(String hostIP, int port) {
         if (client.isConnected()) {
-            System.out.println("Клиент уже подключен, новый connect пропущен");
+            AppLog.info("Network", "Клиент уже подключен, новый connect пропущен");
             return;
         }
 
         Thread connectThread = new Thread(() -> {
                 try {
-                    System.out.println("Пытаемся подключиться к " + hostIP + ":" + port);
+                    AppLog.info("Network", "Пытаемся подключиться к " + hostIP + ":" + port);
                     client.connect(15000, hostIP, port);
-                    System.out.println("Подключение к " + hostIP + ":" + port + " завершено");
+                    AppLog.info("Network", "Подключение к " + hostIP + ":" + port + " завершено");
                 } catch (IOException e) {
                     Gdx.app.postRunnable(() ->
                     listener.onConnectionFailed(e.getMessage())
@@ -113,12 +114,12 @@ public class GameClient {
             JoinRoomResponse response = (JoinRoomResponse) packet;
             if (response.success) {
                 localPlayerId = response.playerId;
-                System.out.println("JoinRoomResponse: успех, playerId=" + response.playerId);
+                AppLog.info("Network", "JoinRoomResponse: успех, playerId=" + response.playerId);
                 Gdx.app.postRunnable(() ->
                     listener.onJoinedRoom()
                 );
             } else {
-                System.out.println("JoinRoomResponse: отказ во входе");
+                AppLog.info("Network", "JoinRoomResponse: отказ во входе");
             }
         } else if (packet instanceof GameStatePacket) {
             gameState = ((GameStatePacket) packet).gameState;
@@ -129,6 +130,11 @@ public class GameClient {
             Gdx.app.postRunnable(() ->
             listener.onDiceRolled((RollDiceResponse) packet)
             );
+        } else if (packet instanceof ActionRejectedPacket) {
+            ActionRejectedPacket response = (ActionRejectedPacket) packet;
+            Gdx.app.postRunnable(() ->
+                listener.onActionRejected(response.actionType, response.reasonCode, response.reason)
+            );
         }
     }
 
@@ -138,23 +144,23 @@ public class GameClient {
 
     public void sendJoinRoom(JoinRoomRequest request) {
         if (request == null || request.playerName == null || request.playerName.trim().isEmpty()) {
-            System.out.println("JoinRoomRequest не отправлен: пустое имя игрока");
+            AppLog.warn("Network", "JoinRoomRequest не отправлен: пустое имя игрока");
             return;
         }
 
         if (!client.isConnected()) {
-            System.out.println("JoinRoomRequest не отправлен: клиент не подключен");
+            AppLog.warn("Network", "JoinRoomRequest не отправлен: клиент не подключен");
             return;
         }
 
         request.playerName = request.playerName.trim();
         client.sendTCP(request);
-        System.out.println("JoinRoomRequest отправлен через TCP, playerName=" + request.playerName);
+        AppLog.info("Network", "JoinRoomRequest отправлен через TCP, playerName=" + request.playerName);
     }
 
     public void sendStartGame(StartGameRequest request) {
         if (!client.isConnected()) {
-            System.out.println("StartGameRequest не отправлен: клиент не подключен");
+            AppLog.warn("Network", "StartGameRequest не отправлен: клиент не подключен");
             return;
         }
         client.sendTCP(request);

@@ -10,4 +10,5 @@ public interface NetworkListener {
     void onJoinedRoom();
     void onDisconnected();
     void onConnectionFailed(String reason);
+    void onActionRejected(String actionType, String reasonCode, String reason);
 }

@@ -47,6 +47,15 @@ configure(subprojects) {
   }
   processResources.dependsOn 'generateAssetList'
 
+  configurations.configureEach {
+    resolutionStrategy.force(
+      "com.badlogicgames.gdx:gdx:$gdxVersion",
+      "com.badlogicgames.gdx:gdx-freetype:$gdxVersion",
+      "com.badlogicgames.gdx:gdx-platform:$gdxVersion",
+      "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion"
+    )
+  }
+
   compileJava {
     options.incremental = true
   }
