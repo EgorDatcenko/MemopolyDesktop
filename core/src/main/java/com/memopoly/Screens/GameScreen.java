@@ -234,9 +234,9 @@ public class GameScreen extends BaseScreen {
         diceOverlay.defaults().left();
         Table diceContent = new Table();
         diceContent.left().top();
-        diceContent.add(diceButton).size(150, 84).padLeft(34).padRight(24).top();
-        diceContent.add(diceHintLabel).width(430).top().left().padTop(10).padRight(6);
-        diceOverlay.add(diceContent).left().padTop(54);
+        diceContent.add(diceButton).size(150, 84).padLeft(52).padRight(20).top();
+        diceContent.add(diceHintLabel).width(430).top().left().padTop(18).padRight(6);
+        diceOverlay.add(diceContent).left().padTop(72);
 
         currentCellTitleLabel.setColor(Color.WHITE);
         currentCellTitleLabel.setFontScale(0.92f);
@@ -247,9 +247,9 @@ public class GameScreen extends BaseScreen {
         currentCellOverlay.defaults().left();
         Table currentCellContent = new Table();
         currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(150, 150).padLeft(14).padRight(14).top();
+        currentCellContent.add(currentCellImage).size(138, 138).padLeft(24).padRight(14).top();
         currentCellContent.add(currentCellMetaLabel).width(190).top().left().padTop(8);
-        currentCellOverlay.add(currentCellContent).left().padLeft(12).padTop(18).padBottom(10);
+        currentCellOverlay.add(currentCellContent).left().padLeft(18).padTop(10).padBottom(10);
 
         feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
@@ -257,9 +257,9 @@ public class GameScreen extends BaseScreen {
         feedDescriptionLabel.setFontScale(1.00f);
         feedOverlay.top().left();
         feedOverlay.defaults().left();
-        feedOverlay.add(feedDescriptionLabel).width(250).padLeft(16).padTop(18).row();
+        feedOverlay.add(feedDescriptionLabel).width(246).padLeft(28).padTop(10).row();
         auctionLabel.setFontScale(0.82f);
-        feedOverlay.add(auctionLabel).width(250).padLeft(16).padTop(8);
+        feedOverlay.add(auctionLabel).width(246).padLeft(28).padTop(6);
 
         titleLabel.setColor(TITLE_COLOR);
         titleLabel.setFontScale(1.05f);
@@ -545,7 +545,8 @@ public class GameScreen extends BaseScreen {
         }
 
         battleOverlay.setVisible(true);
-        battleTimerLabel.setText(String.valueOf(state.battleTimerSeconds));
+        int timerValue = state.battleTimerSeconds > 0 ? state.battleTimerSeconds : state.currentAuctionTime;
+        battleTimerLabel.setText(String.valueOf(Math.max(0, timerValue)));
         battleTopicLabel.setText("Тема: " + (state.battleTopic == null ? "—" : state.battleTopic));
 
         int localId = game.getClient().getLocalPlayerId();
@@ -1022,10 +1023,10 @@ public class GameScreen extends BaseScreen {
         window.clearChildren();
         Table details = new Table();
         details.defaults().expandX().center();
-        details.add(buyModalCellImage).size(380f, 380f).center();
+        details.add(buyModalCellImage).size(300f, 300f).left();
         buyAuctionModalLabel.setFontScale(1.25f);
-        details.add().width(24f);
-        details.add(buyAuctionModalLabel).width(300f).center();
+        details.add().width(36f);
+        details.add(buyAuctionModalLabel).width(380f).left();
         window.add(details).expandX().fillX().pad(4f, 18f, 0f, 18f).row();
         Table controls = new Table();
         controls.add().expandX();
