@@ -28,7 +28,9 @@ import com.memopoly.network.packets.BattleResponsePacket;
 import com.memopoly.network.packets.GameActionRequest;
 import com.memopoly.network.packets.RollDiceRequest;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GameScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
@@ -51,6 +53,7 @@ public class GameScreen extends BaseScreen {
     private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
     private static final String BUY_AND_AUCTION_WINDOW_TEXTURE_PATH = "buy_and_auction_window.png";
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
+    private static final String SIDEBAR_WINDOW_TEXTURE_PATH = "sidebar_window.jpg";
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final float BUY_AND_AUCTION_MODAL_SCALE = 0.50f;
@@ -71,6 +74,7 @@ public class GameScreen extends BaseScreen {
     private final Texture notificationWindowTexture;
     private final Texture buyAndAuctionWindowTexture;
     private final Texture auctionOrMemeBankWindowTexture;
+    private final Texture sidebarWindowTexture;
     private final Texture inputTexture;
     private final Texture backgroundTexture;
     private final Texture[] cellTextures;
@@ -88,6 +92,7 @@ public class GameScreen extends BaseScreen {
     private final VisLabel feedTitleLabel;
     private final VisLabel feedDescriptionLabel;
     private final Image currentCellImage;
+    private final Image buyModalCellImage;
     private final Table playersTable;
     private final Table ownedCellsTable;
     private final Table diceOverlay;
@@ -116,6 +121,7 @@ public class GameScreen extends BaseScreen {
     private String lastOwnedCellsSignature = "";
 
     private Table battleOverlay;
+    private Table sidePanelContainer;
     private VisLabel battleTitleLabel;
     private VisLabel battleTimerLabel;
     private VisLabel battleTopicLabel;
@@ -146,6 +152,7 @@ public class GameScreen extends BaseScreen {
         notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
         buyAndAuctionWindowTexture = loadTexture(BUY_AND_AUCTION_WINDOW_TEXTURE_PATH);
         auctionOrMemeBankWindowTexture = loadTexture(AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH);
+        sidebarWindowTexture = loadTextureWithFallback(SIDEBAR_WINDOW_TEXTURE_PATH, "sidebar_window.png");
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         cellTextures = loadCellTextures();
@@ -164,6 +171,8 @@ public class GameScreen extends BaseScreen {
         feedDescriptionLabel = new VisLabel("Последние действия игроков будут собираться здесь.");
         currentCellImage = new Image();
         currentCellImage.setScaling(Scaling.fit);
+        buyModalCellImage = new Image();
+        buyModalCellImage.setScaling(Scaling.fit);
         playersTable = new Table();
         ownedCellsTable = new Table();
         diceOverlay = new Table();
@@ -203,60 +212,61 @@ public class GameScreen extends BaseScreen {
         root.add().expand().fill();
 
         Table sidePanel = new Table();
+        sidePanelContainer = sidePanel;
         sidePanel.top().left();
-        sidePanel.defaults().left().growX().padBottom(8);
-        sidePanel.setBackground(panel(PANEL_SHADOW));
-        sidePanel.pad(14);
+        sidePanel.defaults().left().growX().padBottom(10);
+        sidePanel.setBackground(new TextureRegionDrawable(new TextureRegion(sidebarWindowTexture)));
+        sidePanel.pad(18, 20, 18, 20);
 
         Table sideInner = new Table();
-        sideInner.setBackground(panel(PANEL_COLOR));
-        sideInner.pad(16, 18, 16, 18);
+        sideInner.pad(12, 14, 12, 14);
         sideInner.top().left();
-        sideInner.defaults().left().growX().padBottom(8);
+        sideInner.defaults().left().growX().padBottom(10);
 
         diceTitleLabel.setColor(Color.WHITE);
-        diceTitleLabel.setFontScale(1.4f);
+        diceTitleLabel.setFontScale(0.92f);
         diceHintLabel.setWrap(true);
         diceHintLabel.setColor(Color.WHITE);
-        diceHintLabel.setFontScale(1.65f);
+        diceHintLabel.setFontScale(1.00f);
         diceOverlay.top().left();
         diceOverlay.defaults().left();
         Table diceContent = new Table();
         diceContent.left().top();
-        diceContent.add(diceButton).size(150, 84).padLeft(28).padRight(24).top();
+        diceContent.add(diceButton).size(150, 84).padLeft(34).padRight(24).top();
         diceContent.add(diceHintLabel).width(500).top().left().padTop(12);
         diceOverlay.add(diceContent).left().padTop(54);
 
         currentCellTitleLabel.setColor(Color.WHITE);
-        currentCellTitleLabel.setFontScale(1.4f);
+        currentCellTitleLabel.setFontScale(0.92f);
         currentCellMetaLabel.setWrap(true);
         currentCellMetaLabel.setColor(Color.WHITE);
-        currentCellMetaLabel.setFontScale(1.55f);
+        currentCellMetaLabel.setFontScale(1.00f);
         currentCellOverlay.top().left();
         currentCellOverlay.defaults().left();
         Table currentCellContent = new Table();
         currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(82, 82).padRight(16);
+        currentCellContent.add(currentCellImage).size(190, 190).padRight(16);
         currentCellContent.add(currentCellMetaLabel).width(195).top().left().padTop(6);
         currentCellOverlay.add(currentCellContent).left().padLeft(20).padTop(20).padBottom(10);
 
-        feedTitleLabel.setFontScale(1.4f);
+        feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
         feedDescriptionLabel.setColor(Color.WHITE);
-        feedDescriptionLabel.setFontScale(1.55f);
+        feedDescriptionLabel.setFontScale(1.00f);
         feedOverlay.top().left();
         feedOverlay.defaults().left();
         feedOverlay.add(feedDescriptionLabel).width(275).padLeft(22).padTop(20).row();
-        auctionLabel.setFontScale(1.45f);
+        auctionLabel.setFontScale(0.95f);
         feedOverlay.add(auctionLabel).width(275).padLeft(22).padTop(8);
 
         titleLabel.setColor(TITLE_COLOR);
-        titleLabel.setFontScale(1.35f);
+        titleLabel.setFontScale(1.05f);
         phaseLabel.setColor(TEXT_SOFT);
         turnLabel.setColor(Color.WHITE);
         cellLabel.setColor(Color.WHITE);
         logLabel.setWrap(true);
         logLabel.setColor(Color.WHITE);
+        applyGameScreenLineSpacing();
         auctionLabel.setWrap(true);
         auctionLabel.setColor(Color.WHITE);
         playersTable.top().left();
@@ -281,13 +291,13 @@ public class GameScreen extends BaseScreen {
         sideInner.add(phaseLabel).row();
         sideInner.add(turnLabel).row();
         sideInner.add(cellLabel).row();
-        sideInner.add(logLabel).width(360).padBottom(4).row();
+        sideInner.add(logLabel).width(338).padBottom(8).row();
 
         sideInner.add(playersTitle).padTop(12).row();
-        sideInner.add(playersScroll).width(360).height(170).row();
+        sideInner.add(playersScroll).width(338).height(170).row();
 
         sideInner.add(ownedTitle).padTop(12).row();
-        sideInner.add(ownedScroll).width(360).height(180).row();
+        sideInner.add(ownedScroll).width(338).height(180).row();
 
         Table actionsTable = new Table();
         actionsTable.defaults().padRight(8).padBottom(8);
@@ -352,13 +362,21 @@ public class GameScreen extends BaseScreen {
         actionsTable.add(endTurnButton).size(126, COMMON_BUTTON_HEIGHT);
         actionsTable.add().width(120);
         bidField.setMessageText("Ставка");
+        VisTextButton exitToMenuButton = new VisTextButton("Выйти в меню");
+        exitToMenuButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.leaveRoomToMenu();
+            }
+        });
 
         sideInner.add(actionTitle).padTop(12).row();
         sideInner.add(actionsTable).row();
+        sideInner.add(exitToMenuButton).width(220).padTop(10).row();
         sidePanel.clearChildren();
         sidePanel.add(sideInner).width(388);
 
-        root.add(sidePanel).width(416).top().right();
+        root.add(sidePanel).width(460).top().right();
 
 
         configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
@@ -625,7 +643,9 @@ public class GameScreen extends BaseScreen {
         cellLabel.setText(currentCell == null ? "Клетка: -" : "Клетка: " + currentCell.name + " [" + currentCell.type + "]");
         logLabel.setText("Лог: " + (state.lastActionLog == null ? "-" : state.lastActionLog));
         currentCellMetaLabel.setText(buildCellMeta(currentCell, state));
-        currentCellImage.setDrawable(currentCell == null ? null : new TextureRegionDrawable(new TextureRegion(cellTextures[currentCell.id])));
+        TextureRegionDrawable cellDrawable = currentCell == null ? null : new TextureRegionDrawable(new TextureRegion(cellTextures[currentCell.id]));
+        currentCellImage.setDrawable(cellDrawable);
+        buyModalCellImage.setDrawable(cellDrawable);
         diceHintLabel.setText(buildDiceHint(state, current, localPlayer));
         feedDescriptionLabel.setText(buildFeedDescription(state, current, currentCell, localPlayer));
         turnModalLabel.setText(current == null ? "Ход: -" : "Сейчас ходит: " + current.name);
@@ -775,7 +795,8 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1f);
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         renderBackground();
@@ -816,6 +837,7 @@ public class GameScreen extends BaseScreen {
         notificationWindowTexture.dispose();
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
+        sidebarWindowTexture.dispose();
         inputTexture.dispose();
         backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
@@ -905,6 +927,10 @@ public class GameScreen extends BaseScreen {
         return texture;
     }
 
+    private Texture loadTextureWithFallback(String primaryPath, String fallbackPath) {
+        return Gdx.files.internal(primaryPath).exists() ? loadTexture(primaryPath) : loadTexture(fallbackPath);
+    }
+
     private ImageButton createActionButton(Texture texture) {
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
@@ -944,10 +970,14 @@ public class GameScreen extends BaseScreen {
         com.badlogic.gdx.math.Rectangle diceBounds = boardRenderer.getDicePanelBounds();
         com.badlogic.gdx.math.Rectangle currentBounds = boardRenderer.getCurrentCellPanelBounds();
         com.badlogic.gdx.math.Rectangle feedBounds = boardRenderer.getFeedPanelBounds();
+        com.badlogic.gdx.math.Rectangle boardBounds = boardRenderer.getBoardBounds();
 
         diceOverlay.setBounds(diceBounds.x, diceBounds.y, diceBounds.width, diceBounds.height);
         currentCellOverlay.setBounds(currentBounds.x, currentBounds.y, currentBounds.width, currentBounds.height);
         feedOverlay.setBounds(feedBounds.x, feedBounds.y, feedBounds.width, feedBounds.height);
+        if (sidePanelContainer != null) {
+            sidePanelContainer.setHeight(boardBounds.height);
+        }
 
         turnNotificationModal.setFillParent(true);
         buyOrAuctionModal.setFillParent(true);
@@ -984,10 +1014,38 @@ public class GameScreen extends BaseScreen {
 
     private void addBuyAuctionControls() {
         Table window = (Table) buyOrAuctionModal.getCells().first().getActor();
+        window.clearChildren();
+        Table details = new Table();
+        details.defaults().expandX().center();
+        details.add(buyModalCellImage).size(380f, 380f).center();
+        buyAuctionModalLabel.setFontScale(1.25f);
+        details.add(buyAuctionModalLabel).width(340f).center();
+        window.add(details).expandX().fillX().pad(4f, 24f, 0f, 24f).row();
         Table controls = new Table();
-        controls.add(buyButton).size(180, COMMON_BUTTON_HEIGHT).padRight(12f);
-        controls.add(passButton).size(180, COMMON_BUTTON_HEIGHT);
-        window.add(controls).left().padTop(16f);
+        controls.add().expandX();
+        controls.add(buyButton).size(180, COMMON_BUTTON_HEIGHT).padRight(24f);
+        controls.add(passButton).size(180, COMMON_BUTTON_HEIGHT).padLeft(24f);
+        controls.add().expandX();
+        window.add(controls).expandX().fillX().padTop(22f);
+    }
+
+    private void applyGameScreenLineSpacing() {
+        Set<com.badlogic.gdx.graphics.g2d.BitmapFont> fonts = new HashSet<>();
+        fonts.add(titleLabel.getStyle().font);
+        fonts.add(phaseLabel.getStyle().font);
+        fonts.add(turnLabel.getStyle().font);
+        fonts.add(cellLabel.getStyle().font);
+        fonts.add(logLabel.getStyle().font);
+        fonts.add(diceTitleLabel.getStyle().font);
+        fonts.add(diceHintLabel.getStyle().font);
+        fonts.add(currentCellMetaLabel.getStyle().font);
+        fonts.add(feedDescriptionLabel.getStyle().font);
+        fonts.add(buyAuctionModalLabel.getStyle().font);
+        for (com.badlogic.gdx.graphics.g2d.BitmapFont font : fonts) {
+            if (font != null) {
+                font.getData().setLineHeight(font.getCapHeight() * 1.55f);
+            }
+        }
     }
 
     private void addAuctionControls() {
