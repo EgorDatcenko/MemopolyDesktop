@@ -20,6 +20,7 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
+import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
 
 public class SettingsScreen extends BaseScreen {
@@ -94,13 +95,13 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-        updateValueLabels();
+                updateValueLabels();
             }
         });
         sfxSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-        updateValueLabels();
+                updateValueLabels();
             }
         });
 
@@ -229,7 +230,7 @@ public class SettingsScreen extends BaseScreen {
     }
 
     private String t(String key) {
-        boolean ru = language == Language.RU;
+        boolean ru = language == LanguageManager.Language.RU;
         return switch (key) {
             case "fullscreen" -> ru ? "Полноэкранный режим" : "Fullscreen mode";
             case "status_hint" -> ru ? "Изменения сохраняются после нажатия \"Применить\"" : "Changes are saved after pressing \"Apply\"";
