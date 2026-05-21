@@ -229,7 +229,7 @@ public class SettingsScreen extends BaseScreen {
     }
 
     private String t(String key) {
-        boolean ru = language == Language.RU;
+        boolean ru = language == LanguageManager.Language.RU;
         return switch (key) {
             case "fullscreen" -> ru ? "Полноэкранный режим" : "Fullscreen mode";
             case "status_hint" -> ru ? "Изменения сохраняются после нажатия \"Применить\"" : "Changes are saved after pressing \"Apply\"";
