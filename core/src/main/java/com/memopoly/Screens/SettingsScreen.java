@@ -20,7 +20,6 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
-import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
 
 public class SettingsScreen extends BaseScreen {
@@ -95,13 +94,13 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                updateValueLabels();
+        updateValueLabels();
             }
         });
         sfxSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                updateValueLabels();
+        updateValueLabels();
             }
         });
 
