@@ -122,6 +122,7 @@ public class GameScreen extends BaseScreen {
 
     private Table battleOverlay;
     private Table sidePanelContainer;
+    private Table sideRoot;
     private VisLabel battleTitleLabel;
     private VisLabel battleTimerLabel;
     private VisLabel battleTopicLabel;
@@ -207,6 +208,7 @@ public class GameScreen extends BaseScreen {
 
     private void createUi() {
         Table root = new Table();
+        sideRoot = root;
         root.setFillParent(true);
         root.pad(18);
         root.add().expand().fill();
@@ -233,7 +235,7 @@ public class GameScreen extends BaseScreen {
         Table diceContent = new Table();
         diceContent.left().top();
         diceContent.add(diceButton).size(150, 84).padLeft(34).padRight(24).top();
-        diceContent.add(diceHintLabel).width(500).top().left().padTop(12);
+        diceContent.add(diceHintLabel).width(430).top().left().padTop(10).padRight(6);
         diceOverlay.add(diceContent).left().padTop(54);
 
         currentCellTitleLabel.setColor(Color.WHITE);
@@ -245,9 +247,9 @@ public class GameScreen extends BaseScreen {
         currentCellOverlay.defaults().left();
         Table currentCellContent = new Table();
         currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(190, 190).padRight(16);
-        currentCellContent.add(currentCellMetaLabel).width(195).top().left().padTop(6);
-        currentCellOverlay.add(currentCellContent).left().padLeft(20).padTop(20).padBottom(10);
+        currentCellContent.add(currentCellImage).size(150, 150).padLeft(14).padRight(14).top();
+        currentCellContent.add(currentCellMetaLabel).width(190).top().left().padTop(8);
+        currentCellOverlay.add(currentCellContent).left().padLeft(12).padTop(18).padBottom(10);
 
         feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
@@ -255,9 +257,9 @@ public class GameScreen extends BaseScreen {
         feedDescriptionLabel.setFontScale(1.00f);
         feedOverlay.top().left();
         feedOverlay.defaults().left();
-        feedOverlay.add(feedDescriptionLabel).width(275).padLeft(22).padTop(20).row();
-        auctionLabel.setFontScale(0.95f);
-        feedOverlay.add(auctionLabel).width(275).padLeft(22).padTop(8);
+        feedOverlay.add(feedDescriptionLabel).width(250).padLeft(16).padTop(18).row();
+        auctionLabel.setFontScale(0.82f);
+        feedOverlay.add(auctionLabel).width(250).padLeft(16).padTop(8);
 
         titleLabel.setColor(TITLE_COLOR);
         titleLabel.setFontScale(1.05f);
@@ -374,9 +376,8 @@ public class GameScreen extends BaseScreen {
         sideInner.add(actionsTable).row();
         sideInner.add(exitToMenuButton).width(220).padTop(10).row();
         sidePanel.clearChildren();
-        sidePanel.add(sideInner).width(388);
-
-        root.add(sidePanel).width(460).top().right();
+        sidePanel.add(sideInner).width(350);
+        root.add(sidePanel).width(380).top().right();
 
 
         configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
@@ -820,6 +821,9 @@ public class GameScreen extends BaseScreen {
     public void resize(int width, int height) {
         boardRenderer.resize(width, height);
         stage.getViewport().update(width, height, true);
+        if (sideRoot != null) {
+            sideRoot.invalidateHierarchy();
+        }
         layoutBoardOverlays();
     }
 
@@ -977,6 +981,7 @@ public class GameScreen extends BaseScreen {
         feedOverlay.setBounds(feedBounds.x, feedBounds.y, feedBounds.width, feedBounds.height);
         if (sidePanelContainer != null) {
             sidePanelContainer.setHeight(boardBounds.height);
+            sidePanelContainer.setY(boardBounds.y);
         }
 
         turnNotificationModal.setFillParent(true);
@@ -1019,14 +1024,15 @@ public class GameScreen extends BaseScreen {
         details.defaults().expandX().center();
         details.add(buyModalCellImage).size(380f, 380f).center();
         buyAuctionModalLabel.setFontScale(1.25f);
-        details.add(buyAuctionModalLabel).width(340f).center();
-        window.add(details).expandX().fillX().pad(4f, 24f, 0f, 24f).row();
+        details.add().width(24f);
+        details.add(buyAuctionModalLabel).width(300f).center();
+        window.add(details).expandX().fillX().pad(4f, 18f, 0f, 18f).row();
         Table controls = new Table();
         controls.add().expandX();
         controls.add(buyButton).size(180, COMMON_BUTTON_HEIGHT).padRight(24f);
         controls.add(passButton).size(180, COMMON_BUTTON_HEIGHT).padLeft(24f);
         controls.add().expandX();
-        window.add(controls).expandX().fillX().padTop(22f);
+        window.add(controls).expandX().fillX().padTop(10f).padBottom(4f);
     }
 
     private void applyGameScreenLineSpacing() {
