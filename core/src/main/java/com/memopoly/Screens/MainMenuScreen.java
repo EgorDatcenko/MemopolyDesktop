@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -78,9 +79,11 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture englishButtonTexture;
     private final Texture russianButtonTexture;
     private BitmapFont inputFieldFont;
+    private BitmapFont inputPlaceholderFont;
     private final Language language;
     private boolean roomCodeShown;
     private final DeckRepository deckRepository = new DeckRepository();
+    private final Array<Dialog> openDialogs = new Array<>();
 
     public MainMenuScreen(Memopoly game) {
         super(game);
@@ -275,6 +278,7 @@ public class MainMenuScreen extends BaseScreen {
                 FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
                 chooser.setMultiSelectionEnabled(true);
                 chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
+                chooser.setModal(false);
                 chooser.setListener(new FileChooserListener() {
                     @Override
                     public void selected(Array<FileHandle> files) {
@@ -288,7 +292,12 @@ public class MainMenuScreen extends BaseScreen {
                     @Override
                     public void canceled() {}
                 });
-                stage.addActor(chooser.fadeIn());
+                chooser.fadeIn();
+                stage.addActor(chooser);
+                chooser.setPosition(
+                    (stage.getWidth() - chooser.getWidth()) * 0.5f,
+                    (stage.getHeight() - chooser.getHeight()) * 0.5f
+                );
             }
         });
         dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
@@ -343,7 +352,7 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("create_game"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
+        dialog.getContentTable().add(title).left().padBottom(100f).padRight(290f).padTop(-8f).row();
         dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
         dialog.row();
         dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f);
@@ -584,10 +593,11 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        dialog.getContentTable().add(t("select_game_language")).pad(10).row();
-        dialog.getButtonTable().add(english).size(160f, 84f).pad(8f);
-        dialog.getButtonTable().add(russian).size(160f, 84f).pad(8f);
-        dialog.getButtonTable().padBottom(20f);
+        dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(42f).padBottom(20f).row();
+        Table languageButtons = new Table();
+        languageButtons.add(english).size(160f, 84f).pad(8f);
+        languageButtons.add(russian).size(160f, 84f).pad(8f);
+        dialog.getContentTable().add(languageButtons).expand().center().padBottom(20f).row();
         showDialog(dialog);
     }
 
@@ -602,13 +612,33 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showDialog(Dialog dialog) {
         dialog.show(stage);
+        if (!openDialogs.contains(dialog, true)) {
+            openDialogs.add(dialog);
+        }
+        centerDialog(dialog);
+    }
+
+    private void centerDialog(Dialog dialog) {
         Object userObject = dialog.getUserObject();
         if (userObject instanceof Vector2 size) {
             dialog.setSize(size.x, size.y);
-            dialog.setPosition(
-                (stage.getWidth() - size.x) * 0.5f,
-                (stage.getHeight() - size.y) * 0.5f
-            );
+        } else if (dialog instanceof Layout layout) {
+            dialog.setSize(layout.getPrefWidth(), layout.getPrefHeight());
+        }
+        dialog.setPosition(
+            (stage.getWidth() - dialog.getWidth()) * 0.5f,
+            (stage.getHeight() - dialog.getHeight()) * 0.5f
+        );
+    }
+
+    private void recenterOpenDialogs() {
+        for (int i = openDialogs.size - 1; i >= 0; i--) {
+            Dialog dialog = openDialogs.get(i);
+            if (dialog.getStage() != stage) {
+                openDialogs.removeIndex(i);
+            } else {
+                centerDialog(dialog);
+            }
         }
     }
 
@@ -630,7 +660,7 @@ public class MainMenuScreen extends BaseScreen {
         style.cursor = transparent;
         if (inputFieldFont != null) {
             style.font = inputFieldFont;
-            style.messageFont = inputFieldFont;
+            style.messageFont = inputPlaceholderFont != null ? inputPlaceholderFont : inputFieldFont;
         } else {
             style.messageFont = style.font;
         }
@@ -650,7 +680,7 @@ public class MainMenuScreen extends BaseScreen {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
         try {
             FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 20;
+            parameter.size = 18;
             parameter.minFilter = Texture.TextureFilter.Nearest;
             parameter.magFilter = Texture.TextureFilter.Nearest;
             parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS
@@ -659,6 +689,13 @@ public class MainMenuScreen extends BaseScreen {
             BitmapFont font = generator.generateFont(parameter);
             font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             font.setUseIntegerPositions(true);
+            if (inputPlaceholderFont != null) {
+                inputPlaceholderFont.dispose();
+            }
+            parameter.size = 16;
+            inputPlaceholderFont = generator.generateFont(parameter);
+            inputPlaceholderFont.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            inputPlaceholderFont.setUseIntegerPositions(true);
             return font;
         } finally {
             generator.dispose();
@@ -713,6 +750,7 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        recenterOpenDialogs();
     }
 
     @Override
@@ -772,6 +810,9 @@ public class MainMenuScreen extends BaseScreen {
         russianButtonTexture.dispose();
         if (inputFieldFont != null) {
             inputFieldFont.dispose();
+        }
+        if (inputPlaceholderFont != null) {
+            inputPlaceholderFont.dispose();
         }
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();
