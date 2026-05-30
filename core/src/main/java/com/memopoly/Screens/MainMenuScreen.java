@@ -622,7 +622,8 @@ public class MainMenuScreen extends BaseScreen {
         Object userObject = dialog.getUserObject();
         if (userObject instanceof Vector2 size) {
             dialog.setSize(size.x, size.y);
-        } else if (dialog instanceof Layout layout) {
+        } else {
+            Layout layout = dialog;
             dialog.setSize(layout.getPrefWidth(), layout.getPrefHeight());
         }
         dialog.setPosition(

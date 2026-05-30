@@ -136,6 +136,7 @@ public class GameScreen extends BaseScreen {
     private Table battleContentTable;
     private VisTextButton battleYesButton;
     private VisTextButton battleNoButton;
+    private ChatWidget chatWidget;
 
     private enum BattleContentMode {
         INVITE, MEME_SELECTION, WAITING, VOTING, RESULTS
@@ -402,6 +403,12 @@ public class GameScreen extends BaseScreen {
         stage.addActor(buyOrAuctionModal);
         stage.addActor(auctionModal);
         stage.addActor(memeBankModal);
+
+        Table chatRoot = new Table();
+        chatRoot.setFillParent(true);
+        chatWidget = new ChatWidget(game);
+        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        stage.addActor(chatRoot);
         layoutBoardOverlays();
     }
 
@@ -824,6 +831,9 @@ public class GameScreen extends BaseScreen {
         boardRenderer.render(boardCells, state);
         refreshUi(state);
 
+        if (chatWidget != null) {
+            chatWidget.refresh();
+        }
         stage.act(delta);
         stage.draw();
     }
