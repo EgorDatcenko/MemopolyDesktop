@@ -20,9 +20,14 @@ import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
+import com.memopoly.network.packets.ChatMessage;
 import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
@@ -39,6 +44,7 @@ public class Memopoly extends Game implements NetworkListener {
     private boolean lobbyOpened;
     private LanguageManager languageManager;
     private BitmapFont localizedUiFont;
+    private final List<ChatMessage> chatMessages = new ArrayList<>();
 
     @Override
     public void create() {
@@ -95,6 +101,27 @@ public class Memopoly extends Game implements NetworkListener {
     @Override
     public void onActionRejected(String actionType, String reasonCode, String reason) {
         AppLog.warn("Network", "Action rejected: " + actionType + " | " + reasonCode + " | " + reason);
+    }
+
+    @Override
+    public void onChatMessage(ChatMessage message) {
+        if (message == null) {
+            return;
+        }
+        chatMessages.add(message);
+        if (chatMessages.size() > 100) {
+            chatMessages.remove(0);
+        }
+    }
+
+    public List<ChatMessage> getChatMessages() {
+        return Collections.unmodifiableList(chatMessages);
+    }
+
+    public void sendChatMessage(String text) {
+        if (gameClient != null) {
+            gameClient.sendChatMessage(text);
+        }
     }
 
     @Override
@@ -155,6 +182,7 @@ public class Memopoly extends Game implements NetworkListener {
         languageManager = new LanguageManager(getSettingsPreferences());
 
         latestGameState = null;
+        chatMessages.clear();
         isHost = false;
         lobbyOpened = false;
         openMenu();
@@ -164,6 +192,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = true;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameServer = new GameServer();
     }
 
@@ -176,6 +205,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = false;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameClient.connectAndJoin(ip, port, playerName);
     }
 

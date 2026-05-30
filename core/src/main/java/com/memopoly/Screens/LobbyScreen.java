@@ -57,6 +57,7 @@ public class LobbyScreen extends BaseScreen {
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
+    private ChatWidget chatWidget;
     private int lastPlayersCount = -1;
     private boolean gameStarted = false;
     private final Language language;
@@ -148,6 +149,12 @@ public class LobbyScreen extends BaseScreen {
         root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
 
         stage.addActor(root);
+
+        Table chatRoot = new Table();
+        chatRoot.setFillParent(true);
+        chatWidget = new ChatWidget(game);
+        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        stage.addActor(chatRoot);
     }
 
     private void showExitDialog() {
@@ -241,6 +248,9 @@ public class LobbyScreen extends BaseScreen {
             startButton.setDisabled(count < 2);
         }
 
+        if (chatWidget != null) {
+            chatWidget.refresh();
+        }
         stage.act(delta);
         stage.draw();
     }
