@@ -137,10 +137,12 @@ public class LobbyScreen extends BaseScreen {
         panel.add(playersTitle).left().padBottom(10f).row();
         panel.add(playersScroll).width(540f).height(300f).row();
 
+        float primaryButtonWidth = language == Language.RU ? 280f : 240f;
+        float backButtonWidth = language == Language.RU ? 200f : 170f;
         Table buttons = new Table();
-        buttons.add(startButton).width(240f).height(64f).padRight(12f);
-        buttons.add(copyCodeButton).width(240f).height(64f).padRight(12f);
-        buttons.add(backButton).width(170f).height(64f);
+        buttons.add(startButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(copyCodeButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(backButton).width(backButtonWidth).height(64f);
         panel.add(buttons).left().padTop(18f);
 
         root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
