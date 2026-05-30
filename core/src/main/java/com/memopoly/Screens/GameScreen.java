@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Cell;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
@@ -126,6 +127,7 @@ public class GameScreen extends BaseScreen {
 
     private Table battleOverlay;
     private Table battleWindow;
+    private Cell<Table> battleWindowCell;
     private Table sidePanelContainer;
     private Table sideRoot;
     private VisLabel battleTitleLabel;
@@ -228,7 +230,7 @@ public class GameScreen extends BaseScreen {
         sidePanel.pad(18, 20, 18, 20);
 
         Table sideInner = new Table();
-        sideInner.pad(12, 14, 12, 14);
+        sideInner.pad(28, 14, 12, 14);
         sideInner.top().left();
         sideInner.defaults().left().growX().padBottom(10);
 
@@ -258,8 +260,8 @@ public class GameScreen extends BaseScreen {
         Table currentCellContent = new Table();
         currentCellContent.left().top();
         currentCellContent.add(currentCellImage).size(138, 138).padLeft(30).padRight(14).top();
-        currentCellContent.add(currentCellMetaLabel).width(176).top().left().padTop(4);
-        currentCellOverlay.add(currentCellContent).left().padLeft(28).padTop(2).padBottom(10);
+        currentCellContent.add(currentCellMetaLabel).width(176).top().left().padTop(0);
+        currentCellOverlay.add(currentCellContent).left().padLeft(28).padTop(-10).padBottom(10);
 
         feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
@@ -267,9 +269,9 @@ public class GameScreen extends BaseScreen {
         feedDescriptionLabel.setFontScale(1.00f);
         feedOverlay.top().left();
         feedOverlay.defaults().left();
-        feedOverlay.add(feedDescriptionLabel).width(235).padLeft(36).padTop(2).row();
+        feedOverlay.add(feedDescriptionLabel).width(235).padLeft(36).padTop(-10).row();
         auctionLabel.setFontScale(0.82f);
-        feedOverlay.add(auctionLabel).width(235).padLeft(36).padTop(4);
+        feedOverlay.add(auctionLabel).width(235).padLeft(36).padTop(2);
 
         titleLabel.setColor(TITLE_COLOR);
         titleLabel.setFontScale(1.05f);
@@ -305,16 +307,16 @@ public class GameScreen extends BaseScreen {
         actionTitle.setColor(TITLE_COLOR);
 
         sideInner.add(titleLabel).row();
-        sideInner.add(phaseLabel).width(300).row();
-        sideInner.add(turnLabel).width(300).row();
-        sideInner.add(cellLabel).width(300).row();
-        sideInner.add(logLabel).width(300).padBottom(8).row();
+        sideInner.add(phaseLabel).width(340).row();
+        sideInner.add(turnLabel).width(340).row();
+        sideInner.add(cellLabel).width(340).row();
+        sideInner.add(logLabel).width(340).padBottom(8).row();
 
         sideInner.add(playersTitle).padTop(12).row();
-        sideInner.add(playersScroll).width(300).height(170).row();
+        sideInner.add(playersScroll).width(340).height(170).row();
 
         sideInner.add(ownedTitle).padTop(12).row();
-        sideInner.add(ownedScroll).width(300).height(180).row();
+        sideInner.add(ownedScroll).width(340).height(180).row();
 
         Table actionsTable = new Table();
         actionsTable.defaults().padRight(8).padBottom(8);
@@ -383,8 +385,8 @@ public class GameScreen extends BaseScreen {
         sideInner.add(actionsTable).row();
         sideInner.add(exitToMenuButton).width(220).padTop(10).row();
         sidePanel.clearChildren();
-        sidePanel.add(sideInner).width(320);
-        root.add(sidePanel).width(350).top().right();
+        sidePanel.add(sideInner).width(360);
+        root.add(sidePanel).width(390).top().right();
 
 
         configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
@@ -466,7 +468,7 @@ public class GameScreen extends BaseScreen {
         buttons.add(battleNoButton).width(180f).height(COMMON_BUTTON_HEIGHT);
         panel.add(buttons).colspan(2).center().padTop(16f);
 
-        battleOverlay.add(panel).center();
+        battleWindowCell = battleOverlay.add(panel).size(620f, 620f).center();
         battleOverlay.setVisible(false);
 
         stage.addActor(battleOverlay);
@@ -701,9 +703,9 @@ public class GameScreen extends BaseScreen {
             nameLabel.setColor(Color.WHITE);
             nameLabel.setWrap(true);
             Table moneyCell = createMoneyValue(player.money);
-            row.add(nameLabel).width(190).left().padRight(8);
+            row.add(nameLabel).width(220).left().padRight(8);
             row.add(moneyCell).right();
-            playersTable.add(row).width(292).left().padBottom(8).row();
+            playersTable.add(row).width(332).left().padBottom(8).row();
         }
     }
 
@@ -713,7 +715,7 @@ public class GameScreen extends BaseScreen {
             VisLabel emptyLabel = new VisLabel("Пока нет купленных клеток");
             emptyLabel.setColor(TEXT_SOFT);
             emptyLabel.setWrap(true);
-            ownedCellsTable.add(emptyLabel).width(292).left().row();
+            ownedCellsTable.add(emptyLabel).width(332).left().row();
             return;
         }
 
@@ -728,7 +730,7 @@ public class GameScreen extends BaseScreen {
             VisLabel cellInfo = new VisLabel(cell.name + (mortgaged ? " | заложена" : ""));
             cellInfo.setColor(Color.WHITE);
             cellInfo.setWrap(true);
-            row.add(cellInfo).width(124).left().padRight(8);
+            row.add(cellInfo).width(164).left().padRight(8);
             row.add(createMoneyValue(cell.price)).padRight(8);
 
             ImageButton actionButton = createActionButton(mortgaged ? buyBackButtonTexture : mortgageButtonTexture);
@@ -746,7 +748,7 @@ public class GameScreen extends BaseScreen {
             });
 
             row.add(actionButton).size(104, COMMON_BUTTON_HEIGHT);
-            ownedCellsTable.add(row).width(292).left().padBottom(8).row();
+            ownedCellsTable.add(row).width(332).left().padBottom(8).row();
         }
     }
 
@@ -1014,10 +1016,11 @@ public class GameScreen extends BaseScreen {
         buyOrAuctionModal.setFillParent(true);
         auctionModal.setFillParent(true);
         memeBankModal.setFillParent(true);
-        if (battleWindow != null) {
-            battleWindow.invalidateHierarchy();
+        if (battleWindowCell != null) {
             com.badlogic.gdx.math.Rectangle battleBounds = boardRenderer.getBoardBounds();
-            battleWindow.setSize(battleBounds.width * 0.62f, battleBounds.height * 0.62f);
+            float battleSize = battleBounds.width * 0.62f;
+            battleWindowCell.size(battleSize, battleSize);
+            battleOverlay.invalidateHierarchy();
         }
     }
 

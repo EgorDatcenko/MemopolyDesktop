@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -82,6 +83,7 @@ public class MainMenuScreen extends BaseScreen {
     private final Language language;
     private boolean roomCodeShown;
     private final DeckRepository deckRepository = new DeckRepository();
+    private final Array<Dialog> openDialogs = new Array<>();
 
     public MainMenuScreen(Memopoly game) {
         super(game);
@@ -276,6 +278,7 @@ public class MainMenuScreen extends BaseScreen {
                 FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
                 chooser.setMultiSelectionEnabled(true);
                 chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
+                chooser.setModal(false);
                 chooser.setListener(new FileChooserListener() {
                     @Override
                     public void selected(Array<FileHandle> files) {
@@ -289,7 +292,12 @@ public class MainMenuScreen extends BaseScreen {
                     @Override
                     public void canceled() {}
                 });
-                stage.addActor(chooser.fadeIn());
+                chooser.fadeIn();
+                stage.addActor(chooser);
+                chooser.setPosition(
+                    (stage.getWidth() - chooser.getWidth()) * 0.5f,
+                    (stage.getHeight() - chooser.getHeight()) * 0.5f
+                );
             }
         });
         dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
@@ -585,10 +593,10 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(14f).padBottom(20f).row();
+        dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(42f).padBottom(20f).row();
         Table languageButtons = new Table();
-        languageButtons.add(english).size(320f, 84f).pad(8f);
-        languageButtons.add(russian).size(320f, 84f).pad(8f);
+        languageButtons.add(english).size(160f, 84f).pad(8f);
+        languageButtons.add(russian).size(160f, 84f).pad(8f);
         dialog.getContentTable().add(languageButtons).expand().center().padBottom(20f).row();
         showDialog(dialog);
     }
@@ -604,13 +612,33 @@ public class MainMenuScreen extends BaseScreen {
 
     private void showDialog(Dialog dialog) {
         dialog.show(stage);
+        if (!openDialogs.contains(dialog, true)) {
+            openDialogs.add(dialog);
+        }
+        centerDialog(dialog);
+    }
+
+    private void centerDialog(Dialog dialog) {
         Object userObject = dialog.getUserObject();
         if (userObject instanceof Vector2 size) {
             dialog.setSize(size.x, size.y);
-            dialog.setPosition(
-                (stage.getWidth() - size.x) * 0.5f,
-                (stage.getHeight() - size.y) * 0.5f
-            );
+        } else if (dialog instanceof Layout layout) {
+            dialog.setSize(layout.getPrefWidth(), layout.getPrefHeight());
+        }
+        dialog.setPosition(
+            (stage.getWidth() - dialog.getWidth()) * 0.5f,
+            (stage.getHeight() - dialog.getHeight()) * 0.5f
+        );
+    }
+
+    private void recenterOpenDialogs() {
+        for (int i = openDialogs.size - 1; i >= 0; i--) {
+            Dialog dialog = openDialogs.get(i);
+            if (dialog.getStage() != stage) {
+                openDialogs.removeIndex(i);
+            } else {
+                centerDialog(dialog);
+            }
         }
     }
 
@@ -722,6 +750,7 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        recenterOpenDialogs();
     }
 
     @Override
