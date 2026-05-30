@@ -585,10 +585,10 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(42f).padBottom(20f).row();
+        dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(14f).padBottom(20f).row();
         Table languageButtons = new Table();
-        languageButtons.add(english).size(160f, 84f).pad(8f);
-        languageButtons.add(russian).size(160f, 84f).pad(8f);
+        languageButtons.add(english).size(320f, 84f).pad(8f);
+        languageButtons.add(russian).size(320f, 84f).pad(8f);
         dialog.getContentTable().add(languageButtons).expand().center().padBottom(20f).row();
         showDialog(dialog);
     }
