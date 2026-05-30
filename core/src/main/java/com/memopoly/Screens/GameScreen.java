@@ -50,10 +50,12 @@ public class GameScreen extends BaseScreen {
     private static final String PLACE_BID_BUTTON_TEXTURE_PATH = "make_a_bet_btn.png";
     private static final String MORTGAGE_BUTTON_TEXTURE_PATH = "mortgage_btn.png";
     private static final String BUY_BACK_BUTTON_TEXTURE_PATH = "reverse_mortgage_btn.png";
+    private static final String EXIT_TO_MENU_BUTTON_TEXTURE_PATH = "exit_to_menu.png";
     private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
     private static final String BUY_AND_AUCTION_WINDOW_TEXTURE_PATH = "buy_and_auction_window.png";
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
     private static final String SIDEBAR_WINDOW_TEXTURE_PATH = "sidebar_window.jpg";
+    private static final String MEME_BATTLE_OVERLAY_TEXTURE_PATH = "meme_battle_overlay.jpg";
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final float BUY_AND_AUCTION_MODAL_SCALE = 0.50f;
@@ -71,10 +73,12 @@ public class GameScreen extends BaseScreen {
     private final Texture placeBidButtonTexture;
     private final Texture mortgageButtonTexture;
     private final Texture buyBackButtonTexture;
+    private final Texture exitToMenuButtonTexture;
     private final Texture notificationWindowTexture;
     private final Texture buyAndAuctionWindowTexture;
     private final Texture auctionOrMemeBankWindowTexture;
     private final Texture sidebarWindowTexture;
+    private final Texture memeBattleOverlayTexture;
     private final Texture inputTexture;
     private final Texture backgroundTexture;
     private final Texture[] cellTextures;
@@ -121,6 +125,7 @@ public class GameScreen extends BaseScreen {
     private String lastOwnedCellsSignature = "";
 
     private Table battleOverlay;
+    private Table battleWindow;
     private Table sidePanelContainer;
     private Table sideRoot;
     private VisLabel battleTitleLabel;
@@ -150,10 +155,12 @@ public class GameScreen extends BaseScreen {
         placeBidButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(PLACE_BID_BUTTON_TEXTURE_PATH, language));
         mortgageButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(MORTGAGE_BUTTON_TEXTURE_PATH, language));
         buyBackButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(BUY_BACK_BUTTON_TEXTURE_PATH, language));
+        exitToMenuButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(EXIT_TO_MENU_BUTTON_TEXTURE_PATH, language));
         notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
         buyAndAuctionWindowTexture = loadTexture(BUY_AND_AUCTION_WINDOW_TEXTURE_PATH);
         auctionOrMemeBankWindowTexture = loadTexture(AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH);
         sidebarWindowTexture = loadTextureWithFallback(SIDEBAR_WINDOW_TEXTURE_PATH, "sidebar_window.png");
+        memeBattleOverlayTexture = loadTextureIfExists(MEME_BATTLE_OVERLAY_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         cellTextures = loadCellTextures();
@@ -234,9 +241,12 @@ public class GameScreen extends BaseScreen {
         diceOverlay.defaults().left();
         Table diceContent = new Table();
         diceContent.left().top();
-        diceContent.add(diceButton).size(150, 84).padLeft(52).padRight(20).top();
-        diceContent.add(diceHintLabel).width(430).top().left().padTop(18).padRight(6);
-        diceOverlay.add(diceContent).left().padTop(72);
+        Table diceButtonColumn = new Table();
+        diceButtonColumn.add(diceButton).size(150, 84).row();
+        diceButtonColumn.add(endTurnButton).size(150, COMMON_BUTTON_HEIGHT).padTop(8f);
+        diceContent.add(diceButtonColumn).padLeft(62).padRight(18).top();
+        diceContent.add(diceHintLabel).width(405).top().left().padTop(22).padRight(6);
+        diceOverlay.add(diceContent).left().padTop(82);
 
         currentCellTitleLabel.setColor(Color.WHITE);
         currentCellTitleLabel.setFontScale(0.92f);
@@ -247,9 +257,9 @@ public class GameScreen extends BaseScreen {
         currentCellOverlay.defaults().left();
         Table currentCellContent = new Table();
         currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(138, 138).padLeft(24).padRight(14).top();
-        currentCellContent.add(currentCellMetaLabel).width(190).top().left().padTop(8);
-        currentCellOverlay.add(currentCellContent).left().padLeft(18).padTop(10).padBottom(10);
+        currentCellContent.add(currentCellImage).size(138, 138).padLeft(30).padRight(14).top();
+        currentCellContent.add(currentCellMetaLabel).width(176).top().left().padTop(4);
+        currentCellOverlay.add(currentCellContent).left().padLeft(28).padTop(2).padBottom(10);
 
         feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
@@ -257,15 +267,18 @@ public class GameScreen extends BaseScreen {
         feedDescriptionLabel.setFontScale(1.00f);
         feedOverlay.top().left();
         feedOverlay.defaults().left();
-        feedOverlay.add(feedDescriptionLabel).width(246).padLeft(28).padTop(10).row();
+        feedOverlay.add(feedDescriptionLabel).width(235).padLeft(36).padTop(2).row();
         auctionLabel.setFontScale(0.82f);
-        feedOverlay.add(auctionLabel).width(246).padLeft(28).padTop(6);
+        feedOverlay.add(auctionLabel).width(235).padLeft(36).padTop(4);
 
         titleLabel.setColor(TITLE_COLOR);
         titleLabel.setFontScale(1.05f);
         phaseLabel.setColor(TEXT_SOFT);
+        phaseLabel.setWrap(true);
         turnLabel.setColor(Color.WHITE);
+        turnLabel.setWrap(true);
         cellLabel.setColor(Color.WHITE);
+        cellLabel.setWrap(true);
         logLabel.setWrap(true);
         logLabel.setColor(Color.WHITE);
         applyGameScreenLineSpacing();
@@ -276,10 +289,12 @@ public class GameScreen extends BaseScreen {
 
         ScrollPane playersScroll = new ScrollPane(playersTable);
         playersScroll.setFadeScrollBars(false);
+        playersScroll.setScrollingDisabled(true, false);
         playersScroll.getStyle().background = panel(new Color(0.13f, 0.12f, 0.20f, 0.95f));
 
         ScrollPane ownedScroll = new ScrollPane(ownedCellsTable);
         ownedScroll.setFadeScrollBars(false);
+        ownedScroll.setScrollingDisabled(true, false);
         ownedScroll.getStyle().background = panel(new Color(0.13f, 0.12f, 0.20f, 0.95f));
 
         VisLabel playersTitle = new VisLabel("Игроки");
@@ -290,16 +305,16 @@ public class GameScreen extends BaseScreen {
         actionTitle.setColor(TITLE_COLOR);
 
         sideInner.add(titleLabel).row();
-        sideInner.add(phaseLabel).row();
-        sideInner.add(turnLabel).row();
-        sideInner.add(cellLabel).row();
-        sideInner.add(logLabel).width(338).padBottom(8).row();
+        sideInner.add(phaseLabel).width(300).row();
+        sideInner.add(turnLabel).width(300).row();
+        sideInner.add(cellLabel).width(300).row();
+        sideInner.add(logLabel).width(300).padBottom(8).row();
 
         sideInner.add(playersTitle).padTop(12).row();
-        sideInner.add(playersScroll).width(338).height(170).row();
+        sideInner.add(playersScroll).width(300).height(170).row();
 
         sideInner.add(ownedTitle).padTop(12).row();
-        sideInner.add(ownedScroll).width(338).height(180).row();
+        sideInner.add(ownedScroll).width(300).height(180).row();
 
         Table actionsTable = new Table();
         actionsTable.defaults().padRight(8).padBottom(8);
@@ -361,23 +376,15 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        actionsTable.add(endTurnButton).size(126, COMMON_BUTTON_HEIGHT);
-        actionsTable.add().width(120);
         bidField.setMessageText("Ставка");
-        VisTextButton exitToMenuButton = new VisTextButton("Выйти в меню");
-        exitToMenuButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.leaveRoomToMenu();
-            }
-        });
+        Actor exitToMenuButton = createExitToMenuButton();
 
         sideInner.add(actionTitle).padTop(12).row();
         sideInner.add(actionsTable).row();
         sideInner.add(exitToMenuButton).width(220).padTop(10).row();
         sidePanel.clearChildren();
-        sidePanel.add(sideInner).width(350);
-        root.add(sidePanel).width(380).top().right();
+        sidePanel.add(sideInner).width(320);
+        root.add(sidePanel).width(350).top().right();
 
 
         configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
@@ -390,7 +397,6 @@ public class GameScreen extends BaseScreen {
         stage.addActor(diceOverlay);
         stage.addActor(currentCellOverlay);
         stage.addActor(feedOverlay);
-        stage.addActor(turnNotificationModal);
         stage.addActor(buyOrAuctionModal);
         stage.addActor(auctionModal);
         stage.addActor(memeBankModal);
@@ -400,10 +406,15 @@ public class GameScreen extends BaseScreen {
     private void createBattleOverlay() {
         battleOverlay = new Table();
         battleOverlay.setFillParent(true);
-        battleOverlay.setBackground(panel(new Color(0f, 0f, 0f, 0.75f))); // затемнение
+        battleOverlay.setBackground(panel(new Color(0f, 0f, 0f, 0.55f))); // затемнение
 
         Table panel = new Table();
-        panel.setBackground(panel(new Color(0.18f, 0.16f, 0.27f, 0.98f)));
+        battleWindow = panel;
+        if (memeBattleOverlayTexture != null) {
+            panel.setBackground(new TextureRegionDrawable(new TextureRegion(memeBattleOverlayTexture)));
+        } else {
+            panel.setBackground(panel(new Color(0.18f, 0.16f, 0.27f, 0.98f)));
+        }
         panel.pad(24f);
 
         battleTitleLabel = new VisLabel("Мем-баттл!");
@@ -688,10 +699,11 @@ public class GameScreen extends BaseScreen {
             row.pad(8, 10, 8, 10);
             VisLabel nameLabel = new VisLabel(player.name + marker + active + bankrupt);
             nameLabel.setColor(Color.WHITE);
+            nameLabel.setWrap(true);
             Table moneyCell = createMoneyValue(player.money);
-            row.add(nameLabel).expandX().left().padRight(8);
+            row.add(nameLabel).width(190).left().padRight(8);
             row.add(moneyCell).right();
-            playersTable.add(row).width(340).left().padBottom(8).row();
+            playersTable.add(row).width(292).left().padBottom(8).row();
         }
     }
 
@@ -700,7 +712,8 @@ public class GameScreen extends BaseScreen {
         if (localPlayer == null || localPlayer.ownedCells.isEmpty()) {
             VisLabel emptyLabel = new VisLabel("Пока нет купленных клеток");
             emptyLabel.setColor(TEXT_SOFT);
-            ownedCellsTable.add(emptyLabel).left().row();
+            emptyLabel.setWrap(true);
+            ownedCellsTable.add(emptyLabel).width(292).left().row();
             return;
         }
 
@@ -714,7 +727,8 @@ public class GameScreen extends BaseScreen {
             row.left();
             VisLabel cellInfo = new VisLabel(cell.name + (mortgaged ? " | заложена" : ""));
             cellInfo.setColor(Color.WHITE);
-            row.add(cellInfo).width(170).left().padRight(8);
+            cellInfo.setWrap(true);
+            row.add(cellInfo).width(124).left().padRight(8);
             row.add(createMoneyValue(cell.price)).padRight(8);
 
             ImageButton actionButton = createActionButton(mortgaged ? buyBackButtonTexture : mortgageButtonTexture);
@@ -731,8 +745,8 @@ public class GameScreen extends BaseScreen {
                 }
             });
 
-            row.add(actionButton).size(110, COMMON_BUTTON_HEIGHT);
-            ownedCellsTable.add(row).width(340).left().padBottom(8).row();
+            row.add(actionButton).size(104, COMMON_BUTTON_HEIGHT);
+            ownedCellsTable.add(row).width(292).left().padBottom(8).row();
         }
     }
 
@@ -741,6 +755,7 @@ public class GameScreen extends BaseScreen {
         boolean canBuyOrPass = myTurn && state.currentPhase == GameState.GamePhase.PLAYER_ACTION
             && currentCell != null && currentCell.type == BoardCell.Type.SITUATION;
         boolean canEndTurn = myTurn && state.currentPhase == GameState.GamePhase.PLAYING && state.hasRolledThisTurn;
+        boolean showTurnControls = myTurn && state.currentPhase == GameState.GamePhase.PLAYING;
         boolean canBid = state.currentPhase == GameState.GamePhase.AUCTION
             && game.getClient().getLocalPlayerId() == state.auctionCurrentPlayerId;
         boolean canUseMemeBank = state.currentPhase == GameState.GamePhase.MEME_BANK_ACTION
@@ -750,7 +765,7 @@ public class GameScreen extends BaseScreen {
         boolean canWithdrawFromMemeBank = canUseMemeBank && localPlayer != null && localPlayer.memeBankBalance > 0;
 
         setButtonsEnabled(canRoll, canBuyOrPass, canBuyOrPass, canEndTurn, canBid);
-        diceButton.setVisible(canRoll);
+        diceButton.setVisible(showTurnControls);
         buyButton.setVisible(canBuyOrPass);
         passButton.setVisible(canBuyOrPass);
         endTurnButton.setVisible(canEndTurn);
@@ -765,7 +780,7 @@ public class GameScreen extends BaseScreen {
         memeBankWithdrawButton.setDisabled(!canWithdrawFromMemeBank);
         memeBankSkipButton.setDisabled(!canUseMemeBank);
 
-        turnNotificationModal.setVisible(currentCell != null || state.getCurrentPlayer() != null);
+        turnNotificationModal.setVisible(false);
         buyOrAuctionModal.setVisible(canBuyOrPass);
         auctionModal.setVisible(state.currentPhase == GameState.GamePhase.AUCTION);
         memeBankModal.setVisible(state.currentPhase == GameState.GamePhase.MEME_BANK_ACTION && canUseMemeBank);
@@ -839,10 +854,16 @@ public class GameScreen extends BaseScreen {
         placeBidButtonTexture.dispose();
         mortgageButtonTexture.dispose();
         buyBackButtonTexture.dispose();
+        if (exitToMenuButtonTexture != null) {
+            exitToMenuButtonTexture.dispose();
+        }
         notificationWindowTexture.dispose();
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
         sidebarWindowTexture.dispose();
+        if (memeBattleOverlayTexture != null) {
+            memeBattleOverlayTexture.dispose();
+        }
         inputTexture.dispose();
         backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
@@ -893,9 +914,9 @@ public class GameScreen extends BaseScreen {
             return "Ждём первого активного игрока.";
         }
         if (localPlayer != null && current.id == localPlayer.id) {
-            return "Твой ход. Бросай кубики или продолжай действие по текущей фазе.";
+            return "← Твой ход";
         }
-        return "Сейчас ходит " + current.name + ". Кнопка активируется, когда очередь дойдёт до тебя.";
+        return "Сейчас ходит " + current.name;
     }
 
     private Drawable panel(Color color) {
@@ -934,6 +955,10 @@ public class GameScreen extends BaseScreen {
 
     private Texture loadTextureWithFallback(String primaryPath, String fallbackPath) {
         return Gdx.files.internal(primaryPath).exists() ? loadTexture(primaryPath) : loadTexture(fallbackPath);
+    }
+
+    private Texture loadTextureIfExists(String path) {
+        return Gdx.files.internal(path).exists() ? loadTexture(path) : null;
     }
 
     private ImageButton createActionButton(Texture texture) {
@@ -989,6 +1014,11 @@ public class GameScreen extends BaseScreen {
         buyOrAuctionModal.setFillParent(true);
         auctionModal.setFillParent(true);
         memeBankModal.setFillParent(true);
+        if (battleWindow != null) {
+            battleWindow.invalidateHierarchy();
+            com.badlogic.gdx.math.Rectangle battleBounds = boardRenderer.getBoardBounds();
+            battleWindow.setSize(battleBounds.width * 0.62f, battleBounds.height * 0.62f);
+        }
     }
 
     private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float scale, boolean centerText) {
@@ -1071,6 +1101,19 @@ public class GameScreen extends BaseScreen {
         controls.add(memeBankWithdrawButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
         controls.add(memeBankSkipButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
         window.add(controls).left().padTop(16f);
+    }
+
+    private Actor createExitToMenuButton() {
+        Actor button = exitToMenuButtonTexture != null
+            ? createActionButton(exitToMenuButtonTexture)
+            : new VisTextButton("Выйти в меню");
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.leaveRoomToMenu();
+            }
+        });
+        return button;
     }
 
     private void applyInputFieldStyle(VisTextField field) {

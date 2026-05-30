@@ -344,7 +344,7 @@ public class MainMenuScreen extends BaseScreen {
         VisLabel title = new VisLabel(t("create_game"));
         title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
+        dialog.getContentTable().add(title).left().padBottom(100f).padRight(290f).padTop(-8f).row();
         dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
         dialog.row();
         dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f);
