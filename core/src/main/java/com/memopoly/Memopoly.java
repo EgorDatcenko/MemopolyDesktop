@@ -3,16 +3,13 @@ package com.memopoly;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.utils.ObjectMap;
 import com.kotcrab.vis.ui.VisUI;
 import com.memopoly.Screens.*;
 import com.memopoly.game.model.GameState;
@@ -44,7 +41,6 @@ public class Memopoly extends Game implements NetworkListener {
     private boolean lobbyOpened;
     private LanguageManager languageManager;
     private BitmapFont localizedUiFont;
-    private final List<ChatMessage> chatMessages = new ArrayList<>();
 
     @Override
     public void create() {
@@ -246,101 +242,64 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     private void applyLocalizedFonts() {
-        String fontPath = "fonts_ru/PressStart2P-Regular.ttf";
-        BitmapFont newFont = tryLoadBitmapFont(fontPath);
+        String fontFolderPath = languageManager.getLanguage() == LanguageManager.Language.RU ? "fonts_ru" : "fonts_en";
+        BitmapFont newFont = tryLoadBitmapFont(fontFolderPath);
         if (newFont == null) {
-            newFont = tryGenerateFontFromTtf(fontPath);
+            newFont = tryGenerateFontFromTtf(fontFolderPath);
         }
         if (newFont == null) {
-            AppLog.info("Fonts", "No font at " + fontPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
+            Gdx.app.log("Fonts", "No font in " + fontFolderPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
             return;
         }
         if (localizedUiFont != null) {
             localizedUiFont.dispose();
         }
         localizedUiFont = newFont;
-        applyFontToVisUiSkin(localizedUiFont);
+
+        Label.LabelStyle labelStyle = VisUI.getSkin().get(Label.LabelStyle.class);
+        labelStyle.font = localizedUiFont;
+        TextButton.TextButtonStyle textButtonStyle = VisUI.getSkin().get(TextButton.TextButtonStyle.class);
+        textButtonStyle.font = localizedUiFont;
+        TextField.TextFieldStyle textFieldStyle = VisUI.getSkin().get(TextField.TextFieldStyle.class);
+        textFieldStyle.font = localizedUiFont;
+        CheckBox.CheckBoxStyle checkBoxStyle = VisUI.getSkin().get(CheckBox.CheckBoxStyle.class);
+        checkBoxStyle.font = localizedUiFont;
     }
 
-    private void applyFontToVisUiSkin(BitmapFont font) {
-        Skin skin = VisUI.getSkin();
-        skin.add("default-font", font, BitmapFont.class);
-        applyFontToStyles(skin.getAll(Label.LabelStyle.class), font);
-        applyFontToStyles(skin.getAll(TextButton.TextButtonStyle.class), font);
-        applyFontToStyles(skin.getAll(TextField.TextFieldStyle.class), font);
-        applyFontToStyles(skin.getAll(CheckBox.CheckBoxStyle.class), font);
-    }
-
-    private void applyFontToStyles(ObjectMap<String, ?> styles, BitmapFont font) {
-        if (styles == null) {
-            return;
+    private BitmapFont tryLoadBitmapFont(String folderPath) {
+        FileHandle folder = Gdx.files.internal(folderPath);
+        if (!folder.exists() || !folder.isDirectory()) {
+            return null;
         }
-        for (ObjectMap.Entry<String, ?> entry : styles.entries()) {
-            Object style = entry.value;
-            if (style instanceof Label.LabelStyle) {
-                ((Label.LabelStyle) style).font = font;
-            } else if (style instanceof TextButton.TextButtonStyle) {
-                ((TextButton.TextButtonStyle) style).font = font;
-            } else if (style instanceof TextField.TextFieldStyle) {
-                ((TextField.TextFieldStyle) style).font = font;
-            } else if (style instanceof CheckBox.CheckBoxStyle) {
-                ((CheckBox.CheckBoxStyle) style).font = font;
+        for (FileHandle file : folder.list()) {
+            if ("fnt".equalsIgnoreCase(file.extension())) {
+                return new BitmapFont(file, false);
             }
         }
+        return null;
     }
 
-    private void applyPixelFontFiltering(BitmapFont font) {
-        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        font.setUseIntegerPositions(true);
-    }
-
-    private BitmapFont tryLoadBitmapFont(String fontPath) {
-        FileHandle file = Gdx.files.internal(fontPath);
-        if (!file.exists() || !"fnt".equalsIgnoreCase(file.extension())) {
+    private BitmapFont tryGenerateFontFromTtf(String folderPath) {
+        FileHandle folder = Gdx.files.internal(folderPath);
+        if (!folder.exists() || !folder.isDirectory()) {
             return null;
         }
-        try {
-            BitmapFont font = new BitmapFont(file, false);
-            applyPixelFontFiltering(font);
-            return font;
-        } catch (Throwable throwable) {
-            Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.", throwable);
-            return null;
-        }
-    }
-
-    private BitmapFont tryGenerateFontFromTtf(String fontPath) {
-        FileHandle file = Gdx.files.internal(fontPath);
-        if (!file.exists()) {
-            return null;
-        }
-        String ext = file.extension().toLowerCase();
-        if (!"ttf".equals(ext) && !"otf".equals(ext)) {
-            return null;
-        }
-
-        FreeTypeFontGenerator generator = null;
-        try {
-            generator = new FreeTypeFontGenerator(file);
+        for (FileHandle file : folder.list()) {
+            String ext = file.extension().toLowerCase();
+            if (!"ttf".equals(ext) && !"otf".equals(ext)) {
+                continue;
+            }
+            FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            param.size = 18;
-            param.minFilter = Texture.TextureFilter.Nearest;
-            param.magFilter = Texture.TextureFilter.Nearest;
-            param.mono = true;
+            param.size = 30;
             param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
                 + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
                 + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
             BitmapFont font = generator.generateFont(param);
-            applyPixelFontFiltering(font);
+            generator.dispose();
             return font;
-        } catch (Throwable throwable) {
-            Gdx.app.error("Fonts", "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
-            return null;
-        } finally {
-            if (generator != null) {
-                generator.dispose();
-            }
         }
+        return null;
     }
 
     @Override
