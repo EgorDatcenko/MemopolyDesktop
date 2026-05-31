@@ -6,18 +6,14 @@ public final class AppLog {
     private AppLog() {}
 
     public static void info(String tag, String message) {
-        if (Gdx.app != null) {
-            Gdx.app.log(tag, message);
-        } else {
-            System.out.println("[" + tag + "] " + message);
-        }
+        Gdx.app.log(tag, message);
     }
 
     public static void warn(String tag, String message) {
-        if (Gdx.app != null) {
-            Gdx.app.error(tag, message);
-        } else {
-            System.err.println("[" + tag + "] " + message);
-        }
+        Gdx.app.error(tag, message);
+    }
+
+    public static void error(String tag, String message, Throwable throwable) {
+        Gdx.app.error(tag, message, throwable);
     }
 }

@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.kotcrab.vis.ui.VisUI;
@@ -111,6 +112,7 @@ public class GameScreen extends BaseScreen {
     private final VisLabel buyAuctionModalLabel;
     private final VisLabel auctionModalLabel;
     private final VisLabel memeBankModalLabel;
+    private final Image auctionCellImage;
 
     private final ImageButton diceButton;
     private final ImageButton buyButton;
@@ -197,6 +199,8 @@ public class GameScreen extends BaseScreen {
         buyAuctionModalLabel = new VisLabel("");
         auctionModalLabel = new VisLabel("");
         memeBankModalLabel = new VisLabel("");
+        auctionCellImage = new Image();
+        auctionCellImage.setScaling(Scaling.fit);
 
         diceButton = createDiceButton();
         buyButton = createActionButton(buyButtonTexture);
@@ -260,9 +264,9 @@ public class GameScreen extends BaseScreen {
         currentCellOverlay.defaults().left();
         Table currentCellContent = new Table();
         currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(138, 138).padLeft(30).padRight(14).top();
-        currentCellContent.add(currentCellMetaLabel).width(176).top().left().padTop(0);
-        currentCellOverlay.add(currentCellContent).left().padLeft(28).padTop(-10).padBottom(10);
+        currentCellContent.add(currentCellImage).size(88, 88).padRight(8);
+        currentCellContent.add(currentCellMetaLabel).width(210).top().left().padTop(2);
+        currentCellOverlay.add(currentCellContent).left().padLeft(6).padTop(8).padBottom(10);
 
         feedTitleLabel.setFontScale(0.92f);
         feedDescriptionLabel.setWrap(true);
@@ -318,9 +322,6 @@ public class GameScreen extends BaseScreen {
 
         sideInner.add(ownedTitle).padTop(12).row();
         sideInner.add(ownedScroll).width(340).height(180).row();
-
-        Table actionsTable = new Table();
-        actionsTable.defaults().padRight(8).padBottom(8);
 
         buyButton.addListener(new ChangeListener() {
             @Override
@@ -383,8 +384,10 @@ public class GameScreen extends BaseScreen {
         Actor exitToMenuButton = createExitToMenuButton();
 
         sideInner.add(actionTitle).padTop(12).row();
-        sideInner.add(actionsTable).row();
-        sideInner.add(exitToMenuButton).width(220).padTop(10).row();
+        VisLabel modalActionHint = new VisLabel("Действия появятся в модальных окнах");
+        modalActionHint.setWrap(true);
+        modalActionHint.setColor(TEXT_SOFT);
+        sideInner.add(modalActionHint).width(340).row();
         sidePanel.clearChildren();
         sidePanel.add(sideInner).width(360);
         root.add(sidePanel).width(390).top().right();
@@ -396,19 +399,21 @@ public class GameScreen extends BaseScreen {
         configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE, false);
         setupModalControls();
 
+
+        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel);
+        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel);
+        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel);
+        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel);
+        setupModalControls();
+
         stage.addActor(root);
         stage.addActor(diceOverlay);
         stage.addActor(currentCellOverlay);
         stage.addActor(feedOverlay);
+        stage.addActor(turnNotificationModal);
         stage.addActor(buyOrAuctionModal);
         stage.addActor(auctionModal);
         stage.addActor(memeBankModal);
-
-        Table chatRoot = new Table();
-        chatRoot.setFillParent(true);
-        chatWidget = new ChatWidget(game);
-        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
-        stage.addActor(chatRoot);
         layoutBoardOverlays();
     }
 
@@ -418,26 +423,24 @@ public class GameScreen extends BaseScreen {
         battleOverlay.setBackground(panel(new Color(0f, 0f, 0f, 0.55f))); // затемнение
 
         Table panel = new Table();
-        battleWindow = panel;
-        if (memeBattleOverlayTexture != null) {
-            panel.setBackground(new TextureRegionDrawable(new TextureRegion(memeBattleOverlayTexture)));
-        } else {
-            panel.setBackground(panel(new Color(0.18f, 0.16f, 0.27f, 0.98f)));
-        }
-        panel.pad(24f);
+        panel.setBackground(memeBattleOverlayTexture == null
+            ? panel(new Color(0.18f, 0.16f, 0.27f, 0.98f))
+            : new TextureRegionDrawable(new TextureRegion(memeBattleOverlayTexture)));
+        panel.pad(28f, 34f, 28f, 34f);
+        panel.top();
 
         battleTitleLabel = new VisLabel("Мем-баттл!");
         battleTitleLabel.setColor(TITLE_COLOR);
-        battleTitleLabel.setFontScale(1.8f);
+        battleTitleLabel.setFontScale(1.35f);
 
         battleTimerLabel = new VisLabel("30");
         battleTimerLabel.setColor(Color.RED);
-        battleTimerLabel.setFontScale(1.6f);
+        battleTimerLabel.setFontScale(1.25f);
 
         battleTopicLabel = new VisLabel("");
         battleTopicLabel.setColor(Color.WHITE);
         battleTopicLabel.setWrap(true);
-        battleTopicLabel.setFontScale(1.3f);
+        battleTopicLabel.setFontScale(1.05f);
 
         battleContentTable = new Table();
 
@@ -464,18 +467,20 @@ public class GameScreen extends BaseScreen {
             }
         });
 
-        panel.add(battleTitleLabel).colspan(2).center().padBottom(12f).row();
-        panel.add(new VisLabel("Осталось:")).padRight(8f);
+        panel.add(battleTitleLabel).colspan(2).center().padTop(58f).padBottom(6f).row();
+        VisLabel timerTitleLabel = new VisLabel("Осталось:");
+        timerTitleLabel.setFontScale(0.95f);
+        panel.add(timerTitleLabel).padRight(8f);
         panel.add(battleTimerLabel).left().row();
-        panel.add(battleTopicLabel).colspan(2).width(600f).padBottom(16f).row();
-        panel.add(battleContentTable).colspan(2).width(700f).row();
+        panel.add(battleTopicLabel).colspan(2).width(560f).padBottom(10f).row();
+        panel.add(battleContentTable).colspan(2).width(610f).row();
 
         Table buttons = new Table();
         buttons.add(battleYesButton).width(180f).height(COMMON_BUTTON_HEIGHT).padRight(16f);
         buttons.add(battleNoButton).width(180f).height(COMMON_BUTTON_HEIGHT);
         panel.add(buttons).colspan(2).center().padTop(16f);
 
-        battleWindowCell = battleOverlay.add(panel).size(620f, 620f).center();
+        battleOverlay.add(panel).width(860f).height(740f).center();
         battleOverlay.setVisible(false);
 
         stage.addActor(battleOverlay);
@@ -789,10 +794,11 @@ public class GameScreen extends BaseScreen {
         memeBankWithdrawButton.setDisabled(!canWithdrawFromMemeBank);
         memeBankSkipButton.setDisabled(!canUseMemeBank);
 
-        turnNotificationModal.setVisible(false);
+        turnNotificationModal.setVisible(currentCell != null || state.getCurrentPlayer() != null);
         buyOrAuctionModal.setVisible(canBuyOrPass);
         auctionModal.setVisible(state.currentPhase == GameState.GamePhase.AUCTION);
         memeBankModal.setVisible(state.currentPhase == GameState.GamePhase.MEME_BANK_ACTION && canUseMemeBank);
+        updateAuctionCellImage(state);
 
         if (state.currentPhase == GameState.GamePhase.AUCTION) {
             String auctionText = "Аукцион: осталось " + state.currentAuctionTime + " сек. | ход: " + getAuctionTurnName(state) + " | ставок: " + state.auctionBids.size();
@@ -866,18 +872,13 @@ public class GameScreen extends BaseScreen {
         placeBidButtonTexture.dispose();
         mortgageButtonTexture.dispose();
         buyBackButtonTexture.dispose();
-        if (exitToMenuButtonTexture != null) {
-            exitToMenuButtonTexture.dispose();
-        }
         notificationWindowTexture.dispose();
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
-        sidebarWindowTexture.dispose();
+        inputTexture.dispose();
         if (memeBattleOverlayTexture != null) {
             memeBattleOverlayTexture.dispose();
         }
-        inputTexture.dispose();
-        backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
             cellTexture.dispose();
         }
@@ -1017,42 +1018,25 @@ public class GameScreen extends BaseScreen {
         diceOverlay.setBounds(diceBounds.x, diceBounds.y, diceBounds.width, diceBounds.height);
         currentCellOverlay.setBounds(currentBounds.x, currentBounds.y, currentBounds.width, currentBounds.height);
         feedOverlay.setBounds(feedBounds.x, feedBounds.y, feedBounds.width, feedBounds.height);
-        if (sidePanelContainer != null) {
-            sidePanelContainer.setHeight(boardBounds.height);
-            sidePanelContainer.setY(boardBounds.y);
-        }
 
         turnNotificationModal.setFillParent(true);
         buyOrAuctionModal.setFillParent(true);
         auctionModal.setFillParent(true);
         memeBankModal.setFillParent(true);
-        if (battleWindowCell != null) {
-            com.badlogic.gdx.math.Rectangle battleBounds = boardRenderer.getBoardBounds();
-            float battleSize = battleBounds.width * 0.62f;
-            battleWindowCell.size(battleSize, battleSize);
-            battleOverlay.invalidateHierarchy();
-        }
     }
 
-    private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float scale, boolean centerText) {
+    private void configureModal(Table modal, Texture texture, VisLabel contentLabel) {
         modal.setVisible(false);
-        modal.center();
+        modal.top();
         Table window = new Table();
         window.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
         window.pad(20f);
         window.top().left();
         modal.clearChildren();
-        float modalWidth = texture.getWidth() * scale;
-        float modalHeight = texture.getHeight() * scale;
         contentLabel.setWrap(true);
-        if (centerText) {
-            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-            window.add(contentLabel).width(modalWidth * 0.8f).expand().center().pad(12f).row();
-        } else {
-            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.left);
-            window.add(contentLabel).width(modalWidth * 0.8f).left().top().pad(12f).row();
-        }
-        modal.add(window).size(modalWidth, modalHeight).center();
+        contentLabel.setAlignment(Align.left);
+        window.add(contentLabel).width(520f).left().top().pad(12f).row();
+        modal.add(window).size(640f, 360f).center();
     }
 
     private void setupModalControls() {
@@ -1063,79 +1047,71 @@ public class GameScreen extends BaseScreen {
 
     private void addBuyAuctionControls() {
         Table window = (Table) buyOrAuctionModal.getCells().first().getActor();
-        window.clearChildren();
-        Table details = new Table();
-        details.defaults().expandX().center();
-        details.add(buyModalCellImage).size(300f, 300f).left();
-        buyAuctionModalLabel.setFontScale(1.25f);
-        details.add().width(36f);
-        details.add(buyAuctionModalLabel).width(380f).left();
-        window.add(details).expandX().fillX().pad(4f, 18f, 0f, 18f).row();
         Table controls = new Table();
-        controls.add().expandX();
-        controls.add(buyButton).size(180, COMMON_BUTTON_HEIGHT).padRight(24f);
-        controls.add(passButton).size(180, COMMON_BUTTON_HEIGHT).padLeft(24f);
-        controls.add().expandX();
-        window.add(controls).expandX().fillX().padTop(10f).padBottom(4f);
-    }
-
-    private void applyGameScreenLineSpacing() {
-        Set<com.badlogic.gdx.graphics.g2d.BitmapFont> fonts = new HashSet<>();
-        fonts.add(titleLabel.getStyle().font);
-        fonts.add(phaseLabel.getStyle().font);
-        fonts.add(turnLabel.getStyle().font);
-        fonts.add(cellLabel.getStyle().font);
-        fonts.add(logLabel.getStyle().font);
-        fonts.add(diceTitleLabel.getStyle().font);
-        fonts.add(diceHintLabel.getStyle().font);
-        fonts.add(currentCellMetaLabel.getStyle().font);
-        fonts.add(feedDescriptionLabel.getStyle().font);
-        fonts.add(buyAuctionModalLabel.getStyle().font);
-        for (com.badlogic.gdx.graphics.g2d.BitmapFont font : fonts) {
-            if (font != null) {
-                font.getData().setLineHeight(font.getCapHeight() * 1.55f);
-            }
-        }
+        controls.add(buyButton).size(180, 64).padRight(12f);
+        controls.add(passButton).size(180, 64);
+        window.add(controls).left().padTop(16f);
     }
 
     private void addAuctionControls() {
         Table window = (Table) auctionModal.getCells().first().getActor();
+        auctionModalLabel.setAlignment(Align.center);
+        window.getCells().first().center();
+
+        Table content = new Table();
+        content.add(auctionCellImage).size(96f, 96f).left().padRight(26f);
+
         Table controls = new Table();
-        controls.add(bidField).width(220f).height(18f).padRight(10f);
-        controls.add(placeBidButton).size(180, COMMON_BUTTON_HEIGHT);
-        window.add(controls).left().padTop(16f);
+        controls.add(bidField).width(260f).height(64f).padRight(12f);
+        controls.add(placeBidButton).size(180, 64);
+        content.add(controls).center().padTop(86f);
+        window.add(content).expandX().center().padTop(42f).row();
     }
 
     private void addMemeBankControls() {
         Table window = (Table) memeBankModal.getCells().first().getActor();
-        Table controls = new Table();
-        controls.add(memeBankAmountField).width(220f).height(18f).padRight(10f);
-        controls.add(memeBankDepositButton).width(180f).height(COMMON_BUTTON_HEIGHT).row();
-        controls.add(memeBankWithdrawButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
-        controls.add(memeBankSkipButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
-        window.add(controls).left().padTop(16f);
-    }
+        memeBankModalLabel.setAlignment(Align.center);
+        window.getCells().first().center();
 
-    private Actor createExitToMenuButton() {
-        Actor button = exitToMenuButtonTexture != null
-            ? createActionButton(exitToMenuButtonTexture)
-            : new VisTextButton("Выйти в меню");
-        button.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.leaveRoomToMenu();
-            }
-        });
-        return button;
+        Table controls = new Table();
+        controls.defaults().center();
+        controls.add(memeBankAmountField).width(300f).height(64f).colspan(3).center().row();
+        controls.add(memeBankDepositButton).width(180f).height(48f).padTop(22f).padRight(10f);
+        controls.add(memeBankWithdrawButton).width(180f).height(48f).padTop(22f).padRight(10f);
+        controls.add(memeBankSkipButton).width(180f).height(48f).padTop(22f);
+        window.add(controls).expandX().center().padTop(72f);
     }
 
     private void applyInputFieldStyle(VisTextField field) {
         VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
-        style.background = new TextureRegionDrawable(new TextureRegion(inputTexture));
-        style.backgroundOver = style.background;
-        style.focusedBackground = style.background;
-        style.disabledBackground = style.background;
+        TextureRegionDrawable inputBackground = new TextureRegionDrawable(new TextureRegion(inputTexture));
+        inputBackground.setLeftWidth(18f);
+        inputBackground.setRightWidth(10f);
+        inputBackground.setTopHeight(8f);
+        inputBackground.setBottomHeight(8f);
+        inputBackground.setMinHeight(64f);
+        style.background = inputBackground;
+        style.backgroundOver = inputBackground;
+        style.backgroundFocused = inputBackground;
+        style.disabledBackground = inputBackground;
         field.setStyle(style);
+        field.setAlignment(Align.left);
+    }
+
+    private Texture loadOptionalTexture(String path) {
+        if (!Gdx.files.internal(path).exists()) {
+            Gdx.app.log("Assets", "Optional texture not found: " + path);
+            return null;
+        }
+        return loadTexture(path);
+    }
+
+    private void updateAuctionCellImage(GameState state) {
+        if (state == null || state.auctionCellId < 0 || state.auctionCellId >= cellTextures.length) {
+            auctionCellImage.setDrawable(null);
+            return;
+        }
+        auctionCellImage.setDrawable(new TextureRegionDrawable(new TextureRegion(cellTextures[state.auctionCellId])));
     }
 
     private String buildPlayersSignature(GameState state, Player current, int localPlayerId) {

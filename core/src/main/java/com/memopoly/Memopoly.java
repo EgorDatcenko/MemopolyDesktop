@@ -246,7 +246,9 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     private void applyLocalizedFonts() {
-        String fontPath = "fonts_ru/PressStart2P-Regular.ttf";
+        String fontPath = languageManager.getLanguage() == com.memopoly.utils.LanguageManager.Language.RU
+            ? "fonts_ru/PressStart2P-Regular.ttf"
+            : "fonts_en/PressStart2P-Regular.ttf";
         BitmapFont newFont = tryLoadBitmapFont(fontPath);
         if (newFont == null) {
             newFont = tryGenerateFontFromTtf(fontPath);
