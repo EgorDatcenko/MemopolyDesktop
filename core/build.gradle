@@ -20,4 +20,11 @@ dependencies {
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }
+
+  testImplementation platform("org.junit:junit-bom:5.10.2")
+  testImplementation "org.junit.jupiter:junit-jupiter"
+}
+
+test {
+  useJUnitPlatform()
 }

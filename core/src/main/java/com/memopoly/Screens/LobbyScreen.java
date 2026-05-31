@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
@@ -26,6 +27,11 @@ import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 
 public class LobbyScreen extends BaseScreen {
+    private static final float COMMON_BUTTON_HEIGHT = 64f;
+    private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
+    private static final float LOBBY_WINDOW_WIDTH = 1116f;
+    private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
+    private static final float EXIT_DIALOG_SCALE = 0.4f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
@@ -39,6 +45,7 @@ public class LobbyScreen extends BaseScreen {
     private static final String COPY_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
+    private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -46,21 +53,25 @@ public class LobbyScreen extends BaseScreen {
     private final Texture copyButtonTexture;
     private final Texture backButtonTexture;
     private final Texture cancelButtonTexture;
+    private final Texture lobbyWindowTexture;
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
+    private ChatWidget chatWidget;
     private int lastPlayersCount = -1;
     private boolean gameStarted = false;
+    private final Language language;
 
     public LobbyScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
-        Language language = game.getLanguageManager().getLanguage();
+        language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         startButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(START_BUTTON_TEXTURE_PATH, language));
         copyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_BUTTON_TEXTURE_PATH, language));
         backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
         createUI();
     }
@@ -70,21 +81,17 @@ public class LobbyScreen extends BaseScreen {
         root.setFillParent(true);
         root.pad(28);
 
-        Table shadowPanel = new Table();
-        shadowPanel.setBackground(panel(PANEL_SHADOW));
-        shadowPanel.pad(18f);
-
         Table panel = new Table();
-        panel.setBackground(panel(PANEL_COLOR));
+        panel.setBackground(window(lobbyWindowTexture));
         panel.pad(24f, 28f, 24f, 28f);
 
-        VisLabel title = new VisLabel("Комната ожидания");
+        VisLabel title = new VisLabel(t("lobby"));
         title.setFontScale(1.9f);
         title.setColor(TITLE_COLOR);
 
-        VisLabel roomCode = new VisLabel("Код комнаты: " + game.getRoomCode());
+        VisLabel roomCode = new VisLabel(t("room_code") + ": " + game.getRoomCode());
         roomCode.setColor(SUBTITLE_COLOR);
-        statusLabel = new VisLabel("Ожидаем игроков...");
+        statusLabel = new VisLabel(t("waiting_players"));
         statusLabel.setColor(new Color(0.94f, 0.91f, 0.76f, 1f));
 
         playersTable = new Table();
@@ -121,7 +128,7 @@ public class LobbyScreen extends BaseScreen {
             }
         });
 
-        VisLabel playersTitle = new VisLabel("Игроки");
+        VisLabel playersTitle = new VisLabel(t("players"));
         playersTitle.setColor(TITLE_COLOR);
         playersTitle.setFontScale(1.2f);
 
@@ -131,20 +138,27 @@ public class LobbyScreen extends BaseScreen {
         panel.add(playersTitle).left().padBottom(10f).row();
         panel.add(playersScroll).width(540f).height(300f).row();
 
+        float primaryButtonWidth = language == Language.RU ? 280f : 240f;
+        float backButtonWidth = language == Language.RU ? 200f : 170f;
         Table buttons = new Table();
-        buttons.add(startButton).width(240f).height(64f).padRight(12f);
-        buttons.add(copyCodeButton).width(240f).height(64f).padRight(12f);
-        buttons.add(backButton).width(170f).height(64f);
+        buttons.add(startButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(copyCodeButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(backButton).width(backButtonWidth).height(64f);
         panel.add(buttons).left().padTop(18f);
 
-        shadowPanel.add(panel);
-        root.add(shadowPanel).center();
+        root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
 
         stage.addActor(root);
+
+        Table chatRoot = new Table();
+        chatRoot.setFillParent(true);
+        chatWidget = new ChatWidget(game);
+        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        stage.addActor(chatRoot);
     }
 
     private void showExitDialog() {
-        Dialog dialog = new Dialog("Выйти из комнаты?", VisUI.getSkin()) {
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
                 if (Boolean.TRUE.equals(object)) {
@@ -153,7 +167,8 @@ public class LobbyScreen extends BaseScreen {
             }
         };
 
-        dialog.text("Вы точно хотите выйти из комнаты?");
+        dialog.setBackground(window(lobbyWindowTexture));
+        dialog.text(t("leave_room_confirm"));
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().pad(10f);
         ImageButton backButton = createImageButton(backButtonTexture);
@@ -171,9 +186,16 @@ public class LobbyScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(backButton).size(170f, 58f);
-        dialog.getButtonTable().add(cancelButton).size(176f, 58f);
+        dialog.getButtonTable().add(backButton).size(170f, COMMON_BUTTON_HEIGHT);
+        dialog.getButtonTable().add(cancelButton).size(176f, COMMON_BUTTON_HEIGHT);
         dialog.show(stage);
+        float dialogWidth = lobbyWindowTexture.getWidth() * EXIT_DIALOG_SCALE;
+        float dialogHeight = lobbyWindowTexture.getHeight() * EXIT_DIALOG_SCALE;
+        dialog.setSize(dialogWidth, dialogHeight);
+        dialog.setPosition(
+            (stage.getWidth() - dialogWidth) * 0.5f,
+            (stage.getHeight() - dialogHeight) * 0.5f
+        );
     }
 
     private void rebuildPlayers(GameState state) {
@@ -220,18 +242,30 @@ public class LobbyScreen extends BaseScreen {
                 game.openGameLoading();
             }
         } else {
-            statusLabel.setText("Игроков в комнате: " + count);
+            statusLabel.setText(t("players_in_room") + ": " + count);
         }
         if (game.isHost()) {
             startButton.setDisabled(count < 2);
         }
 
+        if (chatWidget != null) {
+            chatWidget.refresh();
+        }
         stage.act(delta);
         stage.draw();
     }
 
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+    }
+
     private Drawable panel(Color color) {
         return VisUI.getSkin().newDrawable("white", color);
+    }
+
+    private Drawable window(Texture texture) {
+        return new TextureRegionDrawable(new TextureRegion(texture));
     }
 
     private Texture loadTexture(String path) {
@@ -252,7 +286,24 @@ public class LobbyScreen extends BaseScreen {
         style.over = transparent;
         style.down = transparent;
         style.disabled = transparent;
-        return new ImageButton(style);
+        ImageButton button = new ImageButton(style);
+        button.getImage().setScaling(Scaling.stretch);
+        button.getImageCell().grow();
+        return button;
+    }
+
+    private String t(String key) {
+        boolean ru = language == Language.RU;
+        return switch (key) {
+            case "lobby" -> ru ? "Комната ожидания" : "Lobby";
+            case "room_code" -> ru ? "Код комнаты" : "Room code";
+            case "waiting_players" -> ru ? "Ожидаем игроков..." : "Waiting for players...";
+            case "players" -> ru ? "Игроки" : "Players";
+            case "leave_room" -> ru ? "Выйти из комнаты?" : "Leave room?";
+            case "leave_room_confirm" -> ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
+            case "players_in_room" -> ru ? "Игроков в комнате" : "Players in room";
+            default -> key;
+        };
     }
 
     @Override
@@ -262,6 +313,7 @@ public class LobbyScreen extends BaseScreen {
         copyButtonTexture.dispose();
         backButtonTexture.dispose();
         cancelButtonTexture.dispose();
+        lobbyWindowTexture.dispose();
         stage.dispose();
     }
 }

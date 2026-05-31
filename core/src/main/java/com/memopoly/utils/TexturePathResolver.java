@@ -12,7 +12,7 @@ public final class TexturePathResolver {
     }
 
     public static String resolveGameScreenTexture(String fileName, LanguageManager.Language language) {
-        return "gamescreen_ui_" + language.code() + "/" + normalizeGameFileName(fileName);
+        return "gamescreen_ui_" + language.code() + "/" + normalizeGameFileName(fileName, language);
     }
 
     public static String resolveBoardMapTexture(LanguageManager.Language language) {
@@ -26,10 +26,11 @@ public final class TexturePathResolver {
         };
     }
 
-    private static String normalizeGameFileName(String fileName) {
+    private static String normalizeGameFileName(String fileName, LanguageManager.Language language) {
         return switch (fileName) {
             case "make_a_bet_btn.png" -> "create_bet_btn.png";
             case "reverse_mortgage_btn.png" -> "unmortgage_btn.png";
+            case "exit_to_menu.png" -> "exit_to_menu_" + language.code() + ".png";
             default -> fileName;
         };
     }

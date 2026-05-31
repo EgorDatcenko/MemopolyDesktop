@@ -28,6 +28,7 @@ public class NetworkRegistry {
         kryo.register(StartGameRequest.class);
         kryo.register(BattleInvitePacket.class);
         kryo.register(BattleResponsePacket.class);
+        kryo.register(ActionRejectedPacket.class);
 
         kryo.register(GameActionRequest.ActionType.class);
         kryo.register(GameState.GamePhase.class);

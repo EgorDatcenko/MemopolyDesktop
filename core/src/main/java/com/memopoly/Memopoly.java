@@ -17,8 +17,14 @@ import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
+import com.memopoly.network.packets.ChatMessage;
 import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
@@ -55,7 +61,7 @@ public class Memopoly extends Game implements NetworkListener {
     @Override
     public void onGameStateUpdated(GameState gameState) {
         latestGameState = gameState;
-        Gdx.app.log("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
+        AppLog.info("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
 
         if (isHost && !lobbyOpened && gameState != null && gameState.players != null && !gameState.players.isEmpty()) {
             lobbyOpened = true; // ставим флаг ДО postRunnable
@@ -65,13 +71,13 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDiceRolled(RollDiceResponse response) {
-        Gdx.app.log("Network", response.playerId + " rolled " + response.total);
+        AppLog.info("Network", response.playerId + " rolled " + response.total);
     }
 
     @Override
     public void onConnected() {
-        System.out.println("Подключено успешно!");
-        Gdx.app.log("Network", "Connected to server!");
+        AppLog.info("Network", "Подключено успешно!");
+        AppLog.info("Network", "Connected to server!");
     }
 
     @Override
@@ -82,11 +88,37 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDisconnected() {
-        Gdx.app.log("Network", "Disconnected from server!");
+        AppLog.info("Network", "Disconnected from server!");
     }
 
     @Override
     public void onConnectionFailed(String reason) {}
+
+    @Override
+    public void onActionRejected(String actionType, String reasonCode, String reason) {
+        AppLog.warn("Network", "Action rejected: " + actionType + " | " + reasonCode + " | " + reason);
+    }
+
+    @Override
+    public void onChatMessage(ChatMessage message) {
+        if (message == null) {
+            return;
+        }
+        chatMessages.add(message);
+        if (chatMessages.size() > 100) {
+            chatMessages.remove(0);
+        }
+    }
+
+    public List<ChatMessage> getChatMessages() {
+        return Collections.unmodifiableList(chatMessages);
+    }
+
+    public void sendChatMessage(String text) {
+        if (gameClient != null) {
+            gameClient.sendChatMessage(text);
+        }
+    }
 
     @Override
     public void render() {
@@ -146,6 +178,7 @@ public class Memopoly extends Game implements NetworkListener {
         languageManager = new LanguageManager(getSettingsPreferences());
 
         latestGameState = null;
+        chatMessages.clear();
         isHost = false;
         lobbyOpened = false;
         openMenu();
@@ -155,6 +188,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = true;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameServer = new GameServer();
     }
 
@@ -167,6 +201,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = false;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameClient.connectAndJoin(ip, port, playerName);
     }
 
