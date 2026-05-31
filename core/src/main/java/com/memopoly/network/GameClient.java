@@ -129,6 +129,8 @@ public class GameClient {
             Gdx.app.postRunnable(() ->
             listener.onDiceRolled((RollDiceResponse) packet)
             );
+        } else if (packet instanceof ChatMessage) {
+            Gdx.app.postRunnable(() -> listener.onChatMessage((ChatMessage) packet));
         }
     }
 
@@ -169,6 +171,17 @@ public class GameClient {
             return;
         }
         client.sendTCP(request);
+    }
+
+    public void sendChatMessage(String text) {
+        if (!client.isConnected() || text == null || text.trim().isEmpty()) {
+            return;
+        }
+        ChatMessage message = new ChatMessage();
+        message.playerId = localPlayerId;
+        message.message = text.trim();
+        message.timestamp = System.currentTimeMillis();
+        client.sendTCP(message);
     }
 
     public int getLocalPlayerId() {

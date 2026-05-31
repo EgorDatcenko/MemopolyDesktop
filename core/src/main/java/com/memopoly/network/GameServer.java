@@ -145,9 +145,22 @@ public class GameServer {
             synchronized (stateLock) {
                 battleManager.handleBattleResponse((BattleResponsePacket) packet);
             }
+        } else if (packet instanceof ChatMessage) {
+            handleChatMessage(connection, (ChatMessage) packet);
         } else {
             System.out.println("Неизвестный тип пакета: " + packet.getClass());
         }
+    }
+
+    private void handleChatMessage(Connection connection, ChatMessage message) {
+        if (message == null || message.message == null || message.message.trim().isEmpty()) {
+            return;
+        }
+        message.playerId = connection.getID();
+        message.playerName = getPlayerName(connection.getID());
+        message.message = message.message.trim();
+        message.timestamp = System.currentTimeMillis();
+        sendAllTcpSafely(message);
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
