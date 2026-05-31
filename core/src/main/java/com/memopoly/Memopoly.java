@@ -3,6 +3,7 @@ package com.memopoly;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
@@ -24,7 +25,9 @@ import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
 
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
@@ -41,7 +44,6 @@ public class Memopoly extends Game implements NetworkListener {
     private boolean lobbyOpened;
     private LanguageManager languageManager;
     private BitmapFont localizedUiFont;
-    private int pendingScreenTransitionId;
     private final List<ChatMessage> chatMessages = new ArrayList<>();
 
     @Override
@@ -148,20 +150,6 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     public void openLobby() {
-        scheduleScreenTransition(() -> new LobbyScreen(this));
-    }
-
-    public void openMenu() {
-        scheduleScreenTransition(() -> new MainMenuScreen(this));
-    }
-    public void openSettings() {
-        scheduleScreenTransition(() -> new SettingsScreen(this));
-    }
-    public void openGame() {
-        scheduleScreenTransition(() -> new GameScreen(this));
-    }
-    public void openGameLoading() {
-        scheduleScreenTransition(() -> new LoadingScreen(this, "Загрузка матча", () -> new GameScreen(this)));
         applyLocalizedFonts();
         screenManager.set(new LobbyScreen(this));
     }
@@ -242,17 +230,6 @@ public class Memopoly extends Game implements NetworkListener {
         return languageManager;
     }
 
-    private void scheduleScreenTransition(Supplier<BaseScreen> screenSupplier) {
-        int transitionId = ++pendingScreenTransitionId;
-        Gdx.app.postRunnable(() -> {
-            if (transitionId != pendingScreenTransitionId) {
-                return;
-            }
-            applyLocalizedFonts();
-            screenManager.set(screenSupplier.get());
-        });
-    }
-
     public void applySettings(float musicVolume, float sfxVolume, boolean fullscreen) {
         com.badlogic.gdx.Preferences preferences = getSettingsPreferences();
         preferences.putFloat("music_volume", musicVolume);
@@ -282,43 +259,6 @@ public class Memopoly extends Game implements NetworkListener {
             localizedUiFont.dispose();
         }
         localizedUiFont = newFont;
-
-        Label.LabelStyle labelStyle = VisUI.getSkin().get(Label.LabelStyle.class);
-        labelStyle.font = localizedUiFont;
-        TextButton.TextButtonStyle textButtonStyle = VisUI.getSkin().get(TextButton.TextButtonStyle.class);
-        textButtonStyle.font = localizedUiFont;
-        TextField.TextFieldStyle textFieldStyle = VisUI.getSkin().get(TextField.TextFieldStyle.class);
-        textFieldStyle.font = localizedUiFont;
-        CheckBox.CheckBoxStyle checkBoxStyle = VisUI.getSkin().get(CheckBox.CheckBoxStyle.class);
-        checkBoxStyle.font = localizedUiFont;
-    }
-
-    private BitmapFont tryLoadBitmapFont(String folderPath) {
-        FileHandle folder = Gdx.files.internal(folderPath);
-        if (!folder.exists() || !folder.isDirectory()) {
-            return null;
-        }
-        for (FileHandle file : folder.list()) {
-            if ("fnt".equalsIgnoreCase(file.extension())) {
-                return new BitmapFont(file, false);
-            }
-        }
-        return null;
-    }
-
-    private BitmapFont tryGenerateFontFromTtf(String folderPath) {
-        FileHandle folder = Gdx.files.internal(folderPath);
-        if (!folder.exists() || !folder.isDirectory()) {
-            return null;
-        }
-        for (FileHandle file : folder.list()) {
-            String ext = file.extension().toLowerCase();
-            if (!"ttf".equals(ext) && !"otf".equals(ext)) {
-                continue;
-            }
-            FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
-            FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            param.size = 30;
         applyFontToVisUiSkin(localizedUiFont);
     }
 
@@ -391,10 +331,6 @@ public class Memopoly extends Game implements NetworkListener {
                 + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
                 + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
             BitmapFont font = generator.generateFont(param);
-            generator.dispose();
-            return font;
-        }
-        return null;
             applyPixelFontFiltering(font);
             return font;
         } catch (Throwable throwable) {
