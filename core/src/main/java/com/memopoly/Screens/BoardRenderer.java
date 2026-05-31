@@ -159,12 +159,19 @@ public class BoardRenderer {
                 float insetY = isHorizontalCell(cell.id) ? bounds.height * 0.18f : bounds.height * 0.08f;
 
                 // tuning point #2: final draw rect (x/y/width/height) for precise alignment
+                float drawX = bounds.x + insetX;
+                float drawY = bounds.y + insetY;
+                float drawWidth = bounds.width - insetX * 2f;
+                float drawHeight = bounds.height - insetY * 2f;
+                float widthGrowth = drawWidth * (MORTGAGE_OVERLAY_SCALE - 1f);
+                float heightGrowth = drawHeight * (MORTGAGE_OVERLAY_SCALE - 1f);
+
                 batch.draw(
                     mortgageTexture,
-                    bounds.x + insetX,
-                    bounds.y + insetY,
-                    bounds.width - insetX * 2f,
-                    bounds.height - insetY * 2f
+                    drawX - widthGrowth / 2f,
+                    drawY - heightGrowth / 2f,
+                    drawWidth + widthGrowth,
+                    drawHeight + heightGrowth
                 );
             }
         }
