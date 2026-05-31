@@ -30,6 +30,7 @@ public class BoardRenderer {
     private static final float WORLD_HEIGHT = 1080f;
     private static final float BOARD_TOP_BOTTOM_MARGIN = 10f;
     private static final float BOARD_SIZE = WORLD_HEIGHT - BOARD_TOP_BOTTOM_MARGIN * 2f;
+    private static final float MORTGAGE_OVERLAY_SCALE = 1.10f;
     private static final float[][] CELL_LAYOUT = createCellLayout();
 
     private final Memopoly game;
@@ -164,6 +165,19 @@ public class BoardRenderer {
                     bounds.y + insetY,
                     bounds.width - insetX * 2f,
                     bounds.height - insetY * 2f
+                float drawX = bounds.x + insetX;
+                float drawY = bounds.y + insetY;
+                float drawWidth = bounds.width - insetX * 2f;
+                float drawHeight = bounds.height - insetY * 2f;
+                float widthGrowth = drawWidth * (MORTGAGE_OVERLAY_SCALE - 1f);
+                float heightGrowth = drawHeight * (MORTGAGE_OVERLAY_SCALE - 1f);
+
+                batch.draw(
+                    mortgageTexture,
+                    drawX - widthGrowth / 2f,
+                    drawY - heightGrowth / 2f,
+                    drawWidth + widthGrowth,
+                    drawHeight + heightGrowth
                 );
             }
         }

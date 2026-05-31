@@ -9,7 +9,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.kotcrab.vis.ui.VisUI;
 import com.memopoly.Screens.*;
 import com.memopoly.game.model.GameState;
@@ -17,7 +19,9 @@ import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
+import com.memopoly.network.packets.ChatMessage;
 import com.memopoly.network.packets.StartGameRequest;
+import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
 
 import java.util.function.Supplier;
@@ -38,6 +42,7 @@ public class Memopoly extends Game implements NetworkListener {
     private LanguageManager languageManager;
     private BitmapFont localizedUiFont;
     private int pendingScreenTransitionId;
+    private final List<ChatMessage> chatMessages = new ArrayList<>();
 
     @Override
     public void create() {
@@ -58,7 +63,7 @@ public class Memopoly extends Game implements NetworkListener {
     @Override
     public void onGameStateUpdated(GameState gameState) {
         latestGameState = gameState;
-        Gdx.app.log("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
+        AppLog.info("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
 
         if (isHost && !lobbyOpened && gameState != null && gameState.players != null && !gameState.players.isEmpty()) {
             lobbyOpened = true; // ставим флаг ДО postRunnable
@@ -68,13 +73,13 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDiceRolled(RollDiceResponse response) {
-        Gdx.app.log("Network", response.playerId + " rolled " + response.total);
+        AppLog.info("Network", response.playerId + " rolled " + response.total);
     }
 
     @Override
     public void onConnected() {
-        System.out.println("Подключено успешно!");
-        Gdx.app.log("Network", "Connected to server!");
+        AppLog.info("Network", "Подключено успешно!");
+        AppLog.info("Network", "Connected to server!");
     }
 
     @Override
@@ -85,11 +90,37 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onDisconnected() {
-        Gdx.app.log("Network", "Disconnected from server!");
+        AppLog.info("Network", "Disconnected from server!");
     }
 
     @Override
     public void onConnectionFailed(String reason) {}
+
+    @Override
+    public void onActionRejected(String actionType, String reasonCode, String reason) {
+        AppLog.warn("Network", "Action rejected: " + actionType + " | " + reasonCode + " | " + reason);
+    }
+
+    @Override
+    public void onChatMessage(ChatMessage message) {
+        if (message == null) {
+            return;
+        }
+        chatMessages.add(message);
+        if (chatMessages.size() > 100) {
+            chatMessages.remove(0);
+        }
+    }
+
+    public List<ChatMessage> getChatMessages() {
+        return Collections.unmodifiableList(chatMessages);
+    }
+
+    public void sendChatMessage(String text) {
+        if (gameClient != null) {
+            gameClient.sendChatMessage(text);
+        }
+    }
 
     @Override
     public void render() {
@@ -131,6 +162,25 @@ public class Memopoly extends Game implements NetworkListener {
     }
     public void openGameLoading() {
         scheduleScreenTransition(() -> new LoadingScreen(this, "Загрузка матча", () -> new GameScreen(this)));
+        applyLocalizedFonts();
+        screenManager.set(new LobbyScreen(this));
+    }
+
+    public void openMenu() {
+        applyLocalizedFonts();
+        screenManager.set(new MainMenuScreen(this));
+    }
+    public void openSettings() {
+        applyLocalizedFonts();
+        screenManager.set(new SettingsScreen(this));
+    }
+    public void openGame() {
+        applyLocalizedFonts();
+        screenManager.set(new GameScreen(this));
+    }
+    public void openGameLoading() {
+        applyLocalizedFonts();
+        screenManager.set(new LoadingScreen(this, "Загрузка матча", () -> new GameScreen(this)));
     }
     public void leaveRoomToMenu() {
         if (gameServer != null) {
@@ -144,6 +194,7 @@ public class Memopoly extends Game implements NetworkListener {
         languageManager = new LanguageManager(getSettingsPreferences());
 
         latestGameState = null;
+        chatMessages.clear();
         isHost = false;
         lobbyOpened = false;
         openMenu();
@@ -153,6 +204,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = true;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameServer = new GameServer();
     }
 
@@ -165,6 +217,7 @@ public class Memopoly extends Game implements NetworkListener {
         isHost = false;
         lobbyOpened = false;
         latestGameState = null;
+        chatMessages.clear();
         gameClient.connectAndJoin(ip, port, playerName);
     }
 
@@ -216,13 +269,13 @@ public class Memopoly extends Game implements NetworkListener {
     }
 
     private void applyLocalizedFonts() {
-        String fontFolderPath = languageManager.getLanguage() == LanguageManager.Language.RU ? "fonts_ru" : "fonts_en";
-        BitmapFont newFont = tryLoadBitmapFont(fontFolderPath);
+        String fontPath = "fonts_ru/PressStart2P-Regular.ttf";
+        BitmapFont newFont = tryLoadBitmapFont(fontPath);
         if (newFont == null) {
-            newFont = tryGenerateFontFromTtf(fontFolderPath);
+            newFont = tryGenerateFontFromTtf(fontPath);
         }
         if (newFont == null) {
-            Gdx.app.log("Fonts", "No font in " + fontFolderPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
+            AppLog.info("Fonts", "No font at " + fontPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
             return;
         }
         if (localizedUiFont != null) {
@@ -266,6 +319,74 @@ public class Memopoly extends Game implements NetworkListener {
             FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
             param.size = 30;
+        applyFontToVisUiSkin(localizedUiFont);
+    }
+
+    private void applyFontToVisUiSkin(BitmapFont font) {
+        Skin skin = VisUI.getSkin();
+        skin.add("default-font", font, BitmapFont.class);
+        applyFontToStyles(skin.getAll(Label.LabelStyle.class), font);
+        applyFontToStyles(skin.getAll(TextButton.TextButtonStyle.class), font);
+        applyFontToStyles(skin.getAll(TextField.TextFieldStyle.class), font);
+        applyFontToStyles(skin.getAll(CheckBox.CheckBoxStyle.class), font);
+    }
+
+    private void applyFontToStyles(ObjectMap<String, ?> styles, BitmapFont font) {
+        if (styles == null) {
+            return;
+        }
+        for (ObjectMap.Entry<String, ?> entry : styles.entries()) {
+            Object style = entry.value;
+            if (style instanceof Label.LabelStyle) {
+                ((Label.LabelStyle) style).font = font;
+            } else if (style instanceof TextButton.TextButtonStyle) {
+                ((TextButton.TextButtonStyle) style).font = font;
+            } else if (style instanceof TextField.TextFieldStyle) {
+                ((TextField.TextFieldStyle) style).font = font;
+            } else if (style instanceof CheckBox.CheckBoxStyle) {
+                ((CheckBox.CheckBoxStyle) style).font = font;
+            }
+        }
+    }
+
+    private void applyPixelFontFiltering(BitmapFont font) {
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        font.setUseIntegerPositions(true);
+    }
+
+    private BitmapFont tryLoadBitmapFont(String fontPath) {
+        FileHandle file = Gdx.files.internal(fontPath);
+        if (!file.exists() || !"fnt".equalsIgnoreCase(file.extension())) {
+            return null;
+        }
+        try {
+            BitmapFont font = new BitmapFont(file, false);
+            applyPixelFontFiltering(font);
+            return font;
+        } catch (Throwable throwable) {
+            Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            return null;
+        }
+    }
+
+    private BitmapFont tryGenerateFontFromTtf(String fontPath) {
+        FileHandle file = Gdx.files.internal(fontPath);
+        if (!file.exists()) {
+            return null;
+        }
+        String ext = file.extension().toLowerCase();
+        if (!"ttf".equals(ext) && !"otf".equals(ext)) {
+            return null;
+        }
+
+        FreeTypeFontGenerator generator = null;
+        try {
+            generator = new FreeTypeFontGenerator(file);
+            FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            param.size = 18;
+            param.minFilter = Texture.TextureFilter.Nearest;
+            param.magFilter = Texture.TextureFilter.Nearest;
+            param.mono = true;
             param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
                 + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
                 + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
@@ -274,6 +395,16 @@ public class Memopoly extends Game implements NetworkListener {
             return font;
         }
         return null;
+            applyPixelFontFiltering(font);
+            return font;
+        } catch (Throwable throwable) {
+            Gdx.app.error("Fonts", "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            return null;
+        } finally {
+            if (generator != null) {
+                generator.dispose();
+            }
+        }
     }
 
     @Override
