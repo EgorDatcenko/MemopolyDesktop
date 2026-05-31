@@ -24,6 +24,8 @@ public class BoardRenderer {
     private static final String ACTIVE_OUTLINE_SQUARE_TEXTURE_PATH = "green(1x1).png";
     private static final String ACTIVE_OUTLINE_HORIZONTAL_TEXTURE_PATH = "green(horizontal).png";
     private static final String ACTIVE_OUTLINE_VERTICAL_TEXTURE_PATH = "green(vertical).png";
+    private static final String MORTGAGE_CELL_HORIZONTAL_TEXTURE_PATH = "mortgage_cell_horizontal.png";
+    private static final String MORTGAGE_CELL_VERTICAL_TEXTURE_PATH = "mortgage_cell_vertical.png";
     private static final float WORLD_WIDTH = 1920f;
     private static final float WORLD_HEIGHT = 1080f;
     private static final float BOARD_TOP_BOTTOM_MARGIN = 10f;
@@ -35,6 +37,8 @@ public class BoardRenderer {
     private final Texture activeOutlineSquareTexture;
     private final Texture activeOutlineHorizontalTexture;
     private final Texture activeOutlineVerticalTexture;
+    private final Texture mortgageCellHorizontalTexture;
+    private final Texture mortgageCellVerticalTexture;
     private final OutlineSet[] playerOutlineSets;
     private final ShapeRenderer shapeRenderer;
     private final OrthographicCamera camera;
@@ -48,6 +52,8 @@ public class BoardRenderer {
         activeOutlineSquareTexture = loadTexture(ACTIVE_OUTLINE_SQUARE_TEXTURE_PATH);
         activeOutlineHorizontalTexture = loadTexture(ACTIVE_OUTLINE_HORIZONTAL_TEXTURE_PATH);
         activeOutlineVerticalTexture = loadTexture(ACTIVE_OUTLINE_VERTICAL_TEXTURE_PATH);
+        mortgageCellHorizontalTexture = loadTexture(MORTGAGE_CELL_HORIZONTAL_TEXTURE_PATH);
+        mortgageCellVerticalTexture = loadTexture(MORTGAGE_CELL_VERTICAL_TEXTURE_PATH);
         playerOutlineSets = new OutlineSet[] {
             createOutlineSet("red", new Color(0.95f, 0.34f, 0.28f, 1f)),
             createOutlineSet("blue", new Color(0.23f, 0.70f, 0.98f, 1f)),
@@ -101,12 +107,12 @@ public class BoardRenderer {
         batch.begin();
         batch.draw(boardTexture, boardBounds.x, boardBounds.y, boardBounds.width, boardBounds.height);
         renderOwnedCells(batch, boardCells, gameState);
+        renderMortgagedCells(batch, boardCells, gameState);
         renderCurrentCell(batch, gameState);
         batch.end();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        renderMortgagedCells(boardCells, gameState);
         renderPlayers(gameState);
         shapeRenderer.end();
     }
@@ -137,7 +143,7 @@ public class BoardRenderer {
         }
     }
 
-    private void renderMortgagedCells(List<BoardCell> boardCells, GameState gameState) {
+    private void renderMortgagedCells(SpriteBatch batch, List<BoardCell> boardCells, GameState gameState) {
         if (gameState == null) {
             return;
         }
@@ -145,9 +151,20 @@ public class BoardRenderer {
         for (BoardCell cell : boardCells) {
             Rectangle bounds = getCellBounds(cell.id);
             if (gameState.cellMortgaged.getOrDefault(cell.id, false)) {
-                shapeRenderer.setColor(new Color(0.06f, 0.06f, 0.10f, 0.45f));
-                float inset = Math.max(6f, Math.min(bounds.width, bounds.height) * 0.08f);
-                shapeRenderer.rect(bounds.x + inset, bounds.y + inset, bounds.width - inset * 2f, bounds.height - inset * 2f);
+                Texture mortgageTexture = isHorizontalCell(cell.id) ? mortgageCellHorizontalTexture : mortgageCellVerticalTexture;
+
+                // tuning point #1: overlay insets (X/Y) and scale by orientation
+                float insetX = isHorizontalCell(cell.id) ? bounds.width * 0.08f : bounds.width * 0.18f;
+                float insetY = isHorizontalCell(cell.id) ? bounds.height * 0.18f : bounds.height * 0.08f;
+
+                // tuning point #2: final draw rect (x/y/width/height) for precise alignment
+                batch.draw(
+                    mortgageTexture,
+                    bounds.x + insetX,
+                    bounds.y + insetY,
+                    bounds.width - insetX * 2f,
+                    bounds.height - insetY * 2f
+                );
             }
         }
     }
@@ -210,6 +227,8 @@ public class BoardRenderer {
         activeOutlineSquareTexture.dispose();
         activeOutlineHorizontalTexture.dispose();
         activeOutlineVerticalTexture.dispose();
+        mortgageCellHorizontalTexture.dispose();
+        mortgageCellVerticalTexture.dispose();
         for (OutlineSet outlineSet : playerOutlineSets) {
             outlineSet.dispose();
         }
