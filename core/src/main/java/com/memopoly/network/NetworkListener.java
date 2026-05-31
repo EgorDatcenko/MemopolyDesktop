@@ -11,6 +11,6 @@ public interface NetworkListener {
     void onJoinedRoom();
     void onDisconnected();
     void onConnectionFailed(String reason);
-    default void onActionRejected(String actionType, String reasonCode, String reason) {}
-    default void onChatMessage(ChatMessage message) {}
+    void onActionRejected(String actionType, String reasonCode, String reason);
+    void onChatMessage(ChatMessage message);
 }
