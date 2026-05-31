@@ -13,6 +13,7 @@ java {
 
 dependencies {
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
   api "com.github.crykn:kryonet:$kryoNetVersion"
   api "com.github.kotcrab.vis-ui:vis-ui:$visUiVersion"
 
