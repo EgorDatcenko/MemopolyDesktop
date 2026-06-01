@@ -198,9 +198,7 @@ public class GameServer {
         } else if (packet instanceof GameActionRequest) {
             handleGameAction(connection, (GameActionRequest) packet);
         } else if (packet instanceof BattleResponsePacket) {
-            synchronized (stateLock) {
-                battleManager.handleBattleResponse((BattleResponsePacket) packet);
-            }
+            battleManager.handleBattleResponse((BattleResponsePacket) packet);
         } else if (packet instanceof ChatMessage) {
             handleChatMessage(connection, (ChatMessage) packet);
         } else {
@@ -225,17 +223,6 @@ public class GameServer {
         broadcast.isSystem = false;
         broadcast.timestamp = System.currentTimeMillis();
         sendAllTcpSafely(broadcast);
-    }
-
-    private void handleChatMessage(Connection connection, ChatMessage message) {
-        if (message == null || message.message == null || message.message.trim().isEmpty()) {
-            return;
-        }
-        message.playerId = connection.getID();
-        message.playerName = getPlayerName(connection.getID());
-        message.message = message.message.trim();
-        message.timestamp = System.currentTimeMillis();
-        sendAllTcpSafely(message);
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
