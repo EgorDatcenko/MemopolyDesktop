@@ -57,6 +57,7 @@ public class LobbyScreen extends BaseScreen {
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
+    private ChatWidget chatWidget;
     private int lastPlayersCount = -1;
     private boolean gameStarted = false;
     private final Language language;
@@ -137,15 +138,23 @@ public class LobbyScreen extends BaseScreen {
         panel.add(playersTitle).left().padBottom(10f).row();
         panel.add(playersScroll).width(540f).height(300f).row();
 
+        float primaryButtonWidth = language == Language.RU ? 280f : 240f;
+        float backButtonWidth = language == Language.RU ? 200f : 170f;
         Table buttons = new Table();
-        buttons.add(startButton).width(240f).height(64f).padRight(12f);
-        buttons.add(copyCodeButton).width(240f).height(64f).padRight(12f);
-        buttons.add(backButton).width(170f).height(64f);
+        buttons.add(startButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(copyCodeButton).width(primaryButtonWidth).height(64f).padRight(12f);
+        buttons.add(backButton).width(backButtonWidth).height(64f);
         panel.add(buttons).left().padTop(18f);
 
         root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
 
         stage.addActor(root);
+
+        Table chatRoot = new Table();
+        chatRoot.setFillParent(true);
+        chatWidget = new ChatWidget(game);
+        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        stage.addActor(chatRoot);
     }
 
     private void showExitDialog() {
@@ -239,6 +248,9 @@ public class LobbyScreen extends BaseScreen {
             startButton.setDisabled(count < 2);
         }
 
+        if (chatWidget != null) {
+            chatWidget.refresh();
+        }
         stage.act(delta);
         stage.draw();
     }
@@ -302,6 +314,9 @@ public class LobbyScreen extends BaseScreen {
         backButtonTexture.dispose();
         cancelButtonTexture.dispose();
         lobbyWindowTexture.dispose();
+        if (chatWidget != null) {
+            chatWidget.dispose();
+        }
         stage.dispose();
     }
 }

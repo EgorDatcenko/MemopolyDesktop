@@ -14,6 +14,7 @@ public class GameActionRequest {
         MEME_BANK_WITHDRAW,
         MEME_BANK_SKIP,
         PLACE_AUCTION_BID,
+        CANCEL_AUCTION,
         END_TURN
     }
 

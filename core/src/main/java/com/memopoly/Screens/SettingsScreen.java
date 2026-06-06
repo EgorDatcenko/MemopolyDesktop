@@ -20,7 +20,6 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
-import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
 
 public class SettingsScreen extends BaseScreen {
@@ -45,11 +44,10 @@ public class SettingsScreen extends BaseScreen {
     private final VisSlider musicSlider;
     private final VisSlider sfxSlider;
     private final CheckBox fullscreenCheckBox;
-    private final CheckBox russianLanguageCheckBox;
     private final VisLabel musicValueLabel;
     private final VisLabel sfxValueLabel;
     private final VisLabel statusLabel;
-    private final Language language;
+    private final com.memopoly.utils.LanguageManager.Language language;
 
     public SettingsScreen(Memopoly game) {
         super(game);
@@ -63,7 +61,6 @@ public class SettingsScreen extends BaseScreen {
         musicSlider = new VisSlider(0f, 1f, 0.01f, false);
         sfxSlider = new VisSlider(0f, 1f, 0.01f, false);
         fullscreenCheckBox = new CheckBox(" " + t("fullscreen"), VisUI.getSkin());
-        russianLanguageCheckBox = new CheckBox(" " + t("russian"), VisUI.getSkin());
         musicValueLabel = new VisLabel();
         sfxValueLabel = new VisLabel();
         statusLabel = new VisLabel(t("status_hint"));
@@ -97,14 +94,12 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
             }
         });
         sfxSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
             }
         });
@@ -140,7 +135,6 @@ public class SettingsScreen extends BaseScreen {
         panel.add(sfxRow).row();
 
         panel.add(fullscreenCheckBox).left().row();
-        panel.add(russianLanguageCheckBox).left().row();
         panel.add(statusLabel).width(520f).left().padTop(4f).row();
 
         Table buttonRow = new Table();
@@ -156,7 +150,6 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.setValue(preferences.getFloat("music_volume", 0.7f));
         sfxSlider.setValue(preferences.getFloat("sfx_volume", 0.85f));
         fullscreenCheckBox.setChecked(preferences.getBoolean("fullscreen", false));
-        russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
     }
 
@@ -173,7 +166,6 @@ public class SettingsScreen extends BaseScreen {
         preferences.putFloat("music_volume", musicVolume);
         preferences.putFloat("sfx_volume", sfxVolume);
         preferences.putBoolean("fullscreen", fullscreen);
-        game.getLanguageManager().setLanguage(russianLanguageCheckBox.isChecked() ? Language.RU : Language.EN);
         preferences.flush();
 
         game.applySettings(musicVolume, sfxVolume, fullscreen);
@@ -240,7 +232,6 @@ public class SettingsScreen extends BaseScreen {
         boolean ru = language == Language.RU;
         return switch (key) {
             case "fullscreen" -> ru ? "Полноэкранный режим" : "Fullscreen mode";
-            case "russian" -> ru ? "Русский язык" : "Russian language";
             case "status_hint" -> ru ? "Изменения сохраняются после нажатия \"Применить\"" : "Changes are saved after pressing \"Apply\"";
             case "settings" -> ru ? "Настройки" : "Settings";
             case "music" -> ru ? "Музыка" : "Music";

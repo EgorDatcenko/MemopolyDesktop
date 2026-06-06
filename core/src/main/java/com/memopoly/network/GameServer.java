@@ -199,9 +199,30 @@ public class GameServer {
             handleGameAction(connection, (GameActionRequest) packet);
         } else if (packet instanceof BattleResponsePacket) {
             battleManager.handleBattleResponse((BattleResponsePacket) packet);
+        } else if (packet instanceof ChatMessage) {
+            handleChatMessage(connection, (ChatMessage) packet);
         } else {
             AppLog.warn("Server", "Неизвестный тип пакета: " + packet.getClass());
         }
+    }
+
+
+    private void handleChatMessage(Connection connection, ChatMessage message) {
+        if (message == null || message.message == null || message.message.trim().isEmpty()) {
+            return;
+        }
+        String text = message.message.trim();
+        if (text.length() > 180) {
+            text = text.substring(0, 180);
+        }
+        Player sender = gameState.getPlayerById(connection.getID());
+        ChatMessage broadcast = new ChatMessage();
+        broadcast.playerId = connection.getID();
+        broadcast.playerName = sender != null && sender.name != null ? sender.name : "Player " + connection.getID();
+        broadcast.message = text;
+        broadcast.isSystem = false;
+        broadcast.timestamp = System.currentTimeMillis();
+        sendAllTcpSafely(broadcast);
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
@@ -399,6 +420,19 @@ public class GameServer {
                 }
                 actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
                 handleAuctionBid(actingPlayer, request.amount);
+                break;
+            case CANCEL_AUCTION:
+                if (!AuctionGuard.isAuctionActive(gameState)) {
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE, "сейчас нет активного аукциона");
+                    return;
+                }
+                if (!AuctionGuard.isCurrentAuctionBidder(gameState, actingPlayer.id)) {
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN, "сейчас ход другого участника аукциона");
+                    return;
+                }
+                gameState.lastActionLog = actingPlayer.name + " остановил аукцион";
+                endAuctionInternal();
+                cancelAuctionTimer();
                 break;
             case END_TURN:
                 if (!isCurrentPlayer(connection.getID())) {
