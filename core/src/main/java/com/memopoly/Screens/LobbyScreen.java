@@ -14,15 +14,20 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.game.model.GameState;
+import com.memopoly.game.model.MemeDeck;
 import com.memopoly.game.model.Player;
+import com.memopoly.modding.DeckRepository;
 import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 
@@ -32,6 +37,10 @@ public class LobbyScreen extends BaseScreen {
     private static final float LOBBY_WINDOW_WIDTH = 1116f;
     private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
     private static final float EXIT_DIALOG_SCALE = 0.4f;
+    private static final float LOBBY_PRIMARY_BUTTON_WIDTH_RU = 240f;
+    private static final float LOBBY_PRIMARY_BUTTON_WIDTH_EN = 210f;
+    private static final float EXIT_DIALOG_TEXT_WIDTH = 440f;
+    private static final float EXIT_DIALOG_BUTTON_BOTTOM_PADDING = 30f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
     private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
@@ -58,9 +67,12 @@ public class LobbyScreen extends BaseScreen {
     private Table playersTable;
     private ImageButton startButton;
     private ChatWidget chatWidget;
+    private VisLabel selectedDeckLabel;
+    private String selectedDeckName;
     private int lastPlayersCount = -1;
     private boolean gameStarted = false;
     private final Language language;
+    private final DeckRepository deckRepository = new DeckRepository();
 
     public LobbyScreen(Memopoly game) {
         super(game);
@@ -108,6 +120,7 @@ public class LobbyScreen extends BaseScreen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 StartGameRequest request = new StartGameRequest();
+                request.deckName = selectedDeckName;
                 game.getClient().sendStartGame(request);
             }
         });
@@ -134,11 +147,15 @@ public class LobbyScreen extends BaseScreen {
 
         panel.add(title).left().row();
         panel.add(roomCode).left().padTop(8f).row();
-        panel.add(statusLabel).left().padTop(8f).padBottom(18f).row();
+        panel.add(statusLabel).left().padTop(8f).padBottom(12f).row();
+        if (game.isHost()) {
+            Table deckSelector = createDeckSelector();
+            panel.add(deckSelector).left().padBottom(12f).row();
+        }
         panel.add(playersTitle).left().padBottom(10f).row();
-        panel.add(playersScroll).width(540f).height(300f).row();
+        panel.add(playersScroll).width(540f).height(game.isHost() ? 250f : 300f).row();
 
-        float primaryButtonWidth = language == Language.RU ? 280f : 240f;
+        float primaryButtonWidth = language == Language.RU ? LOBBY_PRIMARY_BUTTON_WIDTH_RU : LOBBY_PRIMARY_BUTTON_WIDTH_EN;
         float backButtonWidth = language == Language.RU ? 200f : 170f;
         Table buttons = new Table();
         buttons.add(startButton).width(primaryButtonWidth).height(64f).padRight(12f);
@@ -157,6 +174,101 @@ public class LobbyScreen extends BaseScreen {
         stage.addActor(chatRoot);
     }
 
+    private Table createDeckSelector() {
+        selectedDeckName = resolveInitialDeckName();
+        selectedDeckLabel = new VisLabel(buildDeckLabel());
+        selectedDeckLabel.setColor(SUBTITLE_COLOR);
+        selectedDeckLabel.setWrap(true);
+
+        VisTextButton chooseDeckButton = new VisTextButton(t("choose_deck"));
+        chooseDeckButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                showDeckSelectionDialog();
+            }
+        });
+
+        Table selector = new Table();
+        selector.left();
+        selector.add(selectedDeckLabel).width(330f).left().padRight(12f);
+        selector.add(chooseDeckButton).width(170f).height(40f);
+        return selector;
+    }
+
+    private String resolveInitialDeckName() {
+        Array<MemeDeck> decks = deckRepository.loadDecks();
+        if (decks == null || decks.size == 0) {
+            return null;
+        }
+        MemeDeck first = decks.first();
+        return first == null ? null : first.name;
+    }
+
+    private String buildDeckLabel() {
+        return t("selected_deck") + ": " + (selectedDeckName == null || selectedDeckName.isBlank() ? t("default_deck") : selectedDeckName);
+    }
+
+    private void showDeckSelectionDialog() {
+        Dialog dialog = new Dialog("", VisUI.getSkin());
+        dialog.setBackground(window(lobbyWindowTexture));
+
+        VisLabel title = new VisLabel(t("choose_deck"));
+        title.setColor(TITLE_COLOR);
+        title.setFontScale(1.25f);
+        dialog.getContentTable().add(title).padTop(42f).padBottom(16f).row();
+
+        Table deckRows = new Table();
+        deckRows.defaults().left().growX().padBottom(8f);
+        addDeckChoiceRow(deckRows, dialog, null);
+        Array<MemeDeck> decks = deckRepository.loadDecks();
+        if (decks != null) {
+            for (MemeDeck deck : decks) {
+                if (deck != null && deck.name != null && !deck.name.isBlank()) {
+                    addDeckChoiceRow(deckRows, dialog, deck.name);
+                }
+            }
+        }
+
+        ScrollPane decksScroll = new ScrollPane(deckRows, VisUI.getSkin());
+        decksScroll.setFadeScrollBars(false);
+        decksScroll.setScrollingDisabled(true, false);
+        dialog.getContentTable().add(decksScroll).width(470f).height(250f).padBottom(14f).row();
+
+        VisTextButton closeButton = new VisTextButton(t("cancel"));
+        closeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        dialog.getButtonTable().add(closeButton).width(170f).height(44f).padBottom(26f);
+
+        dialog.show(stage);
+        float dialogWidth = lobbyWindowTexture.getWidth() * 0.52f;
+        float dialogHeight = lobbyWindowTexture.getHeight() * 0.52f;
+        dialog.setSize(dialogWidth, dialogHeight);
+        dialog.setPosition(
+            (stage.getWidth() - dialogWidth) * 0.5f,
+            (stage.getHeight() - dialogHeight) * 0.5f
+        );
+    }
+
+    private void addDeckChoiceRow(Table deckRows, Dialog dialog, String deckName) {
+        String displayName = deckName == null ? t("default_deck") : deckName;
+        VisTextButton deckButton = new VisTextButton(displayName);
+        deckButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                selectedDeckName = deckName;
+                if (selectedDeckLabel != null) {
+                    selectedDeckLabel.setText(buildDeckLabel());
+                }
+                dialog.hide();
+            }
+        });
+        deckRows.add(deckButton).width(430f).height(42f).row();
+    }
+
     private void showExitDialog() {
         Dialog dialog = new Dialog("", VisUI.getSkin()) {
             @Override
@@ -168,9 +280,17 @@ public class LobbyScreen extends BaseScreen {
         };
 
         dialog.setBackground(window(lobbyWindowTexture));
-        dialog.text(t("leave_room_confirm"));
+        VisLabel confirmLabel = new VisLabel(t("leave_room_confirm"));
+        confirmLabel.setWrap(true);
+        confirmLabel.setAlignment(Align.center);
+        dialog.getContentTable().add(confirmLabel)
+            .width(EXIT_DIALOG_TEXT_WIDTH)
+            .padTop(82f)
+            .padLeft(28f)
+            .padRight(28f)
+            .row();
         dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().pad(10f);
+        dialog.getButtonTable().defaults().pad(10f).padBottom(EXIT_DIALOG_BUTTON_BOTTOM_PADDING);
         ImageButton backButton = createImageButton(backButtonTexture);
         backButton.addListener(new ChangeListener() {
             @Override
@@ -302,6 +422,10 @@ public class LobbyScreen extends BaseScreen {
             case "leave_room" -> ru ? "Выйти из комнаты?" : "Leave room?";
             case "leave_room_confirm" -> ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
             case "players_in_room" -> ru ? "Игроков в комнате" : "Players in room";
+            case "choose_deck" -> ru ? "Выбрать колоду" : "Choose deck";
+            case "selected_deck" -> ru ? "Колода" : "Deck";
+            case "default_deck" -> ru ? "Стандартная" : "Default";
+            case "cancel" -> ru ? "Отмена" : "Cancel";
             default -> key;
         };
     }

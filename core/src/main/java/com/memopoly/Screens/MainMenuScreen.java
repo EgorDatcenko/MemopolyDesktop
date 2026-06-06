@@ -44,9 +44,9 @@ public class MainMenuScreen extends BaseScreen {
     private static final float BUTTON_HEIGHT_MENU = 72f;
     private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
     private static final float BUTTON_HEIGHT_WINDOW_EN = 72f;
-    private static final float CREATE_DECK_INPUT_HEIGHT = 18f;
-    private static final float CREATE_DECK_TEXTURE_BUTTON_WIDTH = 220f;
-    private static final float CREATE_DECK_TEXTURE_BUTTON_HEIGHT = 44f;
+    private static final float CREATE_DECK_INPUT_HEIGHT = 32f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_WIDTH = 232f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_HEIGHT = 52f;
     private static final float CREATE_DECK_ACTION_BUTTON_WIDTH = 128f;
     private static final float CREATE_DECK_ACTION_BUTTON_HEIGHT = 36f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
