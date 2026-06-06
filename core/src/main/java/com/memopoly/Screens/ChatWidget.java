@@ -25,6 +25,10 @@ public class ChatWidget extends Table {
     private static final Color LOG_BACKGROUND = new Color(0.13f, 0.12f, 0.20f, 0.88f);
     private static final Color TEXT_COLOR = Color.WHITE;
     private static final Color SYSTEM_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
+    private static final float INPUT_ROW_TOP_PADDING = 2f;
+    private static final float INPUT_FIELD_WIDTH = 270f;
+    private static final float INPUT_CONTROL_HEIGHT = 44f;
+    private static final float ENTER_BUTTON_WIDTH = 76f;
 
     private final Memopoly game;
     private final Texture chatWindowTexture;
@@ -68,8 +72,17 @@ public class ChatWidget extends Table {
         });
 
         add(scrollPane).colspan(2).grow().row();
-        add(inputField).growX().height(34f).padTop(6f).padRight(6f);
-        add(sendButton).width(58f).height(34f).padTop(6f);
+        add(inputField)
+            .width(INPUT_FIELD_WIDTH)
+            .height(INPUT_CONTROL_HEIGHT)
+            .padTop(INPUT_ROW_TOP_PADDING)
+            .padRight(6f)
+            .left();
+        add(sendButton)
+            .width(ENTER_BUTTON_WIDTH)
+            .height(INPUT_CONTROL_HEIGHT)
+            .padTop(INPUT_ROW_TOP_PADDING)
+            .left();
     }
 
     public void refresh() {

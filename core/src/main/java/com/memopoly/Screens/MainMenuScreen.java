@@ -40,6 +40,10 @@ public class MainMenuScreen extends BaseScreen {
     private static final float BUTTON_HEIGHT_MENU = 72f;
     private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
     private static final float BUTTON_HEIGHT_WINDOW_EN = 72f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_WIDTH = 220f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_HEIGHT = 44f;
+    private static final float CREATE_DECK_ACTION_BUTTON_WIDTH = 128f;
+    private static final float CREATE_DECK_ACTION_BUTTON_HEIGHT = 36f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CREATE_BUTTON_TEXTURE_PATH = "create_game_btn.png";
@@ -299,8 +303,12 @@ public class MainMenuScreen extends BaseScreen {
                     @Override
                     public void canceled() {}
                 });
-                chooser.fadeIn();
                 stage.addActor(chooser);
+                chooser.pack();
+                chooser.setSize(
+                    Math.min(chooser.getWidth(), stage.getWidth() - 80f),
+                    Math.min(chooser.getHeight(), stage.getHeight() - 80f)
+                );
                 chooser.setPosition(
                     (stage.getWidth() - chooser.getWidth()) * 0.5f,
                     (stage.getHeight() - chooser.getHeight()) * 0.5f
@@ -309,7 +317,11 @@ public class MainMenuScreen extends BaseScreen {
         });
         dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
         dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
-        dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
+        dialog.getContentTable().add(uploadButton)
+            .width(CREATE_DECK_TEXTURE_BUTTON_WIDTH)
+            .height(CREATE_DECK_TEXTURE_BUTTON_HEIGHT)
+            .pad(8f)
+            .row();
         dialog.getContentTable().add(filesCount).left().pad(8f).row();
         Actor saveButton = createTexturedOrTextButton(saveButtonTexture, t("save"));
         saveButton.addListener(new ChangeListener() {
@@ -331,8 +343,14 @@ public class MainMenuScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(saveButton).width(150f).height(getButtonHeightWindow()).pad(8f);
-        dialog.getButtonTable().add(cancelButton).width(150f).height(getButtonHeightWindow()).pad(8f);
+        dialog.getButtonTable().add(saveButton)
+            .width(CREATE_DECK_ACTION_BUTTON_WIDTH)
+            .height(CREATE_DECK_ACTION_BUTTON_HEIGHT)
+            .pad(8f);
+        dialog.getButtonTable().add(cancelButton)
+            .width(CREATE_DECK_ACTION_BUTTON_WIDTH)
+            .height(CREATE_DECK_ACTION_BUTTON_HEIGHT)
+            .pad(8f);
         dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
     }
