@@ -56,6 +56,8 @@ public class MainMenuScreen extends BaseScreen {
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final float MENU_DIALOG_SCALE = 0.5f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
+    private static final String LOAD_IMAGES_BUTTON_TEXTURE_PATH = "load_images_btn.png";
+    private static final String SAVE_BUTTON_TEXTURE_PATH = "save_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
     private static final String RUSSIAN_BUTTON_TEXTURE_PATH = "russian.png";
@@ -75,6 +77,8 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture lobbyWindowTexture;
     private final Texture inputTexture;
     private final Texture createDeckButtonTexture;
+    private final Texture loadImagesButtonTexture;
+    private final Texture saveButtonTexture;
     private final Texture closeDialogButtonTexture;
     private final Texture englishButtonTexture;
     private final Texture russianButtonTexture;
@@ -104,6 +108,8 @@ public class MainMenuScreen extends BaseScreen {
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
         createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
+        loadImagesButtonTexture = loadTextureIfExists(TexturePathResolver.resolveScreenTexture(LOAD_IMAGES_BUTTON_TEXTURE_PATH, language));
+        saveButtonTexture = loadTextureIfExists(TexturePathResolver.resolveScreenTexture(SAVE_BUTTON_TEXTURE_PATH, language));
         closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
         englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
         russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
@@ -269,9 +275,10 @@ public class MainMenuScreen extends BaseScreen {
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
         VisTextField deckName = new VisTextField();
         deckName.setMessageText(t("deck_name"));
+        applyInputFieldStyle(deckName);
         Array<String> selectedFiles = new Array<>();
         VisLabel filesCount = new VisLabel(t("files_count") + ": 0");
-        VisTextButton uploadButton = new VisTextButton(t("upload_images"));
+        Actor uploadButton = createTexturedOrTextButton(loadImagesButtonTexture, t("upload_images"));
         uploadButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -304,7 +311,7 @@ public class MainMenuScreen extends BaseScreen {
         dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
         dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
         dialog.getContentTable().add(filesCount).left().pad(8f).row();
-        VisTextButton saveButton = new VisTextButton(t("save"));
+        Actor saveButton = createTexturedOrTextButton(saveButtonTexture, t("save"));
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -317,8 +324,15 @@ public class MainMenuScreen extends BaseScreen {
                 showDecksDialog();
             }
         });
-        dialog.getButtonTable().add(saveButton).width(150f).pad(8f);
-        dialog.button(t("cancel"), true);
+        Actor cancelButton = createTexturedOrTextButton(cancelButtonTexture, t("cancel"));
+        cancelButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        dialog.getButtonTable().add(saveButton).width(150f).height(getButtonHeightWindow()).pad(8f);
+        dialog.getButtonTable().add(cancelButton).width(150f).height(getButtonHeightWindow()).pad(8f);
         dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
     }
@@ -776,6 +790,11 @@ public class MainMenuScreen extends BaseScreen {
         return texture;
     }
 
+
+    private Actor createTexturedOrTextButton(Texture texture, String fallbackText) {
+        return texture != null ? createImageButton(texture) : new VisTextButton(fallbackText);
+    }
+
     private ImageButton createImageButton(Texture texture) {
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
@@ -806,6 +825,12 @@ public class MainMenuScreen extends BaseScreen {
         lobbyWindowTexture.dispose();
         inputTexture.dispose();
         createDeckButtonTexture.dispose();
+        if (loadImagesButtonTexture != null) {
+            loadImagesButtonTexture.dispose();
+        }
+        if (saveButtonTexture != null) {
+            saveButtonTexture.dispose();
+        }
         closeDialogButtonTexture.dispose();
         englishButtonTexture.dispose();
         russianButtonTexture.dispose();

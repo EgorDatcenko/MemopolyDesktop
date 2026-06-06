@@ -1,11 +1,16 @@
 package com.memopoly.Screens;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
@@ -22,6 +27,9 @@ public class ChatWidget extends Table {
     private static final Color SYSTEM_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
 
     private final Memopoly game;
+    private final Texture chatWindowTexture;
+    private final Texture inputTexture;
+    private final Texture enterButtonTexture;
     private final Table messagesTable;
     private final ScrollPane scrollPane;
     private final VisTextField inputField;
@@ -29,7 +37,10 @@ public class ChatWidget extends Table {
 
     public ChatWidget(Memopoly game) {
         this.game = game;
-        setBackground(drawable(PANEL_BACKGROUND));
+        chatWindowTexture = loadTextureIfExists("chat_window.png");
+        inputTexture = loadTextureIfExists("input.png");
+        enterButtonTexture = loadTextureIfExists("enter_btn.png");
+        setBackground(chatWindowTexture != null ? new TextureRegionDrawable(new TextureRegion(chatWindowTexture)) : drawable(PANEL_BACKGROUND));
         pad(8f);
         top().left();
 
@@ -42,7 +53,8 @@ public class ChatWidget extends Table {
 
         inputField = new VisTextField();
         inputField.setMessageText("Чат");
-        VisTextButton sendButton = new VisTextButton("OK");
+        applyInputFieldStyle(inputField);
+        Actor sendButton = createSendButton();
         sendButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -95,6 +107,57 @@ public class ChatWidget extends Table {
         }
         game.sendChatMessage(text);
         inputField.setText("");
+    }
+
+    private Actor createSendButton() {
+        if (enterButtonTexture == null) {
+            return new VisTextButton("OK");
+        }
+        TextureRegionDrawable buttonDrawable = new TextureRegionDrawable(new TextureRegion(enterButtonTexture));
+        ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+        style.imageUp = buttonDrawable;
+        style.imageOver = buttonDrawable.tint(new Color(1f, 1f, 1f, 0.96f));
+        style.imageDown = buttonDrawable.tint(new Color(0.86f, 0.86f, 0.86f, 1f));
+        style.up = drawable(new Color(1f, 1f, 1f, 0f));
+        style.over = style.up;
+        style.down = style.up;
+        ImageButton button = new ImageButton(style);
+        button.getImageCell().grow();
+        return button;
+    }
+
+    private void applyInputFieldStyle(VisTextField field) {
+        if (inputTexture == null) {
+            return;
+        }
+        VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
+        TextureRegionDrawable background = new TextureRegionDrawable(new TextureRegion(inputTexture));
+        style.background = background;
+        style.backgroundOver = background;
+        style.focusedBackground = background;
+        style.disabledBackground = background;
+        field.setStyle(style);
+    }
+
+    private Texture loadTextureIfExists(String path) {
+        if (!Gdx.files.internal(path).exists()) {
+            return null;
+        }
+        Texture texture = new Texture(path);
+        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        return texture;
+    }
+
+    public void dispose() {
+        if (chatWindowTexture != null) {
+            chatWindowTexture.dispose();
+        }
+        if (inputTexture != null) {
+            inputTexture.dispose();
+        }
+        if (enterButtonTexture != null) {
+            enterButtonTexture.dispose();
+        }
     }
 
     private Drawable drawable(Color color) {

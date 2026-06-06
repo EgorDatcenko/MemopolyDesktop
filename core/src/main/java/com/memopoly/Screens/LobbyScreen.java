@@ -314,6 +314,9 @@ public class LobbyScreen extends BaseScreen {
         backButtonTexture.dispose();
         cancelButtonTexture.dispose();
         lobbyWindowTexture.dispose();
+        if (chatWidget != null) {
+            chatWidget.dispose();
+        }
         stage.dispose();
     }
 }

@@ -52,6 +52,10 @@ public class GameScreen extends BaseScreen {
     private static final String MORTGAGE_BUTTON_TEXTURE_PATH = "mortgage_btn.png";
     private static final String BUY_BACK_BUTTON_TEXTURE_PATH = "reverse_mortgage_btn.png";
     private static final String EXIT_TO_MENU_BUTTON_TEXTURE_PATH = "exit_to_menu.png";
+    private static final String DEPOSIT_BUTTON_TEXTURE_PATH = "deposit_btn.png";
+    private static final String WITHDRAW_BUTTON_TEXTURE_PATH = "withdraw_btn.png";
+    private static final String PARTICIPATE_BUTTON_TEXTURE_PATH = "participate_btn.png";
+    private static final String DECLINE_BUTTON_TEXTURE_PATH = "decline_btn.png";
     private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
     private static final String BUY_AND_AUCTION_WINDOW_TEXTURE_PATH = "buy_and_auction_window.png";
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
@@ -75,6 +79,10 @@ public class GameScreen extends BaseScreen {
     private final Texture mortgageButtonTexture;
     private final Texture buyBackButtonTexture;
     private final Texture exitToMenuButtonTexture;
+    private final Texture depositButtonTexture;
+    private final Texture withdrawButtonTexture;
+    private final Texture participateButtonTexture;
+    private final Texture declineButtonTexture;
     private final Texture notificationWindowTexture;
     private final Texture buyAndAuctionWindowTexture;
     private final Texture auctionOrMemeBankWindowTexture;
@@ -117,10 +125,11 @@ public class GameScreen extends BaseScreen {
     private final ImageButton passButton;
     private final ImageButton endTurnButton;
     private final ImageButton placeBidButton;
+    private final Actor cancelAuctionButton;
     private final VisTextField bidField;
     private final VisTextField memeBankAmountField;
-    private final VisTextButton memeBankDepositButton;
-    private final VisTextButton memeBankWithdrawButton;
+    private final Actor memeBankDepositButton;
+    private final Actor memeBankWithdrawButton;
     private final VisTextButton memeBankSkipButton;
     private String lastPlayersSignature = "";
     private String lastOwnedCellsSignature = "";
@@ -134,8 +143,8 @@ public class GameScreen extends BaseScreen {
     private VisLabel battleTimerLabel;
     private VisLabel battleTopicLabel;
     private Table battleContentTable;
-    private VisTextButton battleYesButton;
-    private VisTextButton battleNoButton;
+    private Actor battleYesButton;
+    private Actor battleNoButton;
     private ChatWidget chatWidget;
 
     private enum BattleContentMode {
@@ -159,6 +168,10 @@ public class GameScreen extends BaseScreen {
         mortgageButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(MORTGAGE_BUTTON_TEXTURE_PATH, language));
         buyBackButtonTexture = loadTexture(TexturePathResolver.resolveGameScreenTexture(BUY_BACK_BUTTON_TEXTURE_PATH, language));
         exitToMenuButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(EXIT_TO_MENU_BUTTON_TEXTURE_PATH, language));
+        depositButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(DEPOSIT_BUTTON_TEXTURE_PATH, language));
+        withdrawButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(WITHDRAW_BUTTON_TEXTURE_PATH, language));
+        participateButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(PARTICIPATE_BUTTON_TEXTURE_PATH, language));
+        declineButtonTexture = loadTextureIfExists(TexturePathResolver.resolveGameScreenTexture(DECLINE_BUTTON_TEXTURE_PATH, language));
         notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
         buyAndAuctionWindowTexture = loadTexture(BUY_AND_AUCTION_WINDOW_TEXTURE_PATH);
         auctionOrMemeBankWindowTexture = loadTexture(AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH);
@@ -203,10 +216,11 @@ public class GameScreen extends BaseScreen {
         passButton = createActionButton(passButtonTexture);
         endTurnButton = createActionButton(endTurnButtonTexture);
         placeBidButton = createActionButton(placeBidButtonTexture);
+        cancelAuctionButton = createOptionalActionButton(declineButtonTexture, "Отказаться");
         bidField = new VisTextField();
         memeBankAmountField = new VisTextField();
-        memeBankDepositButton = new VisTextButton("Вложить");
-        memeBankWithdrawButton = new VisTextButton("Снять");
+        memeBankDepositButton = createOptionalActionButton(depositButtonTexture, "Вложить");
+        memeBankWithdrawButton = createOptionalActionButton(withdrawButtonTexture, "Снять");
         memeBankSkipButton = new VisTextButton("Пропустить");
         applyInputFieldStyle(bidField);
         applyInputFieldStyle(memeBankAmountField);
@@ -355,6 +369,13 @@ public class GameScreen extends BaseScreen {
             }
         });
 
+        cancelAuctionButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendAction(GameActionRequest.ActionType.CANCEL_AUCTION, 0, 0);
+            }
+        });
+
         memeBankAmountField.setMessageText("Сумма");
         memeBankDepositButton.addListener(new ChangeListener() {
             @Override
@@ -441,8 +462,8 @@ public class GameScreen extends BaseScreen {
 
         battleContentTable = new Table();
 
-        battleYesButton = new VisTextButton("Участвовать");
-        battleNoButton = new VisTextButton("Отказаться");
+        battleYesButton = createOptionalActionButton(participateButtonTexture, "Участвовать");
+        battleNoButton = createOptionalActionButton(declineButtonTexture, "Отказаться");
 
         battleYesButton.addListener(new ChangeListener() {
             @Override
@@ -780,13 +801,14 @@ public class GameScreen extends BaseScreen {
         endTurnButton.setVisible(canEndTurn);
         bidField.setVisible(canBid);
         placeBidButton.setVisible(canBid);
+        cancelAuctionButton.setVisible(canBid);
         memeBankAmountField.setVisible(canDepositToMemeBank);
         memeBankDepositButton.setVisible(canDepositToMemeBank);
         memeBankWithdrawButton.setVisible(canWithdrawFromMemeBank);
         memeBankSkipButton.setVisible(canUseMemeBank);
         memeBankAmountField.setDisabled(!canDepositToMemeBank);
-        memeBankDepositButton.setDisabled(!canDepositToMemeBank);
-        memeBankWithdrawButton.setDisabled(!canWithdrawFromMemeBank);
+        setActorDisabled(memeBankDepositButton, !canDepositToMemeBank);
+        setActorDisabled(memeBankWithdrawButton, !canWithdrawFromMemeBank);
         memeBankSkipButton.setDisabled(!canUseMemeBank);
 
         turnNotificationModal.setVisible(false);
@@ -816,7 +838,17 @@ public class GameScreen extends BaseScreen {
         passButton.setDisabled(!pass);
         endTurnButton.setDisabled(!endTurn);
         placeBidButton.setDisabled(!bid);
+        cancelAuctionButton.setVisible(bid);
+        setActorDisabled(cancelAuctionButton, !bid);
         bidField.setDisabled(!bid);
+    }
+
+    private void setActorDisabled(Actor actor, boolean disabled) {
+        if (actor instanceof ImageButton imageButton) {
+            imageButton.setDisabled(disabled);
+        } else if (actor instanceof VisTextButton textButton) {
+            textButton.setDisabled(disabled);
+        }
     }
 
     @Override
@@ -869,6 +901,18 @@ public class GameScreen extends BaseScreen {
         if (exitToMenuButtonTexture != null) {
             exitToMenuButtonTexture.dispose();
         }
+        if (depositButtonTexture != null) {
+            depositButtonTexture.dispose();
+        }
+        if (withdrawButtonTexture != null) {
+            withdrawButtonTexture.dispose();
+        }
+        if (participateButtonTexture != null) {
+            participateButtonTexture.dispose();
+        }
+        if (declineButtonTexture != null) {
+            declineButtonTexture.dispose();
+        }
         notificationWindowTexture.dispose();
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
@@ -880,6 +924,9 @@ public class GameScreen extends BaseScreen {
         backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
             cellTexture.dispose();
+        }
+        if (chatWidget != null) {
+            chatWidget.dispose();
         }
         stage.dispose();
     }
@@ -1102,7 +1149,8 @@ public class GameScreen extends BaseScreen {
         Table window = (Table) auctionModal.getCells().first().getActor();
         Table controls = new Table();
         controls.add(bidField).width(220f).height(18f).padRight(10f);
-        controls.add(placeBidButton).size(180, COMMON_BUTTON_HEIGHT);
+        controls.add(placeBidButton).size(180, COMMON_BUTTON_HEIGHT).padRight(10f);
+        controls.add(cancelAuctionButton).width(180f).height(COMMON_BUTTON_HEIGHT);
         window.add(controls).left().padTop(16f);
     }
 
@@ -1114,6 +1162,10 @@ public class GameScreen extends BaseScreen {
         controls.add(memeBankWithdrawButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
         controls.add(memeBankSkipButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
         window.add(controls).left().padTop(16f);
+    }
+
+    private Actor createOptionalActionButton(Texture texture, String fallbackText) {
+        return texture != null ? createActionButton(texture) : new VisTextButton(fallbackText);
     }
 
     private Actor createExitToMenuButton() {

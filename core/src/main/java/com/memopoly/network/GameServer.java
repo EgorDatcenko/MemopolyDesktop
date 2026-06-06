@@ -421,6 +421,19 @@ public class GameServer {
                 actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
                 handleAuctionBid(actingPlayer, request.amount);
                 break;
+            case CANCEL_AUCTION:
+                if (!AuctionGuard.isAuctionActive(gameState)) {
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE, "сейчас нет активного аукциона");
+                    return;
+                }
+                if (!AuctionGuard.isCurrentAuctionBidder(gameState, actingPlayer.id)) {
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN, "сейчас ход другого участника аукциона");
+                    return;
+                }
+                gameState.lastActionLog = actingPlayer.name + " остановил аукцион";
+                endAuctionInternal();
+                cancelAuctionTimer();
+                break;
             case END_TURN:
                 if (!isCurrentPlayer(connection.getID())) {
                     rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN, "завершить ход может только текущий игрок");
