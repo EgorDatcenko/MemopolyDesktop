@@ -25,6 +25,14 @@ public class ChatWidget extends Table {
     private static final Color LOG_BACKGROUND = new Color(0.13f, 0.12f, 0.20f, 0.88f);
     private static final Color TEXT_COLOR = Color.WHITE;
     private static final Color SYSTEM_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
+    private static final float MESSAGES_TOP_PADDING = 14f;
+    private static final float MESSAGE_FONT_SCALE = 0.72f;
+    private static final float INPUT_ROW_LEFT_PADDING = 8f;
+    private static final float INPUT_ROW_TOP_PADDING = 0f;
+    private static final float INPUT_ROW_BOTTOM_PADDING = 8f;
+    private static final float INPUT_FIELD_WIDTH = 270f;
+    private static final float INPUT_CONTROL_HEIGHT = 50f;
+    private static final float ENTER_BUTTON_WIDTH = 76f;
 
     private final Memopoly game;
     private final Texture chatWindowTexture;
@@ -46,6 +54,7 @@ public class ChatWidget extends Table {
 
         messagesTable = new Table();
         messagesTable.top().left();
+        messagesTable.padTop(MESSAGES_TOP_PADDING);
         scrollPane = new ScrollPane(messagesTable, VisUI.getSkin());
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(true, false);
@@ -68,8 +77,20 @@ public class ChatWidget extends Table {
         });
 
         add(scrollPane).colspan(2).grow().row();
-        add(inputField).growX().height(34f).padTop(6f).padRight(6f);
-        add(sendButton).width(58f).height(34f).padTop(6f);
+        add(inputField)
+            .width(INPUT_FIELD_WIDTH)
+            .height(INPUT_CONTROL_HEIGHT)
+            .padTop(INPUT_ROW_TOP_PADDING)
+            .padBottom(INPUT_ROW_BOTTOM_PADDING)
+            .padLeft(INPUT_ROW_LEFT_PADDING)
+            .padRight(6f)
+            .left();
+        add(sendButton)
+            .width(ENTER_BUTTON_WIDTH)
+            .height(INPUT_CONTROL_HEIGHT)
+            .padTop(INPUT_ROW_TOP_PADDING)
+            .padBottom(INPUT_ROW_BOTTOM_PADDING)
+            .left();
     }
 
     public void refresh() {
@@ -83,6 +104,7 @@ public class ChatWidget extends Table {
         for (int i = start; i < messages.size(); i++) {
             ChatMessage message = messages.get(i);
             VisLabel label = new VisLabel(format(message));
+            label.setFontScale(MESSAGE_FONT_SCALE);
             label.setWrap(true);
             label.setColor(message.isSystem ? SYSTEM_COLOR : TEXT_COLOR);
             messagesTable.add(label).width(300f).left().pad(3f, 5f, 3f, 5f).row();

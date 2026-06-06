@@ -23,8 +23,6 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
-import com.kotcrab.vis.ui.widget.file.FileChooser;
-import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.badlogic.gdx.utils.Array;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.Memopoly;
@@ -36,10 +34,21 @@ import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.AppLog;
 
+import java.io.File;
+
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 public class MainMenuScreen extends BaseScreen {
     private static final float BUTTON_HEIGHT_MENU = 72f;
     private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
     private static final float BUTTON_HEIGHT_WINDOW_EN = 72f;
+    private static final float CREATE_DECK_INPUT_HEIGHT = 32f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_WIDTH = 232f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_HEIGHT = 52f;
+    private static final float CREATE_DECK_ACTION_BUTTON_WIDTH = 128f;
+    private static final float CREATE_DECK_ACTION_BUTTON_HEIGHT = 36f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CREATE_BUTTON_TEXTURE_PATH = "create_game_btn.png";
@@ -282,34 +291,20 @@ public class MainMenuScreen extends BaseScreen {
         uploadButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
-                chooser.setMultiSelectionEnabled(true);
-                chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
-                chooser.setModal(false);
-                chooser.setListener(new FileChooserListener() {
-                    @Override
-                    public void selected(Array<FileHandle> files) {
-                        selectedFiles.clear();
-
-                        for (FileHandle file : files) {
-                            selectedFiles.add(file.file().getAbsolutePath());
-                        }
-                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
-                    }
-                    @Override
-                    public void canceled() {}
-                });
-                chooser.fadeIn();
-                stage.addActor(chooser);
-                chooser.setPosition(
-                    (stage.getWidth() - chooser.getWidth()) * 0.5f,
-                    (stage.getHeight() - chooser.getHeight()) * 0.5f
-                );
+                openImageChooser(selectedFiles, filesCount);
             }
         });
         dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
-        dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
-        dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
+        dialog.getContentTable().add(deckName)
+            .width(280f)
+            .height(CREATE_DECK_INPUT_HEIGHT)
+            .pad(8f)
+            .row();
+        dialog.getContentTable().add(uploadButton)
+            .width(CREATE_DECK_TEXTURE_BUTTON_WIDTH)
+            .height(CREATE_DECK_TEXTURE_BUTTON_HEIGHT)
+            .pad(8f)
+            .row();
         dialog.getContentTable().add(filesCount).left().pad(8f).row();
         Actor saveButton = createTexturedOrTextButton(saveButtonTexture, t("save"));
         saveButton.addListener(new ChangeListener() {
@@ -331,10 +326,50 @@ public class MainMenuScreen extends BaseScreen {
                 dialog.hide();
             }
         });
-        dialog.getButtonTable().add(saveButton).width(150f).height(getButtonHeightWindow()).pad(8f);
-        dialog.getButtonTable().add(cancelButton).width(150f).height(getButtonHeightWindow()).pad(8f);
+        dialog.getButtonTable().add(saveButton)
+            .width(CREATE_DECK_ACTION_BUTTON_WIDTH)
+            .height(CREATE_DECK_ACTION_BUTTON_HEIGHT)
+            .pad(8f);
+        dialog.getButtonTable().add(cancelButton)
+            .width(CREATE_DECK_ACTION_BUTTON_WIDTH)
+            .height(CREATE_DECK_ACTION_BUTTON_HEIGHT)
+            .pad(8f);
         dialog.getButtonTable().padBottom(20f);
         showDialog(dialog);
+    }
+
+    private void openImageChooser(Array<String> selectedFiles, VisLabel filesCount) {
+        try {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setMultiSelectionEnabled(true);
+                    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                    chooser.setDialogTitle(t("upload_images"));
+                    chooser.setFileFilter(new FileNameExtensionFilter(
+                        "Images (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
+                        "png", "jpg", "jpeg", "gif", "bmp", "webp"
+                    ));
+
+                    if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
+                        return;
+                    }
+
+                    File[] files = chooser.getSelectedFiles();
+                    Gdx.app.postRunnable(() -> {
+                        selectedFiles.clear();
+                        for (File file : files) {
+                            selectedFiles.add(file.getAbsolutePath());
+                        }
+                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
+                    });
+                } catch (RuntimeException exception) {
+                    Gdx.app.postRunnable(() -> showErrorDialog(t("upload_images_failed"), exception.getMessage()));
+                }
+            });
+        } catch (RuntimeException exception) {
+            showErrorDialog(t("upload_images_failed"), exception.getMessage());
+        }
     }
 
     private void showStartGameDialog() {
@@ -738,6 +773,7 @@ public class MainMenuScreen extends BaseScreen {
             case "deck_name" -> ru ? "Название колоды" : "Deck name";
             case "files_count" -> ru ? "Файлов" : "Files";
             case "upload_images" -> ru ? "Загрузить изображения" : "Upload images";
+            case "upload_images_failed" -> ru ? "Не удалось открыть выбор изображений" : "Failed to open image chooser";
             case "name" -> ru ? "Название" : "Name";
             case "save" -> ru ? "Сохранить" : "Save";
             case "cancel" -> ru ? "Отмена" : "Cancel";

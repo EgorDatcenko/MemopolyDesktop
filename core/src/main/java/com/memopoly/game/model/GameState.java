@@ -38,6 +38,7 @@ public class GameState {
     public boolean hasRolledThisTurn;
     public String lastActionLog;
     public int turnCount;
+    public String selectedDeckName;
 
     // Мем-баттл состояние
     public boolean isInBattle;
@@ -76,6 +77,7 @@ public class GameState {
         this.hasRolledThisTurn = false;
         this.lastActionLog = "Игра началась";
         this.turnCount = 0;
+        this.selectedDeckName = null;
 
         this.isInBattle = false;
         this.battleMemes = new ArrayList<>();

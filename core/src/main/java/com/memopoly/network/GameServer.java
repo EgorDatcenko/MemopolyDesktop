@@ -194,7 +194,7 @@ public class GameServer {
         } else if (packet instanceof RollDiceRequest) {
             handleRollDice(connection);
         } else if (packet instanceof StartGameRequest) {
-            handleStartGame(connection);
+            handleStartGame(connection, (StartGameRequest) packet);
         } else if (packet instanceof GameActionRequest) {
             handleGameAction(connection, (GameActionRequest) packet);
         } else if (packet instanceof BattleResponsePacket) {
@@ -254,7 +254,7 @@ public class GameServer {
         broadcastGameStateUnsafe();
     }
 
-    private void handleStartGame(Connection connection) {
+    private void handleStartGame(Connection connection, StartGameRequest request) {
         if (connection.getID() != hostConnectionId) {
             return;
         }
@@ -264,8 +264,11 @@ public class GameServer {
             return;
         }
 
+        gameState.selectedDeckName = request == null ? null : request.deckName;
         gameState.currentPhase = GameState.GamePhase.PLAYING;
-        gameState.lastActionLog = "Игра началась";
+        gameState.lastActionLog = gameState.selectedDeckName == null || gameState.selectedDeckName.isBlank()
+            ? "Игра началась"
+            : "Игра началась | Колода: " + gameState.selectedDeckName;
         gameState.turnCount = 1;
         gameState.currentPlayerIndex = 0;
         gameState.diceValue = 0;
