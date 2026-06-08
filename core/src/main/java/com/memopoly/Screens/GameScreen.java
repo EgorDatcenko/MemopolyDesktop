@@ -3,6 +3,7 @@ package com.memopoly.Screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -29,8 +30,10 @@ import com.memopoly.network.packets.BattleResponsePacket;
 import com.memopoly.network.packets.GameActionRequest;
 import com.memopoly.network.packets.RollDiceRequest;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class GameScreen extends BaseScreen {
@@ -108,6 +111,7 @@ public class GameScreen extends BaseScreen {
     private final Image buyModalCellImage;
     private final Table playersTable;
     private final Table ownedCellsTable;
+    private final Table handMemesTable;
     private final Table diceOverlay;
     private final Table currentCellOverlay;
     private final Table feedOverlay;
@@ -133,6 +137,8 @@ public class GameScreen extends BaseScreen {
     private final VisTextButton memeBankSkipButton;
     private String lastPlayersSignature = "";
     private String lastOwnedCellsSignature = "";
+    private String lastHandMemesSignature = "";
+    private final Map<String, Texture> memeTextureCache = new HashMap<>();
 
     private Table battleOverlay;
     private Table battleWindow;
@@ -199,6 +205,7 @@ public class GameScreen extends BaseScreen {
         buyModalCellImage.setScaling(Scaling.fit);
         playersTable = new Table();
         ownedCellsTable = new Table();
+        handMemesTable = new Table();
         diceOverlay = new Table();
         currentCellOverlay = new Table();
         feedOverlay = new Table();
@@ -235,6 +242,37 @@ public class GameScreen extends BaseScreen {
         sideRoot = root;
         root.setFillParent(true);
         root.pad(18);
+
+        Table memePanel = new Table();
+        memePanel.top().left();
+        memePanel.defaults().left().growX().padBottom(10);
+        memePanel.setBackground(new TextureRegionDrawable(new TextureRegion(sidebarWindowTexture)));
+        memePanel.pad(18, 18, 18, 18);
+
+        Table memeInner = new Table();
+        memeInner.pad(28, 12, 12, 12);
+        memeInner.top().left();
+        memeInner.defaults().left().growX().padBottom(10);
+        VisLabel memesTitle = new VisLabel("Мои мемы");
+        memesTitle.setColor(TITLE_COLOR);
+        VisLabel memesHint = new VisLabel("Во время мем-баттла нажми на карточку, чтобы отправить её.");
+        memesHint.setColor(Color.WHITE);
+        memesHint.setWrap(true);
+        handMemesTable.top().left();
+        ScrollPane memesScroll = new ScrollPane(handMemesTable);
+        memesScroll.setFadeScrollBars(false);
+        memesScroll.setScrollingDisabled(true, false);
+        memesScroll.getStyle().background = panel(new Color(0.13f, 0.12f, 0.20f, 0.95f));
+        chatWidget = new ChatWidget(game);
+        VisLabel chatTitle = new VisLabel("Чат");
+        chatTitle.setColor(TITLE_COLOR);
+        memeInner.add(memesTitle).row();
+        memeInner.add(memesHint).width(300).row();
+        memeInner.add(memesScroll).width(300).height(520).row();
+        memeInner.add(chatTitle).padTop(10).row();
+        memeInner.add(chatWidget).width(300).height(190).row();
+        memePanel.add(memeInner).width(320);
+        root.add(memePanel).width(350).top().left();
         root.add().expand().fill();
 
         Table sidePanel = new Table();
@@ -425,11 +463,6 @@ public class GameScreen extends BaseScreen {
         stage.addActor(auctionModal);
         stage.addActor(memeBankModal);
 
-        Table chatRoot = new Table();
-        chatRoot.setFillParent(true);
-        chatWidget = new ChatWidget(game);
-        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
-        stage.addActor(chatRoot);
         layoutBoardOverlays();
     }
 
@@ -526,15 +559,14 @@ public class GameScreen extends BaseScreen {
                     break;
                 }
                 // Сетка мемов из руки
+                int selectionColumn = 0;
                 for (Meme meme : localPlayer.handMemes) {
-                    VisTextButton memeButton = new VisTextButton(meme.description);
-                    memeButton.addListener(new ChangeListener() {
-                        @Override
-                        public void changed(ChangeEvent event, Actor actor) {
-                            sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0);
-                        }
-                    });
-                    battleContentTable.add(memeButton).width(200f).height(COMMON_BUTTON_HEIGHT).pad(8f);
+                    battleContentTable.add(createMemeCard(meme, "Выбрать", false, () ->
+                        sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0)
+                    )).width(170f).pad(6f);
+                    if (++selectionColumn % 3 == 0) {
+                        battleContentTable.row();
+                    }
                 }
                 break;
 
@@ -549,24 +581,17 @@ public class GameScreen extends BaseScreen {
                     break;
                 }
                 // Анонимные карточки мемов
+                int voteColumn = 0;
                 for (int i = 0; i < state.battleMemes.size(); i++) {
                     Meme meme = state.battleMemes.get(i);
                     final int memeId = meme.id;
-                    Table memeCard = new Table();
-                    memeCard.setBackground(panel(new Color(0.25f, 0.22f, 0.36f, 1f)));
-                    memeCard.pad(12f);
-                    VisLabel memeNum = new VisLabel("Мем #" + (i + 1));
-                    memeNum.setColor(Color.WHITE);
-                    VisTextButton voteButton = new VisTextButton("Голосовать");
-                    voteButton.addListener(new ChangeListener() {
-                        @Override
-                        public void changed(ChangeEvent event, Actor actor) {
-                            sendAction(GameActionRequest.ActionType.VOTE_MEME, memeId, 0);
-                        }
-                    });
-                    memeCard.add(memeNum).row();
-                    memeCard.add(voteButton).width(140f).height(44f).padTop(8f);
-                    battleContentTable.add(memeCard).width(180f).pad(8f);
+                    boolean ownMeme = meme.ownerId == localId;
+                    battleContentTable.add(createMemeCard(meme, ownMeme ? "Твой мем" : "Голосовать", ownMeme, () ->
+                        sendAction(GameActionRequest.ActionType.VOTE_MEME, memeId, 0)
+                    )).width(170f).pad(6f);
+                    if (++voteColumn % 3 == 0) {
+                        battleContentTable.row();
+                    }
                 }
                 break;
 
@@ -669,6 +694,7 @@ public class GameScreen extends BaseScreen {
             feedDescriptionLabel.setText("Подключаемся к игровой комнате и ждём актуальное состояние матча.");
             rebuildPlayersIfNeeded(null, null, -1);
             rebuildOwnedCellsIfNeeded(null, null, false, GameState.GamePhase.WAITING);
+            rebuildHandMemesIfNeeded(null, false);
             setButtonsEnabled(false, false, false, false, false);
             auctionLabel.setText("");
             refreshBattleOverlay(state);
@@ -696,6 +722,8 @@ public class GameScreen extends BaseScreen {
 
         rebuildPlayersIfNeeded(state, current, localPlayerId);
         rebuildOwnedCellsIfNeeded(state, localPlayer, myTurn, state.currentPhase);
+        boolean canSubmitBattleMeme = canSubmitBattleMeme(state, localPlayerId);
+        rebuildHandMemesIfNeeded(localPlayer, canSubmitBattleMeme);
         refreshActions(state, myTurn, currentCell);
         refreshBattleOverlay(state);
     }
@@ -716,6 +744,15 @@ public class GameScreen extends BaseScreen {
         }
         lastOwnedCellsSignature = signature;
         rebuildOwnedCells(state, localPlayer, myTurn, currentPhase);
+    }
+
+    private void rebuildHandMemesIfNeeded(Player localPlayer, boolean canSubmitBattleMeme) {
+        String signature = buildHandMemesSignature(localPlayer, canSubmitBattleMeme);
+        if (signature.equals(lastHandMemesSignature)) {
+            return;
+        }
+        lastHandMemesSignature = signature;
+        rebuildHandMemes(localPlayer, canSubmitBattleMeme);
     }
 
     private void rebuildPlayers(GameState state, Player current, int localPlayerId) {
@@ -778,6 +815,107 @@ public class GameScreen extends BaseScreen {
             row.add(actionButton).size(104, COMMON_BUTTON_HEIGHT);
             ownedCellsTable.add(row).width(332).left().padBottom(8).row();
         }
+    }
+
+    private void rebuildHandMemes(Player localPlayer, boolean canSubmitBattleMeme) {
+        handMemesTable.clearChildren();
+        if (localPlayer == null || localPlayer.handMemes == null || localPlayer.handMemes.isEmpty()) {
+            VisLabel emptyLabel = new VisLabel("Колода ещё не выдала мемы");
+            emptyLabel.setColor(TEXT_SOFT);
+            emptyLabel.setWrap(true);
+            handMemesTable.add(emptyLabel).width(280).left().row();
+            return;
+        }
+
+        for (Meme meme : localPlayer.handMemes) {
+            handMemesTable.add(createMemeCard(meme, canSubmitBattleMeme ? "Выбрать" : "В руке", !canSubmitBattleMeme, () ->
+                sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0)
+            )).width(280).padBottom(10).row();
+        }
+    }
+
+    private boolean canSubmitBattleMeme(GameState state, int localPlayerId) {
+        if (state == null || state.battleParticipants == null || state.battleMemes == null) {
+            return false;
+        }
+        if (state.currentPhase != GameState.GamePhase.MEME_BATTLE
+            || state.battlePhase != GameState.BattlePhase.COLLECTING_MEMES
+            || !state.battleParticipants.contains(localPlayerId)) {
+            return false;
+        }
+        for (Meme meme : state.battleMemes) {
+            if (meme.ownerId == localPlayerId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Table createMemeCard(Meme meme, String buttonText, boolean disabled, Runnable action) {
+        Table card = new Table();
+        card.setBackground(panel(new Color(0.25f, 0.22f, 0.36f, 1f)));
+        card.pad(10f);
+
+        Drawable memeDrawable = getMemeDrawable(meme);
+        if (memeDrawable != null) {
+            Image image = new Image(memeDrawable);
+            image.setScaling(Scaling.fit);
+            card.add(image).size(150f, 110f).center().row();
+        } else {
+            VisLabel placeholder = new VisLabel("Нет превью");
+            placeholder.setColor(Color.WHITE);
+            card.add(placeholder).height(110f).center().row();
+        }
+
+        String description = meme == null || meme.description == null || meme.description.isBlank() ? "Мем" : meme.description;
+        VisLabel descriptionLabel = new VisLabel(description);
+        descriptionLabel.setColor(Color.WHITE);
+        descriptionLabel.setWrap(true);
+        card.add(descriptionLabel).width(150f).padTop(6f).row();
+
+        VisTextButton button = new VisTextButton(buttonText);
+        button.setDisabled(disabled);
+        if (!disabled && action != null) {
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    action.run();
+                }
+            });
+        }
+        card.add(button).width(140f).height(40f).padTop(6f);
+        return card;
+    }
+
+    private Drawable getMemeDrawable(Meme meme) {
+        Texture texture = getMemeTexture(meme == null ? null : meme.imageUrl);
+        return texture == null ? null : new TextureRegionDrawable(new TextureRegion(texture));
+    }
+
+    private Texture getMemeTexture(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+        if (memeTextureCache.containsKey(imagePath)) {
+            return memeTextureCache.get(imagePath);
+        }
+
+        FileHandle file = Gdx.files.local(imagePath);
+        if (!file.exists()) {
+            file = Gdx.files.absolute(imagePath);
+        }
+        if (!file.exists()) {
+            file = Gdx.files.internal(imagePath);
+        }
+        if (!file.exists()) {
+            memeTextureCache.put(imagePath, null);
+            return null;
+        }
+
+        Texture texture = new Texture(file);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        memeTextureCache.put(imagePath, texture);
+        return texture;
     }
 
     private void refreshActions(GameState state, boolean myTurn, BoardCell currentCell) {
@@ -924,6 +1062,11 @@ public class GameScreen extends BaseScreen {
         backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
             cellTexture.dispose();
+        }
+        for (Texture memeTexture : memeTextureCache.values()) {
+            if (memeTexture != null) {
+                memeTexture.dispose();
+            }
         }
         if (chatWidget != null) {
             chatWidget.dispose();
@@ -1222,6 +1365,22 @@ public class GameScreen extends BaseScreen {
         for (int cellId : localPlayer.ownedCells) {
             builder.append(cellId).append(':')
                 .append(state.cellMortgaged.getOrDefault(cellId, false))
+                .append(';');
+        }
+        return builder.toString();
+    }
+
+    private String buildHandMemesSignature(Player localPlayer, boolean canSubmitBattleMeme) {
+        if (localPlayer == null || localPlayer.handMemes == null) {
+            return "none|" + canSubmitBattleMeme;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(canSubmitBattleMeme).append('|');
+        for (Meme meme : localPlayer.handMemes) {
+            builder.append(meme.id).append(':')
+                .append(meme.imageUrl).append(':')
+                .append(meme.description)
                 .append(';');
         }
         return builder.toString();

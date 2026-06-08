@@ -39,6 +39,7 @@ public class GameState {
     public String lastActionLog;
     public int turnCount;
     public String selectedDeckName;
+    public ArrayList<Meme> memeDeckDrawPile;
 
     // Мем-баттл состояние
     public boolean isInBattle;
@@ -78,6 +79,7 @@ public class GameState {
         this.lastActionLog = "Игра началась";
         this.turnCount = 0;
         this.selectedDeckName = null;
+        this.memeDeckDrawPile = new ArrayList<>();
 
         this.isInBattle = false;
         this.battleMemes = new ArrayList<>();
