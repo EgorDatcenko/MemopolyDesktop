@@ -41,10 +41,16 @@ public class ChatWidget extends Table {
     private final Table messagesTable;
     private final ScrollPane scrollPane;
     private final VisTextField inputField;
+    private final float contentWidth;
     private int renderedMessages = -1;
 
     public ChatWidget(Memopoly game) {
+        this(game, INPUT_FIELD_WIDTH + ENTER_BUTTON_WIDTH + INPUT_ROW_LEFT_PADDING + 14f);
+    }
+
+    public ChatWidget(Memopoly game, float contentWidth) {
         this.game = game;
+        this.contentWidth = Math.max(220f, contentWidth);
         chatWindowTexture = loadTextureIfExists("chat_window.png");
         inputTexture = loadTextureIfExists("input.png");
         enterButtonTexture = loadTextureIfExists("enter_btn.png");
@@ -77,8 +83,11 @@ public class ChatWidget extends Table {
         });
 
         add(scrollPane).colspan(2).grow().row();
+        float sendButtonWidth = Math.min(ENTER_BUTTON_WIDTH, Math.max(54f, this.contentWidth * 0.22f));
+        float fieldWidth = Math.max(120f, this.contentWidth - sendButtonWidth - INPUT_ROW_LEFT_PADDING - 14f);
+
         add(inputField)
-            .width(INPUT_FIELD_WIDTH)
+            .width(fieldWidth)
             .height(INPUT_CONTROL_HEIGHT)
             .padTop(INPUT_ROW_TOP_PADDING)
             .padBottom(INPUT_ROW_BOTTOM_PADDING)
@@ -86,7 +95,7 @@ public class ChatWidget extends Table {
             .padRight(6f)
             .left();
         add(sendButton)
-            .width(ENTER_BUTTON_WIDTH)
+            .width(sendButtonWidth)
             .height(INPUT_CONTROL_HEIGHT)
             .padTop(INPUT_ROW_TOP_PADDING)
             .padBottom(INPUT_ROW_BOTTOM_PADDING)
@@ -107,7 +116,7 @@ public class ChatWidget extends Table {
             label.setFontScale(MESSAGE_FONT_SCALE);
             label.setWrap(true);
             label.setColor(message.isSystem ? SYSTEM_COLOR : TEXT_COLOR);
-            messagesTable.add(label).width(300f).left().pad(3f, 5f, 3f, 5f).row();
+            messagesTable.add(label).width(Math.max(160f, contentWidth - 18f)).left().pad(3f, 5f, 3f, 5f).row();
         }
         scrollPane.layout();
         scrollPane.setScrollPercentY(1f);

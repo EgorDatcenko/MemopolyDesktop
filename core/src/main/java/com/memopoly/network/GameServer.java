@@ -16,6 +16,7 @@ import com.memopoly.network.handlers.MortgageCellActionHandler;
 import com.memopoly.network.handlers.MemeBankActionHandler;
 import com.memopoly.network.services.AuctionTimerService;
 import com.memopoly.network.services.GameStatePublisher;
+import com.memopoly.modding.DeckRepository;
 import com.memopoly.network.packets.*;
 import com.memopoly.utils.AppLog;
 import com.memopoly.utils.RoomCodeGenerator;
@@ -25,12 +26,14 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.memopoly.network.packets.GameActionRequest.ActionType.SUBMIT_MEME;
 import static com.memopoly.network.packets.GameActionRequest.ActionType.VOTE_MEME;
@@ -64,6 +67,7 @@ public class GameServer {
     private String hostIP;
     private String roomCode;
     private int hostConnectionId = -1;
+    private final AtomicInteger dealtMemeIdCounter = new AtomicInteger(-1);
 
     public GameServer() {
         Log.set(Log.LEVEL_DEBUG);
@@ -265,6 +269,7 @@ public class GameServer {
         }
 
         gameState.selectedDeckName = request == null ? null : request.deckName;
+        dealSelectedDeckMemes();
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         gameState.lastActionLog = gameState.selectedDeckName == null || gameState.selectedDeckName.isBlank()
             ? "Игра началась"
@@ -449,11 +454,14 @@ public class GameServer {
             case SUBMIT_MEME:
                 if (gameState.battleParticipants.contains(actingPlayer.id)
                     && actingPlayer.containsMeme(request.targetId)
+                    && !hasSubmittedBattleMeme(actingPlayer.id)
                     && gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES) {
                     for (Meme meme : new ArrayList<>(actingPlayer.handMemes)) {
                         if (meme.id == request.targetId) {
                             gameState.battleMemes.add(meme);
                             actingPlayer.handMemes.remove(meme);
+                            drawMemeForPlayer(actingPlayer);
+                            gameState.lastActionLog = actingPlayer.name + " выбрал мем для баттла";
                             break;
                         }
                     }
@@ -464,10 +472,11 @@ public class GameServer {
                 if (gameState.battlePhase == GameState.BattlePhase.VOTING
                     && gameState.containsMeme(request.targetId)          // мем существует
                     && !gameState.battleVoters.contains(actingPlayer.id) // ещё не голосовал
-                    && !gameState.isMemeOwnedBy(actingPlayer.id, request.targetId)) { // не свой мем
+                    && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) { // не свой мем
                     int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
                     gameState.votes.put(request.targetId, currentVotes + 1);
                     gameState.battleVoters.add(actingPlayer.id);
+                    gameState.lastActionLog = actingPlayer.name + " проголосовал в мем-баттле";
                 }
                 break;
             default:
@@ -475,6 +484,99 @@ public class GameServer {
         }
 
         broadcastGameStateUnsafe();
+    }
+
+    private void dealSelectedDeckMemes() {
+        gameState.memeDeckDrawPile.clear();
+        for (Player player : gameState.players) {
+            player.handMemes.clear();
+        }
+
+        ArrayList<Meme> deckMemes = loadSelectedDeckMemes(gameState.selectedDeckName);
+        if (deckMemes.isEmpty()) {
+            return;
+        }
+
+        int cardsNeeded = gameState.players.size() * 5;
+        ArrayList<Meme> dealPile = new ArrayList<>();
+        for (int i = 0; i < cardsNeeded; i++) {
+            Meme template = deckMemes.get(i % deckMemes.size());
+            dealPile.add(copyMemeForOwner(template, -1));
+        }
+        Collections.shuffle(dealPile);
+
+        int index = 0;
+        for (Player player : gameState.players) {
+            for (int card = 0; card < 5; card++) {
+                Meme meme = dealPile.get(index++);
+                meme.ownerId = player.id;
+                player.handMemes.add(meme);
+            }
+        }
+
+        ArrayList<Meme> drawPile = new ArrayList<>();
+        for (Meme meme : deckMemes) {
+            drawPile.add(copyMemeForOwner(meme, -1));
+        }
+        Collections.shuffle(drawPile);
+        gameState.memeDeckDrawPile.addAll(drawPile);
+    }
+
+    private ArrayList<Meme> loadSelectedDeckMemes(String deckName) {
+        ArrayList<Meme> memes = new ArrayList<>();
+        if (deckName == null || deckName.isBlank()) {
+            return memes;
+        }
+
+        for (MemeDeck deck : new DeckRepository().loadDecks()) {
+            if (deck != null && deck.name != null && deck.name.equals(deckName) && deck.memes != null) {
+                for (Meme meme : deck.memes) {
+                    if (meme != null && meme.imageUrl != null && !meme.imageUrl.isBlank()) {
+                        memes.add(meme);
+                    }
+                }
+                break;
+            }
+        }
+        return memes;
+    }
+
+    private Meme copyMemeForOwner(Meme source, int ownerId) {
+        Meme copy = new Meme();
+        copy.id = dealtMemeIdCounter.getAndDecrement();
+        copy.imageUrl = source.imageUrl;
+        copy.description = source.description == null || source.description.isBlank() ? "Мем" : source.description;
+        copy.deckName = source.deckName;
+        copy.ownerId = ownerId;
+        return copy;
+    }
+
+    private void drawMemeForPlayer(Player player) {
+        if (player == null || gameState.memeDeckDrawPile == null) {
+            return;
+        }
+        if (gameState.memeDeckDrawPile.isEmpty()) {
+            ArrayList<Meme> deckMemes = loadSelectedDeckMemes(gameState.selectedDeckName);
+            for (Meme meme : deckMemes) {
+                gameState.memeDeckDrawPile.add(copyMemeForOwner(meme, -1));
+            }
+            Collections.shuffle(gameState.memeDeckDrawPile);
+        }
+        if (gameState.memeDeckDrawPile.isEmpty()) {
+            return;
+        }
+        Meme meme = gameState.memeDeckDrawPile.remove(0);
+        meme.ownerId = player.id;
+        player.handMemes.add(meme);
+    }
+
+    private boolean hasSubmittedBattleMeme(int playerId) {
+        for (Meme meme : gameState.battleMemes) {
+            if (meme.ownerId == playerId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void rejectAction(Connection connection, Player player, GameActionRequest.ActionType actionType, String reasonCode, String reason) {
