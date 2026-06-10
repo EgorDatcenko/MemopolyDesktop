@@ -9,7 +9,6 @@ import com.memopoly.network.packets.BattleResponsePacket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.memopoly.game.model.GameState.BattlePhase.*;
 import static com.memopoly.game.model.GameState.BattleType.MEME_BATTLE_CELL;
@@ -87,12 +86,20 @@ public class BattleManager {
         gameState.battleInvited = battleInvited;
 
         if (battleInvited.isEmpty()) {
+            if (gameState.battleParticipants.size() < 2) {
+                skipBattle("Мем-баттл пропущен: участников меньше двух");
+                return;
+            }
             startCollecting();
         }
 
         onBroadcast.run();
     }
     public void startCollecting(){
+        if (gameState.battleParticipants.size() < 2) {
+            skipBattle("Мем-баттл пропущен: участников меньше двух");
+            return;
+        }
         gameState.battlePhase = COLLECTING_MEMES;
         gameState.battleTimerSeconds = 60;
         Thread collectingThread = new Thread(() -> {
@@ -116,8 +123,14 @@ public class BattleManager {
         collectingThread.start();
     }
     public void startVoting(){
+        if (countSubmittedParticipants() < 2 || gameState.battleMemes.size() < 2) {
+            skipBattle("Мем-баттл пропущен: выбрано меньше двух мемов");
+            return;
+        }
+        normalizeBattleParticipantsToSubmittedMemes();
         gameState.battlePhase = VOTING;
         gameState.battleTimerSeconds = 30;
+        onBroadcast.run();
         Thread voitingThread = new Thread(() -> {
             // Этот код выполняется в отдельном потоке
             while (gameState.battleTimerSeconds > 0 && gameState.isInBattle) {
@@ -137,6 +150,45 @@ public class BattleManager {
         voitingThread.setDaemon(true);
         voitingThread.start();
     }
+    private void normalizeBattleParticipantsToSubmittedMemes() {
+        gameState.battleParticipants = collectSubmittedParticipants();
+    }
+
+    private int countSubmittedParticipants() {
+        return collectSubmittedParticipants().size();
+    }
+
+    private ArrayList<Integer> collectSubmittedParticipants() {
+        ArrayList<Integer> submittedParticipants = new ArrayList<>();
+        for (Meme meme : gameState.battleMemes) {
+            if (!submittedParticipants.contains(meme.ownerId)) {
+                submittedParticipants.add(meme.ownerId);
+            }
+        }
+        return submittedParticipants;
+    }
+
+    private void skipBattle(String reason) {
+        if (gameState.battleType == MEME_BATTLE_CELL && gameState.battleStakes > 0) {
+            for (Integer participantId : gameState.battleParticipants) {
+                if (participantId == null || participantId == gameState.battleOwnerId) {
+                    continue;
+                }
+                Player participant = gameState.getPlayerById(participantId);
+                if (participant != null) {
+                    participant.receive(gameState.battleStakes);
+                }
+            }
+            battleBank = 0;
+            gameState.battleBank = 0;
+        }
+        gameState.lastActionLog = reason;
+        gameState.endMemeBattle();
+        gameState.nextPlayer();
+        gameState.lastActionLog = reason;
+        onBroadcast.run();
+    }
+
     public void countVotes() {
         int max = 0;
         for (int votes : gameState.votes.values()) {
