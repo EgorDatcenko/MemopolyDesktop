@@ -947,6 +947,107 @@ public class GameScreen extends BaseScreen {
         return texture;
     }
 
+    private void rebuildHandMemes(Player localPlayer, boolean canSubmitBattleMeme) {
+        handMemesTable.clearChildren();
+        if (localPlayer == null || localPlayer.handMemes == null || localPlayer.handMemes.isEmpty()) {
+            VisLabel emptyLabel = new VisLabel("Колода ещё не выдала мемы");
+            emptyLabel.setColor(TEXT_SOFT);
+            emptyLabel.setWrap(true);
+            handMemesTable.add(emptyLabel).width(280).left().row();
+            return;
+        }
+
+        for (Meme meme : localPlayer.handMemes) {
+            handMemesTable.add(createMemeCard(meme, canSubmitBattleMeme ? "Выбрать" : "В руке", !canSubmitBattleMeme, () ->
+                sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0)
+            )).width(280).padBottom(10).row();
+        }
+    }
+
+    private boolean canSubmitBattleMeme(GameState state, int localPlayerId) {
+        if (state == null || state.battleParticipants == null || state.battleMemes == null) {
+            return false;
+        }
+        if (state.currentPhase != GameState.GamePhase.MEME_BATTLE
+            || state.battlePhase != GameState.BattlePhase.COLLECTING_MEMES
+            || !state.battleParticipants.contains(localPlayerId)) {
+            return false;
+        }
+        for (Meme meme : state.battleMemes) {
+            if (meme.ownerId == localPlayerId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Table createMemeCard(Meme meme, String buttonText, boolean disabled, Runnable action) {
+        Table card = new Table();
+        card.setBackground(panel(new Color(0.25f, 0.22f, 0.36f, 1f)));
+        card.pad(10f);
+
+        Drawable memeDrawable = getMemeDrawable(meme);
+        if (memeDrawable != null) {
+            Image image = new Image(memeDrawable);
+            image.setScaling(Scaling.fit);
+            card.add(image).size(150f, 110f).center().row();
+        } else {
+            VisLabel placeholder = new VisLabel("Нет превью");
+            placeholder.setColor(Color.WHITE);
+            card.add(placeholder).height(110f).center().row();
+        }
+
+        String description = meme == null || meme.description == null || meme.description.isBlank() ? "Мем" : meme.description;
+        VisLabel descriptionLabel = new VisLabel(description);
+        descriptionLabel.setColor(Color.WHITE);
+        descriptionLabel.setWrap(true);
+        card.add(descriptionLabel).width(150f).padTop(6f).row();
+
+        VisTextButton button = new VisTextButton(buttonText);
+        button.setDisabled(disabled);
+        if (!disabled && action != null) {
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    action.run();
+                }
+            });
+        }
+        card.add(button).width(140f).height(40f).padTop(6f);
+        return card;
+    }
+
+    private Drawable getMemeDrawable(Meme meme) {
+        Texture texture = getMemeTexture(meme == null ? null : meme.imageUrl);
+        return texture == null ? null : new TextureRegionDrawable(new TextureRegion(texture));
+    }
+
+    private Texture getMemeTexture(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+        if (memeTextureCache.containsKey(imagePath)) {
+            return memeTextureCache.get(imagePath);
+        }
+
+        FileHandle file = Gdx.files.local(imagePath);
+        if (!file.exists()) {
+            file = Gdx.files.absolute(imagePath);
+        }
+        if (!file.exists()) {
+            file = Gdx.files.internal(imagePath);
+        }
+        if (!file.exists()) {
+            memeTextureCache.put(imagePath, null);
+            return null;
+        }
+
+        Texture texture = new Texture(file);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        memeTextureCache.put(imagePath, texture);
+        return texture;
+    }
+
     private void refreshActions(GameState state, boolean myTurn, BoardCell currentCell) {
         boolean canRoll = myTurn && state.currentPhase == GameState.GamePhase.PLAYING && !state.hasRolledThisTurn;
         boolean canBuyOrPass = myTurn && state.currentPhase == GameState.GamePhase.PLAYER_ACTION
