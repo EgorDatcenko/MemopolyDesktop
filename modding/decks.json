@@ -1,0 +1,75 @@
+{
+decks: [
+	{
+		name: mops_test
+		memes: [
+			{
+				id: 1734758988
+				imageUrl: modding/decks/mops_test_2556/meme_0.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1727378715
+				imageUrl: modding/decks/mops_test_2556/meme_1.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 454410478
+				imageUrl: modding/decks/mops_test_2556/meme_2.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 554902725
+				imageUrl: modding/decks/mops_test_2556/meme_3.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 2055720416
+				imageUrl: modding/decks/mops_test_2556/meme_4.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1267226008
+				imageUrl: modding/decks/mops_test_2556/meme_5.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 879712612
+				imageUrl: modding/decks/mops_test_2556/meme_6.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1711345776
+				imageUrl: modding/decks/mops_test_2556/meme_7.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1444620152
+				imageUrl: modding/decks/mops_test_2556/meme_8.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1010631080
+				imageUrl: modding/decks/mops_test_2556/meme_9.png
+				description: ""
+				deckName: mops_test
+			}
+			{
+				id: 1133012194
+				imageUrl: modding/decks/mops_test_2556/meme_10.png
+				description: ""
+				deckName: mops_test
+			}
+		]
+	}
+]
+}
