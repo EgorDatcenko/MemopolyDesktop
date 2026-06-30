@@ -20,6 +20,9 @@ import com.memopoly.network.packets.ChatMessage;
 
 import java.util.List;
 
+/**
+ * UI-виджет чата: отображает историю сообщений и поле ввода текста в лобби и во время игры.
+ */
 public class ChatWidget extends Table {
     private static final Color PANEL_BACKGROUND = new Color(0.06f, 0.05f, 0.10f, 0.82f);
     private static final Color LOG_BACKGROUND = new Color(0.13f, 0.12f, 0.20f, 0.88f);

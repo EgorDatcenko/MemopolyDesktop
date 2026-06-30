@@ -31,6 +31,9 @@ import com.memopoly.modding.DeckRepository;
 import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 
+/**
+ * Экран комнаты ожидания: показывает список подключённых игроков, позволяет выбирать колоду и запускать матч.
+ */
 public class LobbyScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
@@ -50,23 +53,27 @@ public class LobbyScreen extends BaseScreen {
     private static final Color SECONDARY_BUTTON = new Color(0.24f, 0.74f, 0.98f, 1f);
     private static final Color DANGER_BUTTON = new Color(0.82f, 0.25f, 0.24f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
+    private static final String CHOOSE_DECK_TEXTURE_PATH = "choose_deck.png";
     private static final String START_BUTTON_TEXTURE_PATH = "start_the_game_btn.png";
     private static final String COPY_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String CANCEL_BUTTON_TEXTURE_PATH = "cancel_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
+    //private static final String GAME_OVERLAY_WINDOW_TEXTURE_PATH = "game_overlay_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
+    private final Texture chooseDeckBtnTexture;
     private final Texture startButtonTexture;
     private final Texture copyButtonTexture;
     private final Texture backButtonTexture;
     private final Texture cancelButtonTexture;
     private final Texture lobbyWindowTexture;
+    //private final Texture gameOverlayWindowTexture;
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
-    private ChatWidget chatWidget;
+    //private ChatWidget chatWidget;
     private VisLabel selectedDeckLabel;
     private String selectedDeckName;
     private int lastPlayersCount = -1;
@@ -79,11 +86,13 @@ public class LobbyScreen extends BaseScreen {
         stage = new Stage(new ScreenViewport());
         language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
+        chooseDeckBtnTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CHOOSE_DECK_TEXTURE_PATH, language));
         startButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(START_BUTTON_TEXTURE_PATH, language));
         copyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_BUTTON_TEXTURE_PATH, language));
         backButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
+        //gameOverlayWindowTexture = loadTexture(GAME_OVERLAY_WINDOW_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
         createUI();
     }
@@ -111,7 +120,7 @@ public class LobbyScreen extends BaseScreen {
         ScrollPane playersScroll = new ScrollPane(playersTable, VisUI.getSkin());
         playersScroll.setFadeScrollBars(false);
         playersScroll.setScrollingDisabled(true, false);
-        playersScroll.getStyle().background = panel(new Color(0.13f, 0.12f, 0.20f, 0.95f));
+        //playersScroll.getStyle().background = new TextureRegionDrawable(new TextureRegion(gameOverlayWindowTexture));
 
         startButton = createImageButton(startButtonTexture);
         startButton.setVisible(game.isHost());
@@ -167,11 +176,11 @@ public class LobbyScreen extends BaseScreen {
 
         stage.addActor(root);
 
-        Table chatRoot = new Table();
-        chatRoot.setFillParent(true);
-        chatWidget = new ChatWidget(game);
-        chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
-        stage.addActor(chatRoot);
+        //Table chatRoot = new Table();
+        //chatRoot.setFillParent(true);
+        //chatWidget = new ChatWidget(game);
+        //chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        //stage.addActor(chatRoot);
     }
 
     private Table createDeckSelector() {
@@ -180,7 +189,7 @@ public class LobbyScreen extends BaseScreen {
         selectedDeckLabel.setColor(SUBTITLE_COLOR);
         selectedDeckLabel.setWrap(true);
 
-        VisTextButton chooseDeckButton = new VisTextButton(t("choose_deck"));
+        ImageButton chooseDeckButton = createImageButton(chooseDeckBtnTexture);
         chooseDeckButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -368,9 +377,9 @@ public class LobbyScreen extends BaseScreen {
             startButton.setDisabled(count < 2);
         }
 
-        if (chatWidget != null) {
-            chatWidget.refresh();
-        }
+        //if (chatWidget != null) {
+        //    chatWidget.refresh();
+        //}
         stage.act(delta);
         stage.draw();
     }
@@ -433,14 +442,16 @@ public class LobbyScreen extends BaseScreen {
     @Override
     public void dispose() {
         backgroundTexture.dispose();
+        chooseDeckBtnTexture.dispose();
         startButtonTexture.dispose();
         copyButtonTexture.dispose();
         backButtonTexture.dispose();
         cancelButtonTexture.dispose();
         lobbyWindowTexture.dispose();
-        if (chatWidget != null) {
-            chatWidget.dispose();
-        }
+        //gameOverlayWindowTexture.dispose();
+        //if (chatWidget != null) {
+        //    chatWidget.dispose();
+        //}
         stage.dispose();
     }
 }

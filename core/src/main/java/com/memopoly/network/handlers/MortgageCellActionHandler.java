@@ -8,6 +8,9 @@ import com.memopoly.network.packets.GameActionRequest;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
+/**
+ * Обработчик залога клетки: переводит имущество игрока в состояние залога (ипотеки) для получения быстрых денег.
+ */
 public class MortgageCellActionHandler implements GameActionHandler {
     private final GameState gameState;
     private final IntPredicate isCurrentPlayer;

@@ -1,23 +1,25 @@
 package com.memopoly.game.model;
 
+/**
+ * Модель карточки событий (шанс): содержит описание события и тип применяемого эффекта (деньги, пропуск хода, взять карту и т.д.).
+ */
 public class EventCard {
     public enum EffectType{
-        RECEIVE_MONEY,    //+n
-        SKIP_TURN,        // Пропустить ход
-        COLLECT_FROM_ALL, // Каждый платит n
-        PAY_MONEY,        // Заплатить n
-        DRAW_MEME,        // Все получают карту
-        RECEIVE_MONEY_LARGE // +n > 100
+        RECEIVE_MONEY,    
+        SKIP_TURN,        
+        COLLECT_FROM_ALL, 
+        PAY_MONEY,        
+        DRAW_MEME,        
+        RECEIVE_MONEY_LARGE 
     }
 
     public int id;
     public String title;
     public String description;
     public EffectType effectType;
-    public int amount; // Для денежных эффектов
-    public String targetPlayer; // Для специфических эффектов
+    public int amount; 
+    public String targetPlayer; 
 
-    // Пустой конструктор для KryoNet
     public EventCard() {}
 
     public EventCard(int id, String title, String description, EffectType effectType) {
@@ -26,7 +28,7 @@ public class EventCard {
         this.title = title;
         this.description = description;
         this.effectType = effectType;
-        this.amount = 0; // По умолчанию
+        this.amount = 0; 
     }
 
     public EventCard(int id, String title, String description, EffectType effectType, int amount) {
@@ -34,7 +36,6 @@ public class EventCard {
         this.amount = amount;
     }
 
-    // Фабричные методы для удобства
     public static EventCard createReceiveCard(int id, String title, String desc, int amount) {
         return new EventCard(id, title, desc, EffectType.RECEIVE_MONEY, amount);
     }

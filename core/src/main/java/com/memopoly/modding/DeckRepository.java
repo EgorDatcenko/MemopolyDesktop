@@ -11,6 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Репозиторий колод: отвечает за сохранение, загрузку и управление пользовательскими колодами мемов (моддинг).
+ */
 public class DeckRepository {
     private static final String STORAGE_PATH = "modding/decks.json";
     private static final String DECK_IMAGES_DIR = "modding/decks";
@@ -33,7 +36,6 @@ public class DeckRepository {
         }
 
         String trimmed = raw.trim();
-        // backward compatibility: older format stored bare array of decks
         if (trimmed.startsWith("[")) {
             Array<MemeDeck> decks = json.fromJson(Array.class, MemeDeck.class, raw);
             return decks == null ? new Array<>() : decks;

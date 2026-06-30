@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Главный класс игры: создаёт GameClient/GameServer, управляет переключением экранов через ScreenManager, хранит последнее состояние GameState и обрабатывает сетевые события.
+ */
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
     private static final int WINDOWED_WIDTH = 1600;
@@ -68,7 +71,7 @@ public class Memopoly extends Game implements NetworkListener {
         AppLog.info("Network", "State updated: " + gameState.turnCount + ", phase=" + gameState.currentPhase);
 
         if (isHost && !lobbyOpened && gameState != null && gameState.players != null && !gameState.players.isEmpty()) {
-            lobbyOpened = true; // ставим флаг ДО postRunnable
+            lobbyOpened = true; 
             Gdx.app.postRunnable(() -> openLobby());
         }
     }

@@ -3,6 +3,9 @@ package com.memopoly.assets;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
+/**
+ * Менеджер игровых ресурсов: централизованно загружает и хранит текстуры, шрифты, атласы и прочие ассеты.
+ */
 public class Assets {
     public static final String ATLAS_UI = "ui/ui.atlas";
     public static final String ATLAS_MEMES = "memes/memes.atlas";

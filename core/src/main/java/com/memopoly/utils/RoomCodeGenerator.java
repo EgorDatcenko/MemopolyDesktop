@@ -1,5 +1,8 @@
 package com.memopoly.utils;
 
+/**
+ * Генератор кодов комнат: кодирует IP-адрес сервера в буквенный код и декодирует его обратно с проверкой контрольной суммы.
+ */
 public class RoomCodeGenerator {
 
     private static final String[] FIXED_WORDS = {
@@ -16,7 +19,6 @@ public class RoomCodeGenerator {
                 String base36 = Integer.toString(number, 36).toUpperCase();
                 String word = FIXED_WORDS[i % FIXED_WORDS.length];
 
-                // Явный разделитель между числом и словом
                 code.append(base36).append("_").append(word);
 
                 if (i < 3) code.append("-");
@@ -42,7 +44,6 @@ public class RoomCodeGenerator {
             for (int i = 0; i < 4; i++) {
                 String part = parts[i];
 
-                // Разделяем по "_" чтобы отделить base36 от слова
                 String[] numberAndWord = part.split("_");
 
                 if (numberAndWord.length < 2) {
@@ -64,7 +65,6 @@ public class RoomCodeGenerator {
                 }
             }
 
-            // Проверяем контрольную сумму
             if (parts.length > 4) {
                 String providedChecksum = parts[4];
                 String calculatedChecksum = generateSimpleChecksum(ip.toString());
@@ -111,7 +111,6 @@ public class RoomCodeGenerator {
         AppLog.info("RoomCode", "Decoded: " + decoded);
         AppLog.info("RoomCode", "Correct: " + ip.equals(decoded));
 
-        // Тест с другими IP
         AppLog.info("RoomCode", "Дополнительные тесты:");
         testIP("127.0.0.1");
         testIP("10.0.0.1");

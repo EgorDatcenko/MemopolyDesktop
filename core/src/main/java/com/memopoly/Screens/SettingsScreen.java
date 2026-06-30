@@ -23,6 +23,9 @@ import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
 
+/**
+ * Экран настроек: содержит регуляторы громкости музыки/эффектов и переключатель полноэкранного режима.
+ */
 public class SettingsScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 48f;
     private static final float SETTINGS_WINDOW_SCALE = 0.5f;

@@ -2,6 +2,9 @@ package com.memopoly.game.model;
 
 import com.badlogic.gdx.utils.Array;
 
+/**
+ * Управляет колодой мемов: отвечает за стопку добора и сброса, перемешивание и выдачу карт игрокам.
+ */
 public class MemeDeck {
     public String name;
     public Array<Meme> memes = new Array<>();

@@ -4,6 +4,9 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 
+/**
+ * Утилита буфера обмена: позволяет быстро копировать код комнаты в системный буфер обмена.
+ */
 public class ClipboardUtils {
     public static void copyToClipboard(String text) {
         try {

@@ -38,6 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.memopoly.network.packets.GameActionRequest.ActionType.SUBMIT_MEME;
 import static com.memopoly.network.packets.GameActionRequest.ActionType.VOTE_MEME;
 
+/**
+ * Авторитетный игровой сервер на KryoNet: принимает подключения, проверяет валидность действий, обновляет GameState и рассылает его игрокам.
+ */
 public class GameServer {
     private static final int TCP_PORT = 54555;
     private static final String REJECT_NOT_YOUR_TURN = "NOT_YOUR_TURN";
@@ -77,7 +80,7 @@ public class GameServer {
         gameState = new GameState();
         auctionTimerService = new AuctionTimerService(timerExecutor);
         gameStatePublisher = new GameStatePublisher(gameState, this::sendAllTcpSafely, this::sendTcpSafely);
-        battleManager = new BattleManager(gameState, board, gameStatePublisher::broadcastState);
+        battleManager = new BattleManager(gameState, board, gameStatePublisher::broadcastState, timerExecutor, stateLock);
         buyCellActionHandler = new BuyCellActionHandler(
             gameState,
             board,
@@ -350,17 +353,13 @@ public class GameServer {
                 int cellIndex = cell.id;
                 if (!gameState.cellOwners.containsKey(cellIndex)) {
                     gameState.currentPhase = GameState.GamePhase.PLAYER_ACTION;
-                    gameState.lastActionLog = current.name + " попал на " + cell.name;
                 } else if (gameState.cellOwners.get(cellIndex) != current.id) {
                     boolean mortgaged = gameState.cellMortgaged.getOrDefault(cellIndex, false);
                     if (!mortgaged) {
                         int fee = cell.getEntranceFee();
                         current.pay(fee);
                         Player owner = gameState.getPlayerById(gameState.cellOwners.get(cellIndex));
-                        if (owner != null) {
-                            owner.receive(fee);
-                        }
-                        gameState.lastActionLog = current.name + " заплатил " + fee + " игроку " + (owner != null ? owner.name : "владельцу");
+                        if (owner != null) owner.receive(fee);
                         checkBankruptcy(current, true);
                     }
                 }
@@ -371,8 +370,7 @@ public class GameServer {
                 gameState.lastActionLog = current.name + " попал на Meme Bank";
                 break;
             case MEME_BATTLE:
-                gameState.battleType = GameState.BattleType.MEME_BATTLE_CELL;
-                battleManager.startBattle(current.id, cell.id, 0);
+                battleManager.startSetup(current.id, cell.id);
                 break;
             default:
                 break;
@@ -389,6 +387,16 @@ public class GameServer {
             return;
         }
         switch (request.actionType) {
+            case START_MEME_BATTLE: {
+                if (gameState.isInBattle
+                    && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
+                    && isCurrentPlayer(connection.getID())) {
+                    String topic = (request.data != null && !request.data.isBlank()) ? request.data : "Без темы";
+                    int stakes = Math.max(0, request.amount);
+                    battleManager.confirmSetup(actingPlayer.id, topic, stakes);
+                }
+                break;
+            }
             case BUY_CELL:
                 if (buyCellActionHandler.handle(connection, actingPlayer, request)) {
                     break;
@@ -451,32 +459,81 @@ public class GameServer {
                     gameState.nextPlayer();
                 }
                 break;
-            case SUBMIT_MEME:
-                if (gameState.battleParticipants.contains(actingPlayer.id)
-                    && actingPlayer.containsMeme(request.targetId)
-                    && !hasSubmittedBattleMeme(actingPlayer.id)
-                    && gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES) {
-                    for (Meme meme : new ArrayList<>(actingPlayer.handMemes)) {
-                        if (meme.id == request.targetId) {
-                            gameState.battleMemes.add(meme);
-                            actingPlayer.handMemes.remove(meme);
-                            drawMemeForPlayer(actingPlayer);
-                            gameState.lastActionLog = actingPlayer.name + " выбрал мем для баттла";
+
+            case SUBMIT_MEME: {
+                System.out.println("\n[SERVER_LOG] Получен пакет SUBMIT_MEME от игрока ID: " + (actingPlayer != null ? actingPlayer.id : "null"));
+
+                if (gameState == null) {
+                    System.out.println("[SERVER_LOG] Ошибка: gameState равен null!");
+                    break;
+                }
+
+                System.out.println("[SERVER_LOG] Проверка условий:");
+                System.out.println("  -> gameState.isInBattle: " + gameState.isInBattle);
+                System.out.println("  -> gameState.currentPhase: " + gameState.currentPhase);
+
+                if (gameState.battleParticipants != null && actingPlayer != null) {
+                    System.out.println("  -> Игрок в списке участников баттла: " + gameState.battleParticipants.contains(actingPlayer.id));
+                } else {
+                    System.out.println("  -> Ошибка: battleParticipants или actingPlayer равен null!");
+                }
+
+                if (gameState.isInBattle && actingPlayer != null) {
+
+                    Meme newMeme = null;
+                    System.out.println("[SERVER_LOG] Мемы в руке игрока " + actingPlayer.name + ":");
+                    for (Meme m : actingPlayer.handMemes) {
+                        System.out.println("  * Карту с ID: " + m.id);
+                        if (m.id == request.targetId) {
+                            newMeme = m;
+                        }
+                    }
+
+                    if (newMeme == null) {
+                        System.out.println("[SERVER_LOG] КРИТИЧЕСКАЯ ОШИБКА: Мем с запрошенным ID " + request.targetId + " НЕ НАЙДЕН в руке игрока!");
+                        break;
+                    }
+
+                    Meme previouslySubmitted = null;
+                    for (Meme m : gameState.battleMemes) {
+                        if (m.ownerId == actingPlayer.id) {
+                            previouslySubmitted = m;
                             break;
                         }
                     }
+
+                    if (previouslySubmitted != null) {
+                        System.out.println("[SERVER_LOG] Игрок меняет выбор. Возвращаем мем ID " + previouslySubmitted.id + " в руку.");
+                        gameState.battleMemes.remove(previouslySubmitted);
+                        actingPlayer.handMemes.add(previouslySubmitted);
+                    } else {
+                        System.out.println("[SERVER_LOG] Первый выбор мема. Берем карту из колоды.");
+                        drawMemeForPlayer(actingPlayer);
+                    }
+
+                    actingPlayer.handMemes.remove(newMeme);
+                    gameState.battleMemes.add(newMeme);
+                    System.out.println("[SERVER_LOG] Успешно! Мем добавлен на стол. Всего мемов на столе: " + gameState.battleMemes.size());
+
+                    gameState.lastActionLog = actingPlayer.name + " выбрал мем для баттла";
+                    broadcastGameStateUnsafe();
+                    battleManager.checkCollectingPhaseCompletion();
+                } else {
+                    System.out.println("[SERVER_LOG] Пакет отклонён: условия начала баттла не выполнены.");
                 }
                 break;
-
+            }
             case VOTE_MEME:
                 if (gameState.battlePhase == GameState.BattlePhase.VOTING
-                    && gameState.containsMeme(request.targetId)          // мем существует
-                    && !gameState.battleVoters.contains(actingPlayer.id) // ещё не голосовал
-                    && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) { // не свой мем
+                    && gameState.containsMeme(request.targetId)
+                    && !gameState.battleVoters.contains(actingPlayer.id)
+                    && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) {
                     int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
                     gameState.votes.put(request.targetId, currentVotes + 1);
                     gameState.battleVoters.add(actingPlayer.id);
                     gameState.lastActionLog = actingPlayer.name + " проголосовал в мем-баттле";
+                    broadcastGameStateUnsafe();
+                    battleManager.checkVotingPhaseCompletion();
                 }
                 break;
             default:

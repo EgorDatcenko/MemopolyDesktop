@@ -1,5 +1,8 @@
 package com.memopoly.network.packets;
 
+/**
+ * Пакет отклонения действия: отправляется сервером клиенту в случае невалидного хода с указанием причины.
+ */
 public class ActionRejectedPacket {
     public String actionType;
     public String reasonCode;

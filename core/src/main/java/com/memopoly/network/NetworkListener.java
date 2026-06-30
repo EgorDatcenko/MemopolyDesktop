@@ -4,6 +4,9 @@ import com.memopoly.game.model.GameState;
 import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.ChatMessage;
 
+/**
+ * Сетевой интерфейс обратных вызовов: определяет методы для обработки сетевых событий (подключение, изменение состояния, чат).
+ */
 public interface NetworkListener {
     void onGameStateUpdated(GameState gameState);
     void onDiceRolled(RollDiceResponse response);

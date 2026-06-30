@@ -4,33 +4,34 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+/**
+ * Главная модель состояния матча: содержит список игроков, фазу игры, состояние аукционов и мем-баттлов, лог событий и баланс банка мемов.
+ */
 public class GameState {
     public HashMap<Integer, Integer> cellOwners;
     public HashMap<Integer, Boolean> cellMortgaged;
-    // Фазы игры
     public enum GamePhase {
-        WAITING,       // Ожидание игроков
-        PLAYING,       // Основная игра
-        ROLLING_DICE,  // Бросок кубиков
-        PLAYER_ACTION, // Выбор действия (купить/отказаться)
-        MEME_BATTLE,   // Мем-баттл
-        AUCTION,       // Аукцион
-        GAME_OVER,      // Конец игры
-        MEME_BANK_ACTION
+        WAITING,
+        PLAYING,
+        ROLLING_DICE,
+        PLAYER_ACTION,
+        AUCTION,
+        GAME_OVER,
+        MEME_BANK_ACTION,
+        MEME_BATTLE
     }
     public enum BattleType {
-        MEME_BATTLE_CELL,
-        SITUATION_CELL
+        MEME_BATTLE_CELL
     }
 
     public enum BattlePhase {
+        BATTLE_SETUP,
         INVITE,
         COLLECTING_MEMES,
         VOTING,
         COUNTING,
         RESULTS
     }
-    // Основные поля для KryoNet
     public ArrayList<Player> players;
     public int currentPlayerIndex;
     public GamePhase currentPhase;
@@ -41,7 +42,6 @@ public class GameState {
     public String selectedDeckName;
     public ArrayList<Meme> memeDeckDrawPile;
 
-    // Мем-баттл состояние
     public boolean isInBattle;
     public int battleStakes;
     public String battleTopic;
@@ -50,6 +50,7 @@ public class GameState {
     public int battleOwnerId;
 
     public BattleType battleType;
+    public int battleSetupCellIndex;  // cell that triggered the battle setup
     public ArrayList<Integer> battleParticipants;
     public ArrayList<Integer> battleInvited;
     public HashMap<Integer, Boolean> battleAccepted;
@@ -57,17 +58,15 @@ public class GameState {
     public BattlePhase battlePhase;
     public int battleBank;
     public ArrayList<Integer> battleVoters;
-    // Аукцион состояние
     public boolean isInAuction;
     public int auctionCellId;
-    public HashMap<Integer, Integer> auctionBids; // playerId -> bid
+    public HashMap<Integer, Integer> auctionBids;
     public int currentAuctionTime;
     public int auctionStarterPlayerId;
     public int auctionCurrentPlayerId;
 
     public int memeBankPlayerId = -1;
 
-    // Стандартные конструкторы
     public GameState() {
         this.cellOwners = new HashMap<>();
         this.cellMortgaged = new HashMap<>();
@@ -96,7 +95,6 @@ public class GameState {
         this.auctionCurrentPlayerId = -1;
     }
 
-    // Игровые методы
     public Player getCurrentPlayer() {
         if (players.isEmpty()) return null;
         return players.get(currentPlayerIndex);
@@ -152,7 +150,6 @@ public class GameState {
         return richest;
     }
 
-    // Методы для мем-баттла
     public void startMemeBattle(int stakes, String topic, int ownerId) {
         isInBattle = true;
         battleStakes = stakes;
@@ -193,12 +190,11 @@ public class GameState {
         battleVoters.clear();
     }
 
-    // Методы для аукциона
     public void startAuction(int cellId) {
         isInAuction = true;
         auctionCellId = cellId;
         auctionBids.clear();
-        currentAuctionTime = 30; // 30 секунд
+        currentAuctionTime = 30;
         auctionCurrentPlayerId = -1;
         currentPhase = GamePhase.AUCTION;
         lastActionLog = "Начинается аукцион!";

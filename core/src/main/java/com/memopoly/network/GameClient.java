@@ -11,6 +11,9 @@ import com.memopoly.utils.AppLog;
 
 import java.io.IOException;
 
+/**
+ * Сетевой клиент игры на KryoNet: отвечает за подключение к серверу, отправку действий и получение обновлений состояния.
+ */
 public class GameClient {
     private final Client client;
     private volatile GameState gameState;

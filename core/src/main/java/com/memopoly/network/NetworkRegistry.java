@@ -11,6 +11,9 @@ import com.memopoly.network.packets.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Регистратор сетевых пакетов: регистрирует DTO-классы в Kryo для корректной сериализации и передачи по сети.
+ */
 public class NetworkRegistry {
     public static void register(Kryo kryo) {
         kryo.setRegistrationRequired(true);

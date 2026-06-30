@@ -8,6 +8,9 @@ import com.memopoly.network.packets.GameStatePacket;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Сервис рассылки состояния: управляет отправкой пакетов GameStatePacket клиентам на сервере.
+ */
 public class GameStatePublisher {
     private final GameState gameState;
     private final Consumer<Object> sendAllTcp;

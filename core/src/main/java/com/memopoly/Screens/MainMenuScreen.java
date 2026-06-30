@@ -40,6 +40,9 @@ import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+/**
+ * Экран главного меню: предоставляет кнопки для создания игры, подключения по коду, настроек и выхода.
+ */
 public class MainMenuScreen extends BaseScreen {
     private static final float BUTTON_HEIGHT_MENU = 72f;
     private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
@@ -579,7 +582,6 @@ public class MainMenuScreen extends BaseScreen {
         Dialog notification = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
-                // Просто закрываем уведомление
             }
         };
 
@@ -644,8 +646,8 @@ public class MainMenuScreen extends BaseScreen {
 
         dialog.getContentTable().add(t("select_game_language")).expandX().top().padTop(42f).padBottom(20f).row();
         Table languageButtons = new Table();
-        languageButtons.add(english).size(160f, 84f).pad(8f);
-        languageButtons.add(russian).size(160f, 84f).pad(8f);
+        languageButtons.add(english).size(320f, 84f).pad(8f);
+        languageButtons.add(russian).size(320f, 84f).pad(8f);
         dialog.getContentTable().add(languageButtons).expand().center().padBottom(20f).row();
         showDialog(dialog);
     }

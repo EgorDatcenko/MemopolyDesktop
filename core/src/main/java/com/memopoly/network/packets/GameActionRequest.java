@@ -1,5 +1,8 @@
 package com.memopoly.network.packets;
 
+/**
+ * Пакет игрового действия: отправляется клиентом для выполнения какого-либо хода на сервере.
+ */
 public class GameActionRequest {
     public enum ActionType {
         BUY_CELL,

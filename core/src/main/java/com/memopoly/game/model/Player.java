@@ -2,6 +2,9 @@ package com.memopoly.game.model;
 
 import java.util.ArrayList;
 
+/**
+ * Состояние игрока: хранит баланс денег, позицию на поле, статус банкротства, карты мемов в руке, купленные клетки и баланс в банке мемов.
+ */
 public class Player {
     public int id;
     public String name;

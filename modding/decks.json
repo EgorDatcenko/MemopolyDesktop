@@ -71,5 +71,646 @@ decks: [
 			}
 		]
 	}
+	{
+		name: Забава
+		memes: [
+			{
+				id: 1334863083
+				imageUrl: modding/decks/__3090/meme_0.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1126958267
+				imageUrl: modding/decks/__3090/meme_1.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2087504838
+				imageUrl: modding/decks/__3090/meme_2.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1849977706
+				imageUrl: modding/decks/__3090/meme_3.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1714649438
+				imageUrl: modding/decks/__3090/meme_4.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1965335243
+				imageUrl: modding/decks/__3090/meme_5.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2060720929
+				imageUrl: modding/decks/__3090/meme_6.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1433512330
+				imageUrl: modding/decks/__3090/meme_7.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1263364195
+				imageUrl: modding/decks/__3090/meme_8.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 247902621
+				imageUrl: modding/decks/__3090/meme_9.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 675347438
+				imageUrl: modding/decks/__3090/meme_10.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 490839550
+				imageUrl: modding/decks/__3090/meme_11.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1779528893
+				imageUrl: modding/decks/__3090/meme_12.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 205791894
+				imageUrl: modding/decks/__3090/meme_13.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 380754975
+				imageUrl: modding/decks/__3090/meme_14.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1423496862
+				imageUrl: modding/decks/__3090/meme_15.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 915105343
+				imageUrl: modding/decks/__3090/meme_16.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 28367667
+				imageUrl: modding/decks/__3090/meme_17.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1583268672
+				imageUrl: modding/decks/__3090/meme_18.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1267596484
+				imageUrl: modding/decks/__3090/meme_19.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 435360964
+				imageUrl: modding/decks/__3090/meme_20.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 81825109
+				imageUrl: modding/decks/__3090/meme_21.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1978813602
+				imageUrl: modding/decks/__3090/meme_22.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 378594311
+				imageUrl: modding/decks/__3090/meme_23.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2088035815
+				imageUrl: modding/decks/__3090/meme_24.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1985406818
+				imageUrl: modding/decks/__3090/meme_25.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1147985874
+				imageUrl: modding/decks/__3090/meme_26.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1140683937
+				imageUrl: modding/decks/__3090/meme_27.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1622363189
+				imageUrl: modding/decks/__3090/meme_28.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1968474492
+				imageUrl: modding/decks/__3090/meme_29.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2087956442
+				imageUrl: modding/decks/__3090/meme_30.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1892004395
+				imageUrl: modding/decks/__3090/meme_31.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1888547883
+				imageUrl: modding/decks/__3090/meme_32.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1804011647
+				imageUrl: modding/decks/__3090/meme_33.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1583292118
+				imageUrl: modding/decks/__3090/meme_34.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 217445332
+				imageUrl: modding/decks/__3090/meme_35.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2139075116
+				imageUrl: modding/decks/__3090/meme_36.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1084590080
+				imageUrl: modding/decks/__3090/meme_37.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2033976665
+				imageUrl: modding/decks/__3090/meme_38.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 602283874
+				imageUrl: modding/decks/__3090/meme_39.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1787388721
+				imageUrl: modding/decks/__3090/meme_40.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1115547222
+				imageUrl: modding/decks/__3090/meme_41.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 195747678
+				imageUrl: modding/decks/__3090/meme_42.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1918474570
+				imageUrl: modding/decks/__3090/meme_43.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1363637034
+				imageUrl: modding/decks/__3090/meme_44.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2124299167
+				imageUrl: modding/decks/__3090/meme_45.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 404694442
+				imageUrl: modding/decks/__3090/meme_46.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 22697529
+				imageUrl: modding/decks/__3090/meme_47.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 657484524
+				imageUrl: modding/decks/__3090/meme_48.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2135313558
+				imageUrl: modding/decks/__3090/meme_49.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1510825051
+				imageUrl: modding/decks/__3090/meme_50.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1600539787
+				imageUrl: modding/decks/__3090/meme_51.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1995649101
+				imageUrl: modding/decks/__3090/meme_52.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1555475902
+				imageUrl: modding/decks/__3090/meme_53.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 679855310
+				imageUrl: modding/decks/__3090/meme_54.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 158167488
+				imageUrl: modding/decks/__3090/meme_55.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1404847875
+				imageUrl: modding/decks/__3090/meme_56.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 980856757
+				imageUrl: modding/decks/__3090/meme_57.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 740846410
+				imageUrl: modding/decks/__3090/meme_58.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 960266590
+				imageUrl: modding/decks/__3090/meme_59.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1115019128
+				imageUrl: modding/decks/__3090/meme_60.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1298738865
+				imageUrl: modding/decks/__3090/meme_61.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2032235375
+				imageUrl: modding/decks/__3090/meme_62.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 42869499
+				imageUrl: modding/decks/__3090/meme_63.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 47913681
+				imageUrl: modding/decks/__3090/meme_64.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 466906220
+				imageUrl: modding/decks/__3090/meme_65.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 293649797
+				imageUrl: modding/decks/__3090/meme_66.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 391490035
+				imageUrl: modding/decks/__3090/meme_67.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 85085650
+				imageUrl: modding/decks/__3090/meme_68.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1525479830
+				imageUrl: modding/decks/__3090/meme_69.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1350841684
+				imageUrl: modding/decks/__3090/meme_70.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1669762238
+				imageUrl: modding/decks/__3090/meme_71.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2092524195
+				imageUrl: modding/decks/__3090/meme_72.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 959893750
+				imageUrl: modding/decks/__3090/meme_73.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2136412598
+				imageUrl: modding/decks/__3090/meme_74.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1570528278
+				imageUrl: modding/decks/__3090/meme_75.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 462951551
+				imageUrl: modding/decks/__3090/meme_76.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1501720859
+				imageUrl: modding/decks/__3090/meme_77.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 857516458
+				imageUrl: modding/decks/__3090/meme_78.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 391930899
+				imageUrl: modding/decks/__3090/meme_79.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1773364440
+				imageUrl: modding/decks/__3090/meme_80.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 143564031
+				imageUrl: modding/decks/__3090/meme_81.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1432610443
+				imageUrl: modding/decks/__3090/meme_82.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 182136970
+				imageUrl: modding/decks/__3090/meme_83.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 2013507380
+				imageUrl: modding/decks/__3090/meme_84.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 214441615
+				imageUrl: modding/decks/__3090/meme_85.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 22335302
+				imageUrl: modding/decks/__3090/meme_86.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1165190592
+				imageUrl: modding/decks/__3090/meme_87.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 611021951
+				imageUrl: modding/decks/__3090/meme_88.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1274127938
+				imageUrl: modding/decks/__3090/meme_89.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1418653774
+				imageUrl: modding/decks/__3090/meme_90.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1795027356
+				imageUrl: modding/decks/__3090/meme_91.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 244923825
+				imageUrl: modding/decks/__3090/meme_92.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1787698723
+				imageUrl: modding/decks/__3090/meme_93.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1864916395
+				imageUrl: modding/decks/__3090/meme_94.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 708987451
+				imageUrl: modding/decks/__3090/meme_95.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1556226909
+				imageUrl: modding/decks/__3090/meme_96.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1699640937
+				imageUrl: modding/decks/__3090/meme_97.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1206255402
+				imageUrl: modding/decks/__3090/meme_98.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 267941604
+				imageUrl: modding/decks/__3090/meme_99.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1374546643
+				imageUrl: modding/decks/__3090/meme_100.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1488549497
+				imageUrl: modding/decks/__3090/meme_101.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1470874263
+				imageUrl: modding/decks/__3090/meme_102.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1881400304
+				imageUrl: modding/decks/__3090/meme_103.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 1984047937
+				imageUrl: modding/decks/__3090/meme_104.png
+				description: ""
+				deckName: Забава
+			}
+			{
+				id: 256145858
+				imageUrl: modding/decks/__3090/meme_105.png
+				description: ""
+				deckName: Забава
+			}
+		]
+	}
 ]
 }

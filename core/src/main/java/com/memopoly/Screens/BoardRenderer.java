@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Отрисовщик игрового поля: рисует карту, рамки владения, фишки игроков и анимации перемещения на поле.
+ */
 public class BoardRenderer {
     private static final String MAP_TEXTURE_PATH = "map.png";
     private static final String ACTIVE_OUTLINE_SQUARE_TEXTURE_PATH = "green(1x1).png";
@@ -392,39 +395,32 @@ public class BoardRenderer {
         float horizontalCellWidth = (1f - 2f * cornerWidth) / 9f;
         float verticalCellHeight = (1f - 2f * cornerHeight) / 9f;
 
-        // Bottom row
         layout[0] = rect(1f - cornerWidth, 0f, cornerWidth, cornerHeight);
         for (int i = 1; i < 10; i++) {
             layout[i] = rect(1f - cornerWidth - horizontalCellWidth * i, 0f, horizontalCellWidth, cornerHeight);
         }
 
-        // Left column
         layout[10] = rect(0f, 0f, cornerWidth, cornerHeight);
         for (int i = 11; i < 20; i++) {
             layout[i] = rect(0f, cornerHeight + verticalCellHeight * (i - 11), cornerWidth, verticalCellHeight);
         }
 
-        // Top row
         layout[20] = rect(0f, 1f - cornerHeight, cornerWidth, cornerHeight);
         for (int i = 21; i < 30; i++) {
             layout[i] = rect(cornerWidth + horizontalCellWidth * (i - 21), 1f - cornerHeight, horizontalCellWidth, cornerHeight);
         }
 
-        // Right column
         layout[30] = rect(1f - cornerWidth, 1f - cornerHeight, cornerWidth, cornerHeight);
         for (int i = 31; i < 40; i++) {
             layout[i] = rect(1f - cornerWidth, 1f - cornerHeight - verticalCellHeight * (i - 30), cornerWidth, verticalCellHeight);
         }
 
         // First manual calibration pass for the real art:
-        // corners are visually larger than regular cells, and side strips need
-        // a bit more breathing room from the decorative inner frame.
         layout[0] = rect(0.870f, 0f, 0.130f, 0.132f);
         layout[10] = rect(0.000f, 0.000f, 0.130f, 0.132f);
         layout[20] = rect(0.000f, 0.868f, 0.130f, 0.132f);
         layout[30] = rect(0.870f, 0.868f, 0.130f, 0.132f);
 
-        // Bottom side: align overlays tighter to the visible cell borders.
 
         layout[9] = rect(0.12810000f, 0.000f, 0.08702222222222222f, 0.132f);
         layout[8] = rect(0.2113222222222222f, 0.000f, 0.08702222222222222f, 0.132f);
@@ -436,9 +432,6 @@ public class BoardRenderer {
         layout[2] = rect(0.7046555555555555f, 0.000f, 0.08702222222222222f, 0.132f);
         layout[1] = rect(0.7868777777777778f, 0.000f, 0.08702222222222222f, 0.132f);
 
-        // Right side: calibrated from the full-height corners and evenly stepped
-        // interior cards on the art. A slight overlap between neighbors avoids
-        // visible seams in the highlight outlines.
         layout[31] = rect(0.870f, 0.7858889f, 0.132f, 0.08702222222222222f);
         layout[32] = rect(0.870f, 0.7036667f, 0.132f, 0.08702222222222222f);
         layout[33] = rect(0.870f, 0.6214444f, 0.132f, 0.08702222222222222f);
@@ -449,7 +442,6 @@ public class BoardRenderer {
         layout[38] = rect(0.870f, 0.2103333f, 0.132f, 0.08702222222222222f);
         layout[39] = rect(0.870f, 0.1281111f, 0.132f, 0.08702222222222222f);
 
-        // Left side
         layout[11] = rect(0.000f, 0.1281111f, 0.130f, 0.08702222222222222f);
         layout[12] = rect(0.000f, 0.2103333f, 0.130f, 0.08702222222222222f);
         layout[13] = rect(0.000f, 0.2925556f, 0.130f, 0.08702222222222222f);
@@ -460,7 +452,6 @@ public class BoardRenderer {
         layout[18] = rect(0.000f, 0.7036667f, 0.130f, 0.08702222222222222f);
         layout[19] = rect(0.000f, 0.7858889f, 0.130f, 0.08702222222222222f);
 
-        // Top side mirrors the calibrated bottom row.
         layout[21] = rect(0.12710000f, 0.868f, 0.08702222222222222f, 0.132f);
         layout[22] = rect(0.2103222222222222f, 0.868f, 0.08702222222222222f, 0.132f);
         layout[23] = rect(0.2925444444444444f, 0.868f, 0.08702222222222222f, 0.132f);

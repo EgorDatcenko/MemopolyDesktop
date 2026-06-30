@@ -4,6 +4,9 @@ import javax.sound.sampled.LineEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Модель клетки игрового поля: хранит тип клетки, цену, группу, владельца, состояние залога (ипотеки) и вычисляет стоимость аренды.
+ */
 public class BoardCell {
     public enum Type{
         SITUATION,
