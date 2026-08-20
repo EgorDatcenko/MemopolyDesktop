@@ -47,6 +47,9 @@ public class GameServer {
     private static final String REJECT_INVALID_PHASE = "INVALID_PHASE";
     private static final String REJECT_AUCTION_NOT_ACTIVE = "AUCTION_NOT_ACTIVE";
     private static final String REJECT_AUCTION_OTHER_PLAYER_TURN = "AUCTION_OTHER_PLAYER_TURN";
+    private static final int JAIL_CELL_ID = 30;
+    private static final int JAIL_FINE = 50;
+    private static final int MAX_JAIL_ATTEMPTS = 3;
 
     private final Server server;
     private final GameState gameState;
@@ -303,6 +306,22 @@ public class GameServer {
         gameState.hasRolledThisTurn = true;
         current.maxAffordable = getMaxAffordable(current);
 
+        // Handle jail logic: if player is in jail, roll dice to try to get out
+        if (current.inJail) {
+            handleJailDiceRoll(current, dice1, dice2, total);
+
+            RollDiceResponse response = new RollDiceResponse();
+            response.playerId = connection.getID();
+            response.dice1 = dice1;
+            response.dice2 = dice2;
+            response.total = total;
+            response.newPosition = current.position;
+
+            sendAllTcpSafely(response);
+            broadcastGameStateUnsafe();
+            return;
+        }
+
         int oldPosition = current.position;
         current.position = (oldPosition + total) % board.size();
         gameState.lastActionLog = current.name + " бросил кубики: " + total;
@@ -342,12 +361,21 @@ public class GameServer {
         switch (cell.type) {
             case START:
             case REST:
+                break;
             case JAIL:
+                current.inJail = true;
+                current.jailTurns = 0;
+                gameState.lastActionLog = current.name + " попал в тюрьму (Copyright Infringement)";
                 break;
             case TAX:
                 current.pay(100);
                 gameState.lastActionLog = current.name + " заплатил налог 100";
                 checkBankruptcy(current, true);
+                break;
+            case EVENT:
+                EventCard eventCard = EventDeck.drawRandom();
+                applyEventCard(current, eventCard);
+                notifyPlayers(current.name + ": " + eventCard.title + " — " + eventCard.description);
                 break;
             case SITUATION:
                 int cellIndex = cell.id;
@@ -377,6 +405,69 @@ public class GameServer {
         }
     }
 
+    /**
+     * Handles dice roll while player is in jail.
+     * - If doubles are rolled: player gets out of jail immediately and moves the dice total
+     * - If not doubles: increment jailTurns counter
+     * - After 3 failed attempts: player must pay fine or stays in jail
+     */
+    private void handleJailDiceRoll(Player current, int dice1, int dice2, int total) {
+        if (current == null) return;
+
+        boolean isDoubles = (dice1 == dice2);
+
+        if (isDoubles) {
+            // Got doubles! Get out of jail immediately and move
+            current.inJail = false;
+            current.jailTurns = 0;
+
+            // Move player after getting out of jail
+            int oldPosition = current.position;
+            current.position = (oldPosition + total) % board.size();
+            gameState.lastActionLog = current.name + " вышел из тюрьмы, бросив двойню! Движется на " + total + " клеток";
+
+            // Check if passed Start
+            if (current.position < oldPosition) {
+                current.receive(200);
+                gameState.lastActionLog += " и прошёл Старт, получив 200!";
+                for (Player p : gameState.players) {
+                    if (p.memeBankBalance > 0) {
+                        int interest = p.memeBankBalance / 10;
+                        p.memeBankBalance += interest;
+                        gameState.lastActionLog += " | " + p.name + " получил " + interest + " % по вкладу";
+                    }
+                }
+            }
+
+            // Handle landing on cell
+            BoardCell cell = board.get(current.position);
+            handleCellLanding(current, cell);
+        } else {
+            // No doubles
+            current.jailTurns++;
+            gameState.lastActionLog = current.name + " бросил " + total + " в тюрьме (попытка " + current.jailTurns + "/3)";
+
+            if (current.jailTurns >= MAX_JAIL_ATTEMPTS) {
+                // After 3 failed attempts, must pay fine or stay in jail
+                if (current.money >= JAIL_FINE) {
+                    current.pay(JAIL_FINE);
+                    current.inJail = false;
+                    current.jailTurns = 0;
+                    gameState.lastActionLog = current.name + " заплатил штраф " + JAIL_FINE + " и вышел из тюрьмы";
+                    notifyPlayers(current.name + " заплатил " + JAIL_FINE + " за выход из тюрьмы");
+                } else {
+                    // Can't afford fine - must stay in jail until doubles or pay later
+                    current.inJail = true;
+                    gameState.lastActionLog = current.name + " не может позволить себе штраф и остаётся в тюрьме";
+                    notifyPlayers(current.name + " не хватает " + (JAIL_FINE - current.money) + " для выхода из тюрьмы");
+                }
+            } else {
+                // Still have attempts remaining
+                gameState.lastActionLog = current.name + " остаётся в тюрьме (" + current.jailTurns + "/3 попыток)";
+            }
+        }
+    }
+
     public void handleGameAction(Connection connection, GameActionRequest request) {
         if (request == null || request.actionType == null) {
             return;
@@ -391,9 +482,17 @@ public class GameServer {
                 if (gameState.isInBattle
                     && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
                     && isCurrentPlayer(connection.getID())) {
-                    String topic = (request.data != null && !request.data.isBlank()) ? request.data : "Без темы";
-                    int stakes = Math.max(0, request.amount);
+                    String topic = (request.data != null && !request.data.isBlank()) ? request.data.trim() : "";
+                    int stakes = Math.min(200, Math.max(10, request.amount));
                     battleManager.confirmSetup(actingPlayer.id, topic, stakes);
+                }
+                break;
+            }
+            case CANCEL_MEME_BATTLE: {
+                if (gameState.isInBattle
+                    && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
+                    && gameState.battleOwnerId == actingPlayer.id) {
+                    battleManager.cancelSetup(actingPlayer.id);
                 }
                 break;
             }
@@ -449,6 +548,26 @@ public class GameServer {
                 gameState.lastActionLog = actingPlayer.name + " остановил аукцион";
                 endAuctionInternal();
                 cancelAuctionTimer();
+                break;
+            case PAY_JAIL_FINE:
+                if (!isCurrentPlayer(connection.getID())) {
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN, "можно платить штраф только в свой ход");
+                    return;
+                }
+                if (!actingPlayer.inJail) {
+                    rejectAction(connection, actingPlayer, request.actionType, "INVALID_JAIL_STATE", "игрок не находится в тюрьме");
+                    return;
+                }
+                if (actingPlayer.money < JAIL_FINE) {
+                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS", "недостаточно монет для штрафа " + JAIL_FINE);
+                    return;
+                }
+                actingPlayer.pay(JAIL_FINE);
+                actingPlayer.inJail = false;
+                actingPlayer.jailTurns = 0;
+                gameState.hasRolledThisTurn = true;
+                gameState.lastActionLog = actingPlayer.name + " заплатил " + JAIL_FINE + " и вышел из тюрьмы";
+                notifyPlayers(actingPlayer.name + " заплатил " + JAIL_FINE + " за выход из тюрьмы");
                 break;
             case END_TURN:
                 if (!isCurrentPlayer(connection.getID())) {
@@ -516,6 +635,12 @@ public class GameServer {
                     System.out.println("[SERVER_LOG] Успешно! Мем добавлен на стол. Всего мемов на столе: " + gameState.battleMemes.size());
 
                     gameState.lastActionLog = actingPlayer.name + " выбрал мем для баттла";
+
+                    if (gameState.battleOwnerId == actingPlayer.id
+                        && request.data != null && !request.data.isBlank()) {
+                        gameState.battleTopic = request.data.trim();
+                    }
+
                     broadcastGameStateUnsafe();
                     battleManager.checkCollectingPhaseCompletion();
                 } else {
@@ -923,5 +1048,69 @@ public class GameServer {
         cancelAuctionTimer();
         timerExecutor.shutdownNow();
         server.stop();
+    }
+
+    private void notifyPlayers(String text) {
+        gameState.showNotification(text);
+    }
+
+    private void applyEventCard(Player player, EventCard card) {
+        if (player == null || card == null || card.effectType == null) {
+            return;
+        }
+
+        player.maxAffordable = getMaxAffordable(player);
+        switch (card.effectType) {
+            case RECEIVE_MONEY:
+            case RECEIVE_MONEY_LARGE:
+                player.receive(card.amount);
+                break;
+            case PAY_MONEY:
+                player.pay(card.amount);
+                checkBankruptcy(player, true);
+                break;
+            case RECEIVE_PER_OWNED_CELL:
+                player.receive(player.ownedCells.size() * card.amount);
+                break;
+            case PAY_PER_OWNED_CELL:
+                player.pay(player.ownedCells.size() * card.amount);
+                checkBankruptcy(player, true);
+                break;
+            case SKIP_NEXT_RENT_COLLECTION:
+                player.receive(card.amount);
+                player.skipNextRentCollection = true;
+                break;
+            case SKIP_TURN:
+                player.skipNextTurn = true;
+                break;
+            case EXTRA_ROLL:
+                gameState.hasRolledThisTurn = false;
+                gameState.currentPhase = GameState.GamePhase.PLAYING;
+                break;
+            case RETURN_TO_START:
+                player.position = 0;
+                gameState.currentPhase = GameState.GamePhase.PLAYING;
+                break;
+            case MARKET_CRASH:
+                player.memeBankBalance = 0;
+                break;
+            case COLLECT_FROM_ALL:
+                for (Player other : gameState.players) {
+                    if (other.id != player.id && !other.isBankrupt) {
+                        other.maxAffordable = getMaxAffordable(other);
+                        other.pay(card.amount);
+                        if (!other.isBankrupt) {
+                            player.receive(card.amount);
+                        }
+                        checkBankruptcy(other, false);
+                    }
+                }
+                break;
+            case DRAW_MEME:
+                drawMemeForPlayer(player);
+                break;
+            default:
+                break;
+        }
     }
 }

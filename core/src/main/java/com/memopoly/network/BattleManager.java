@@ -233,6 +233,11 @@ public class BattleManager {
         }
     }
 
+    public void cancelSetup(int organizerId) {
+        if (gameState.battlePhase != BATTLE_SETUP || gameState.battleOwnerId != organizerId) return;
+        skipBattle("Мем-баттл отменён организатором");
+    }
+
     private void normalizeBattleParticipantsToSubmittedMemes() {
         gameState.battleParticipants = collectSubmittedParticipants();
     }

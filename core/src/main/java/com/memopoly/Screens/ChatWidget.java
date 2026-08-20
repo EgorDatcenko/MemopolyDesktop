@@ -67,7 +67,7 @@ public class ChatWidget extends Table {
         scrollPane = new ScrollPane(messagesTable, VisUI.getSkin());
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(true, false);
-        scrollPane.getStyle().background = drawable(LOG_BACKGROUND);
+        scrollPane.getStyle().background = null;
 
         inputField = new VisTextField();
         inputField.setMessageText("Чат");

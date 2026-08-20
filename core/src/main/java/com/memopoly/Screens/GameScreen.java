@@ -34,6 +34,7 @@ import com.memopoly.network.packets.RollDiceRequest;
 import javax.swing.event.ChangeEvent;
 import java.util.*;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 /**
  * Экран игрового процесса: отображает доску, статистику игроков, кнопки действий и всплывающие окна баттлов/аукционов.
  */
@@ -41,9 +42,6 @@ public class GameScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float WORLD_WIDTH = 1920f;
     private static final float WORLD_HEIGHT = 1080f;
-    private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
-    private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.96f);
-    private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.92f);
     private static final Color TITLE_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final Color TEXT_SOFT = Color.WHITE;
     private static final Color ACCENT_GOLD = new Color(0.99f, 0.83f, 0.29f, 1f);
@@ -63,15 +61,22 @@ public class GameScreen extends BaseScreen {
     private static final String NOTIFICATION_WINDOW_TEXTURE_PATH = "notification_window.png";
     private static final String BUY_AND_AUCTION_WINDOW_TEXTURE_PATH = "buy_and_auction_window.png";
     private static final String AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH = "auction_or_memebank_window.png";
-    private static final String SIDEBAR_WINDOW_TEXTURE_PATH = "sidebar_window.jpg";
-    private static final String MEME_BATTLE_OVERLAY_TEXTURE_PATH = "meme_battle_overlay.jpg";
+    private static final Color BATTLE_TEXT_COLOR = Color.valueOf("000A3E");
     private static final String INPUT_TEXTURE_PATH = "input.png";
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String GAME_OVERLAY_WINDOW_TEXTURE_PATH = "game_overlay_window.png";
     private static final String PASS_BUTTON_TEXTURE_PATH = "pass_btn.png";
-    private static final float BUY_AND_AUCTION_MODAL_SCALE = 0.50f;
-    private static final float AUCTION_OR_MEME_BANK_MODAL_SCALE = 0.50f;
-    private static final float NOTIFICATION_MODAL_SCALE = 0.50f;
+    private static final String PLAYERS_WINDOW_TEXTURE_PATH = "the_left_sidebar_window.png";
+    private static final String MY_CELLS_WINDOW_TEXTURE_PATH = "my_cells_sidebar.png";
+    private static final String MEMES_WINDOW_TEXTURE_PATH = "memes_sidebar.png";
+    private static final float BUY_AND_AUCTION_MODAL_MIN_W = 780f;
+    private static final float BUY_AND_AUCTION_MODAL_MIN_H = 430f;
+    private static final float AUCTION_MODAL_MIN_W = 800f;
+    private static final float AUCTION_MODAL_MIN_H = 320f;
+    private static final float MEME_BANK_MODAL_MIN_W = 640f;
+    private static final float MEME_BANK_MODAL_MIN_H = 420f;
+    private static final float NOTIFICATION_MODAL_MIN_W = 520f;
+    private static final float NOTIFICATION_MODAL_MIN_H = 220f;
 
     private final Stage stage;
     private final BoardRenderer boardRenderer;
@@ -93,12 +98,13 @@ public class GameScreen extends BaseScreen {
     private final Texture notificationWindowTexture;
     private final Texture buyAndAuctionWindowTexture;
     private final Texture auctionOrMemeBankWindowTexture;
-    private final Texture sidebarWindowTexture;
-    private final Texture memeBattleOverlayTexture;
     private final Texture inputTexture;
     private final Texture backgroundTexture;
     private final Texture gameOverlayWindowTexture;
     private final Texture[] cellTextures;
+    private final Texture playersWindowTexture;
+    private final Texture myCellsWindowTexture;
+    private final Texture memesWindowTexture;
 
     private final VisLabel titleLabel;
     private final VisLabel phaseLabel;
@@ -144,32 +150,36 @@ public class GameScreen extends BaseScreen {
     private String lastPlayersSignature = "";
     private String lastOwnedCellsSignature = "";
     private String lastHandMemesSignature = "";
+    private long lastShownNotificationTimestamp = 0L;
+    private float notificationVisibleTime = 0f;
     private final Map<String, Texture> memeTextureCache = new HashMap<>();
+    private final Map<Integer, Integer> lastKnownPositions = new HashMap<>();
     private String lastBattleSignature = "";
     // Input validation error labels
     private VisLabel memeBankErrorLabel;
     private VisLabel auctionErrorLabel;
 
+    private final Language language;
     private Table battleOverlay;
-    private Table battleWindow;
-    private Cell<Table> battleWindowCell;
     private Table sidePanelContainer;
     private Table sideRoot;
-    private VisLabel battleTitleLabel;
     private VisLabel battleTimerLabel;
-    private VisLabel battleTopicLabel;
-    private Table battleContentTable;
-    private Actor battleYesButton;
-    private Actor battleNoButton;
+    private VisLabel stakeValueLabel;
+    private int localStake = 50;
+    private VisTextField topicField;
+    private ImageButton startBattleButton;
+    private int selectedBattleMemeId = -1;
     private ChatWidget chatWidget;
-
-    private enum BattleContentMode {
-        SETUP, INVITE, MEME_SELECTION, WAITING, VOTING, RESULTS
-    }
+    private final Texture tenUpTexture;
+    private final Texture tenDownTexture;
+    private final Texture startBattleTexture;
+    private final Texture inputMemeBattleTexture;
+    private final Texture cardBoardTexture;
 
     public GameScreen(Memopoly game) {
         super(game);
-        Language language = game.getLanguageManager().getLanguage();
+        this.language = game.getLanguageManager().getLanguage();
+        Language language = this.language;
         boardRenderer = new BoardRenderer(game);
         stage = new Stage(new FitViewport(WORLD_WIDTH, WORLD_HEIGHT));
         boardCells = BoardData.buildCells();
@@ -192,12 +202,18 @@ public class GameScreen extends BaseScreen {
         notificationWindowTexture = loadTexture(NOTIFICATION_WINDOW_TEXTURE_PATH);
         buyAndAuctionWindowTexture = loadTexture(BUY_AND_AUCTION_WINDOW_TEXTURE_PATH);
         auctionOrMemeBankWindowTexture = loadTexture(AUCTION_OR_MEMEBANK_WINDOW_TEXTURE_PATH);
-        sidebarWindowTexture = loadTextureWithFallback(SIDEBAR_WINDOW_TEXTURE_PATH, "sidebar_window.png");
-        memeBattleOverlayTexture = loadTextureIfExists(MEME_BATTLE_OVERLAY_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         cellTextures = loadCellTextures();
         gameOverlayWindowTexture = loadTexture(GAME_OVERLAY_WINDOW_TEXTURE_PATH);
+        playersWindowTexture = loadTextureWithFallback(PLAYERS_WINDOW_TEXTURE_PATH, MY_CELLS_WINDOW_TEXTURE_PATH);
+        myCellsWindowTexture = loadTextureWithFallback(MY_CELLS_WINDOW_TEXTURE_PATH, PLAYERS_WINDOW_TEXTURE_PATH);
+        memesWindowTexture = loadTextureWithFallback(MEMES_WINDOW_TEXTURE_PATH, PLAYERS_WINDOW_TEXTURE_PATH);
+        tenUpTexture = loadOrFallback("ten_up.png", diceButtonTexture);
+        tenDownTexture = loadOrFallback("ten_down.png", diceButtonTexture);
+        startBattleTexture = loadOrFallback("start_battle.png", placeBidButtonTexture);
+        inputMemeBattleTexture = loadOrFallback("input_memebattle.png", inputTexture);
+        cardBoardTexture = loadOrFallback("card_board.png", gameOverlayWindowTexture);
 
         titleLabel = new VisLabel("Мемополия");
         phaseLabel = new VisLabel("Фаза: -");
@@ -259,93 +275,56 @@ public class GameScreen extends BaseScreen {
         createBattleOverlay();
         Gdx.input.setInputProcessor(stage);
     }
-
+    private Texture loadOrFallback(String path, Texture fallback) {
+        Texture t = loadTextureIfExists(path);
+        return t != null ? t : fallback;
+    }
     private void createUi() {
         Table root = new Table();
         sideRoot = root;
         root.setFillParent(true);
         root.pad(18);
-//
-        //Table memePanel = new Table();
-        //memePanel.top().left();
-        //memePanel.defaults().left().growX().padBottom(10);
-        //memePanel.setBackground(new TextureRegionDrawable(new TextureRegion(sidebarWindowTexture)));
-        //memePanel.pad(18, 18, 18, 18);
-        //Table memeInner = new Table();
-        //memeInner.pad(28, 18, 12, 18);
-        //memeInner.top().left();
-        //memeInner.defaults().left().growX().padBottom(10);
-        //VisLabel memesTitle = new VisLabel("Мои мемы");
-        //memesTitle.setColor(TITLE_COLOR);
-        //VisLabel memesHint = new VisLabel("Во время мем-баттла нажми на карточку, чтобы отправить её.");
-        //memesHint.setColor(Color.WHITE);
-        //memesHint.setWrap(true);
-        //handMemesTable.top().left();
-        //ScrollPane memesScroll = new ScrollPane(handMemesTable);
-        //memesScroll.setFadeScrollBars(false);
-        //memesScroll.setScrollingDisabled(true, false);
-        //chatWidget = new ChatWidget(game, 250f);
-        //VisLabel chatTitle = new VisLabel("Чат");
-        //chatTitle.setColor(TITLE_COLOR);
-        //memeInner.add(memesTitle).row();
-        //memeInner.add(memesHint).width(270).row();
-        //memeInner.add(memesScroll).width(270).height(520).row();
-        //memeInner.add(chatTitle).padTop(10).row();
-        //memeInner.add(chatWidget).width(270).height(190).row();
-        //memePanel.add(memeInner).width(306);
-        //root.add(memePanel).width(350).top().left();
-        root.add().expand().fill();
 
-        Table sidePanel = new Table();
-        sidePanelContainer = sidePanel;
-        sidePanel.top().left();
-        sidePanel.defaults().left().growX().padBottom(10);
-        sidePanel.setBackground(new TextureRegionDrawable(new TextureRegion(sidebarWindowTexture)));
-        sidePanel.pad(18, 20, 18, 20);
-
-        Table sideInner = new Table();
-        sideInner.pad(28, 14, 12, 14);
-        sideInner.top().left();
-        sideInner.defaults().left().growX().padBottom(10);
-
+        // ===== оверлеи доски (без изменений) =====
         diceTitleLabel.setColor(Color.WHITE);
         diceTitleLabel.setFontScale(0.92f);
         diceHintLabel.setWrap(true);
         diceHintLabel.setColor(Color.WHITE);
         diceHintLabel.setFontScale(1.00f);
-        diceOverlay.top().left();
-        diceOverlay.defaults().left();
+        diceOverlay.center();
         Table diceContent = new Table();
-        diceContent.left().top();
+        diceContent.center();
         Table diceButtonColumn = new Table();
         diceButtonColumn.add(diceButton).size(150, 84).row();
         diceButtonColumn.add(endTurnButton).size(150, COMMON_BUTTON_HEIGHT).padTop(8f);
-        diceContent.add(diceButtonColumn).padLeft(62).padRight(18).top();
-        diceContent.add(diceHintLabel).width(405).top().left().padTop(22).padRight(6);
-        diceOverlay.add(diceContent).left().padTop(48);
+        diceContent.add(diceButtonColumn).padRight(18f);
+        diceContent.add(diceHintLabel).width(320f).left();
+        diceOverlay.add(diceContent).center();
 
-        currentCellTitleLabel.setColor(Color.WHITE);
-        currentCellTitleLabel.setFontScale(0.92f);
-        currentCellMetaLabel.setWrap(true);
-        currentCellMetaLabel.setColor(Color.WHITE);
-        currentCellMetaLabel.setFontScale(0.82f);
-        currentCellOverlay.top().left();
-        currentCellOverlay.defaults().left();
-        Table currentCellContent = new Table();
-        currentCellContent.left().top();
-        currentCellContent.add(currentCellImage).size(145, 145).padLeft(34).top();
-        currentCellContent.add(currentCellMetaLabel).width(180).top().left().padLeft(12).padTop(24);
-        currentCellOverlay.add(currentCellContent).left().padLeft(8).padTop(-20).padBottom(10);
+        // ===== CURRENT CELL: временно отключено (может понадобиться в будущем) =====
+//currentCellTitleLabel.setColor(Color.WHITE);
+//currentCellTitleLabel.setFontScale(0.92f);
+//currentCellMetaLabel.setWrap(true);
+//currentCellMetaLabel.setColor(Color.WHITE);
+//currentCellMetaLabel.setFontScale(0.82f);
+//currentCellOverlay.top().left();
+//currentCellOverlay.defaults().left();
+//Table currentCellContent = new Table();
+//currentCellContent.left().top();
+//currentCellContent.add(currentCellImage).size(145, 145).padLeft(34).top();
+//currentCellContent.add(currentCellMetaLabel).width(180).top().left().padLeft(12).padTop(24);
+//currentCellOverlay.add(currentCellContent).left().padLeft(8).padTop(-20).padBottom(10);
 
-        feedTitleLabel.setFontScale(0.92f);
-        feedDescriptionLabel.setWrap(true);
-        feedDescriptionLabel.setColor(Color.WHITE);
-        feedDescriptionLabel.setFontScale(0.82f);
-        feedOverlay.top().left();
-        feedOverlay.defaults().left();
-        feedOverlay.add(feedDescriptionLabel).width(330).padLeft(24).padTop(-8).row();
-        auctionLabel.setFontScale(0.74f);
-        feedOverlay.add(auctionLabel).width(282).padLeft(24).padTop(2);
+// ===== FEED: временно отключено (может понадобиться в будущем) =====
+//feedTitleLabel.setFontScale(0.92f);
+//feedDescriptionLabel.setWrap(true);
+//feedDescriptionLabel.setColor(Color.WHITE);
+//feedDescriptionLabel.setFontScale(0.82f);
+//feedOverlay.top().left();
+//feedOverlay.defaults().left();
+//feedOverlay.add(feedDescriptionLabel).width(330).padLeft(24).padTop(-8).row();
+//auctionLabel.setFontScale(0.74f);
+//feedOverlay.add(auctionLabel).width(282).padLeft(24).padTop(2);
 
         titleLabel.setColor(TITLE_COLOR);
         titleLabel.setFontScale(0.98f);
@@ -364,62 +343,48 @@ public class GameScreen extends BaseScreen {
         applyGameScreenLineSpacing();
         auctionLabel.setWrap(true);
         auctionLabel.setColor(Color.WHITE);
+
         playersTable.top().left();
-        ownedCellsTable.top().left();
+        ownedCellsTable.top().center();
+        handMemesTable.top().center();
 
         ScrollPane playersScroll = new ScrollPane(playersTable);
         playersScroll.setFadeScrollBars(false);
         playersScroll.setScrollingDisabled(true, false);
-        //memesScroll.setSize(500, 300);
+        playersScroll.getStyle().background = null;
 
         ScrollPane ownedScroll = new ScrollPane(ownedCellsTable);
         ownedScroll.setFadeScrollBars(false);
         ownedScroll.setScrollingDisabled(true, false);
         ownedScroll.getStyle().background = null;
 
-        VisLabel playersTitle = new VisLabel("Игроки");
-        playersTitle.setColor(TITLE_COLOR);
-        VisLabel ownedTitle = new VisLabel("Мои клетки");
-        ownedTitle.setColor(TITLE_COLOR);
-        VisLabel actionTitle = new VisLabel("Действия");
-        actionTitle.setColor(TITLE_COLOR);
+        // MEMES: одна карточка в ряд, скролл вниз
+        ScrollPane memesScroll = new ScrollPane(handMemesTable);
+        memesScroll.setFadeScrollBars(false);
+        memesScroll.setScrollingDisabled(true, false);
+        memesScroll.getStyle().background = null;
 
-        sideInner.add(titleLabel).row();
-        sideInner.add(phaseLabel).width(306).row();
-        sideInner.add(turnLabel).width(306).row();
-        sideInner.add(cellLabel).width(306).row();
-        sideInner.add(logLabel).width(306).padBottom(8).row();
+        chatWidget = new ChatWidget(game, 340f);
 
-        sideInner.add(playersTitle).padTop(12).row();
-        sideInner.add(playersScroll).width(306).height(170).row();
-
-        sideInner.add(ownedTitle).padTop(12).row();
-        sideInner.add(ownedScroll).width(300f).height(300f).row();
-
-        Table actionsTable = new Table();
-        actionsTable.defaults().padRight(8).padBottom(8);
-
+        // ===== слушатели кнопок (как было) =====
         buyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 sendAction(GameActionRequest.ActionType.BUY_CELL, 0, 0);
             }
         });
-
         passButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 sendAction(GameActionRequest.ActionType.PASS_BUY, 0, 0);
             }
         });
-
         endTurnButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 sendAction(GameActionRequest.ActionType.END_TURN, 0, 0);
             }
         });
-
         bidField.setMessageText("Ставка");
         placeBidButton.addListener(new ChangeListener() {
             @Override
@@ -434,14 +399,12 @@ public class GameScreen extends BaseScreen {
                 }
             }
         });
-
         cancelAuctionButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 sendAction(GameActionRequest.ActionType.CANCEL_AUCTION, 0, 0);
             }
         });
-
         memeBankAmountField.setMessageText("Сумма");
         memeBankDepositButton.addListener(new ChangeListener() {
             @Override
@@ -474,253 +437,75 @@ public class GameScreen extends BaseScreen {
                 sendAction(GameActionRequest.ActionType.MEME_BANK_SKIP, 0, 0);
             }
         });
-
-        bidField.setMessageText("Ставка");
         Actor exitToMenuButton = createExitToMenuButton();
 
-        sideInner.add(actionTitle).padTop(12).row();
-        sideInner.add(actionsTable).row();
-        sideInner.add(exitToMenuButton).width(220).padTop(10).row();
-        sidePanel.clearChildren();
-        sidePanel.add(sideInner).width(334);
-        root.add(sidePanel).width(370).top().right();
+        VisLabel playersTitleLabel = new VisLabel("PLAYERS");
+        playersTitleLabel.setFontScale(1.2f);
 
+        Table playersPanel = new Table();
+        playersPanel.setBackground(window(playersWindowTexture));
+        playersPanel.pad(24f, 14f, 14f, 14f);
+        playersPanel.add(playersTitleLabel).center().padBottom(10f).row();
+        playersPanel.add(playersScroll).grow().row();
+        playersPanel.add(exitToMenuButton).width(220f).height(56f).padTop(10f); // выход внизу окна PLAYERS
 
-        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_SCALE, true);
-        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel, BUY_AND_AUCTION_MODAL_SCALE, false);
-        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE, false);
-        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel, AUCTION_OR_MEME_BANK_MODAL_SCALE, false);
+        Table leftColumn = new Table();
+        leftColumn.top();
+        leftColumn.add(playersPanel).width(380f).expandY().fillY().row();
+        leftColumn.add(chatWidget).width(380f).height(270f).padTop(16f);
+        root.add(leftColumn).top().left();
+
+        root.add().expand().fill();
+
+        VisLabel ownedTitleLabel = new VisLabel("MY CELLS");
+        ownedTitleLabel.setFontScale(1.2f);
+        VisLabel memesTitleLabel = new VisLabel("MEMES");
+        memesTitleLabel.setFontScale(1.2f);
+
+        Table ownedPanel = new Table();
+        ownedPanel.setBackground(window(myCellsWindowTexture));
+        ownedPanel.pad(24f, 12f, 14f, 12f);
+        ownedPanel.add(ownedTitleLabel).center().padBottom(10f).row();
+        ownedPanel.add(ownedScroll).grow();
+
+        Table memesPanel = new Table();
+        memesPanel.setBackground(window(memesWindowTexture));
+        memesPanel.pad(24f, 12f, 14f, 12f);
+        memesPanel.add(memesTitleLabel).center().padBottom(10f).row();
+        memesPanel.add(memesScroll).grow();
+
+        Table rightColumn = new Table();
+        rightColumn.top();
+        rightColumn.add(ownedPanel).width(380f).height(500f).row();
+        rightColumn.add(memesPanel).width(380f).expandY().fillY().row();
+        root.add(rightColumn).top().right();
+
+        configureModal(turnNotificationModal, notificationWindowTexture, turnModalLabel, NOTIFICATION_MODAL_MIN_W, NOTIFICATION_MODAL_MIN_H, true);
+        configureModal(buyOrAuctionModal, buyAndAuctionWindowTexture, buyAuctionModalLabel, BUY_AND_AUCTION_MODAL_MIN_W, BUY_AND_AUCTION_MODAL_MIN_H, false);
+        configureModal(auctionModal, auctionOrMemeBankWindowTexture, auctionModalLabel, AUCTION_MODAL_MIN_W, AUCTION_MODAL_MIN_H, false);
+        configureModal(memeBankModal, auctionOrMemeBankWindowTexture, memeBankModalLabel, MEME_BANK_MODAL_MIN_W, MEME_BANK_MODAL_MIN_H, false);
         setupModalControls();
 
         stage.addActor(root);
         stage.addActor(diceOverlay);
-        stage.addActor(currentCellOverlay);
-        stage.addActor(feedOverlay);
+        //stage.addActor(currentCellOverlay);
+        //stage.addActor(feedOverlay);
         stage.addActor(buyOrAuctionModal);
         stage.addActor(auctionModal);
         stage.addActor(memeBankModal);
+        stage.addActor(turnNotificationModal);
 
         layoutBoardOverlays();
     }
-
+    private Drawable window(Texture texture) {
+        return new TextureRegionDrawable(new TextureRegion(texture));
+    }
     private void createBattleOverlay() {
         battleOverlay = new Table();
         battleOverlay.setFillParent(true);
-        battleOverlay.setBackground(panel(new Color(0f, 0f, 0f, 0.55f))); // затемнение
-
-        Table panel = new Table();
-        battleWindow = panel;
-        if (memeBattleOverlayTexture != null) {
-            panel.setBackground(new TextureRegionDrawable(new TextureRegion(memeBattleOverlayTexture)));
-        } else {
-            panel.setBackground(panel(new Color(0.18f, 0.16f, 0.27f, 0.98f)));
-        }
-        panel.pad(24f);
-
-        battleTitleLabel = new VisLabel("Мем-баттл!");
-        battleTitleLabel.setColor(TITLE_COLOR);
-        battleTitleLabel.setFontScale(1.8f);
-
-        battleTimerLabel = new VisLabel("30");
-        battleTimerLabel.setColor(Color.RED);
-        battleTimerLabel.setFontScale(1.6f);
-
-        battleTopicLabel = new VisLabel("");
-        battleTopicLabel.setColor(Color.WHITE);
-        battleTopicLabel.setWrap(true);
-        battleTopicLabel.setFontScale(1.15f);
-
-        battleContentTable = new Table();
-
-        battleYesButton = createOptionalActionButton(participateButtonTexture, "Участвовать");
-        battleNoButton = createOptionalActionButton(declineButtonTexture, "Отказаться");
-
-        battleYesButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                BattleResponsePacket packet = new BattleResponsePacket();
-                packet.playerId = game.getClient().getLocalPlayerId();
-                packet.accepted = true;
-                game.getClient().sendBattleResponse(packet);
-            }
-        });
-
-        battleNoButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                BattleResponsePacket packet = new BattleResponsePacket();
-                packet.playerId = game.getClient().getLocalPlayerId();
-                packet.accepted = false;
-                game.getClient().sendBattleResponse(packet);
-            }
-        });
-
-        panel.add(battleTitleLabel).colspan(2).center().padBottom(12f).row();
-        panel.add(new VisLabel("Осталось:")).padRight(8f);
-        panel.add(battleTimerLabel).left().row();
-        panel.add(battleTopicLabel).colspan(2).width(760f).padBottom(16f).row();
-        panel.add(battleContentTable).colspan(2).width(820f).row();
-
-        Table buttons = new Table();
-        buttons.add(battleYesButton).width(180f).height(COMMON_BUTTON_HEIGHT).padRight(16f);
-        buttons.add(battleNoButton).width(180f).height(COMMON_BUTTON_HEIGHT);
-        panel.add(buttons).colspan(2).center().padTop(16f);
-
-        battleWindowCell = battleOverlay.add(panel).size(780f, 780f).center();
         battleOverlay.setVisible(false);
-
+        battleOverlay.setTouchable(Touchable.disabled);
         stage.addActor(battleOverlay);
-    }
-
-    private void rebuildBattleContent(GameState state, BattleContentMode mode) {
-        battleContentTable.clearChildren();
-        int localId = game.getClient().getLocalPlayerId();
-        Player localPlayer = state.getPlayerById(localId);
-
-        switch (mode) {
-            case SETUP: {
-                boolean isOwner = state.battleOwnerId == localId;
-                if (isOwner) {
-                    // Setup form for the battle owner
-                    VisLabel setupHint = new VisLabel("Выбери тему и ставку для мем-баттла:");
-                    setupHint.setColor(Color.WHITE);
-                    battleContentTable.add(setupHint).colspan(2).center().padBottom(10).row();
-
-                    VisTextField topicField = new VisTextField();
-                    topicField.setMessageText("Тема баттла...");
-                    battleContentTable.add(new VisLabel("Тема:")).padRight(8);
-                    battleContentTable.add(topicField).width(320).row();
-
-                    VisTextField stakesField = new VisTextField();
-                    stakesField.setMessageText("0");
-                    stakesField.setTextFieldFilter(new VisTextField.TextFieldFilter.DigitsOnlyFilter());
-                    battleContentTable.add(new VisLabel("Ставка:")).padRight(8);
-                    battleContentTable.add(stakesField).width(160).row();
-
-                    VisLabel setupError = new VisLabel("");
-                    setupError.setColor(Color.RED);
-                    battleContentTable.add(setupError).colspan(2).center().padTop(4).row();
-
-                    VisTextButton startBtn = new VisTextButton("Начать баттл!");
-                    startBtn.addListener(new ChangeListener() {
-                        @Override
-                        public void changed(ChangeEvent event, Actor actor) {
-                            String topic = topicField.getText().trim();
-                            if (topic.isEmpty()) {
-                                setupError.setText("Введи тему баттла");
-                                return;
-                            }
-                            int stakes = 0;
-                            try { stakes = Integer.parseInt(stakesField.getText().trim()); } catch (NumberFormatException ignored) {}
-                            Player localPlayer = state.getPlayerById(localId);
-                            if (localPlayer != null && stakes > localPlayer.money) {
-                                setupError.setText("Недостаточно монет!");
-                                return;
-                            }
-                            GameActionRequest req = new GameActionRequest();
-                            req.actionType = GameActionRequest.ActionType.START_MEME_BATTLE;
-                            req.data = topic;
-                            req.amount = stakes;
-                            game.getClient().sendGameAction(req);
-                        }
-                    });
-                    battleContentTable.add(startBtn).colspan(2).center().padTop(8);
-                } else {
-                    // Other players wait
-                    Player owner = state.getPlayerById(state.battleOwnerId);
-                    String ownerName = owner != null ? owner.name : "Организатор";
-                    VisLabel waitLabel = new VisLabel("Ждём, пока " + ownerName + " настроит баттл...");
-                    waitLabel.setColor(Color.LIGHT_GRAY);
-                    battleContentTable.add(waitLabel).center();
-                }
-                break;
-            }
-
-            case INVITE:
-                VisLabel inviteLabel = new VisLabel("Тебя приглашают на мем-баттл!");
-                inviteLabel.setColor(Color.WHITE);
-                battleContentTable.add(inviteLabel).center();
-                break;
-
-            case WAITING:
-                VisLabel waitLabel = new VisLabel("Ждём пока все выберут мемы...");
-                waitLabel.setColor(Color.WHITE);
-                battleContentTable.add(waitLabel).center();
-                break;
-
-            case MEME_SELECTION: {
-                Meme selectedMeme = getSubmittedBattleMeme(state, localId);
-
-                List<Meme> displayMemes = new ArrayList<>();
-                if (localPlayer != null && localPlayer.handMemes != null) {
-                    displayMemes.addAll(localPlayer.handMemes);
-                }
-
-                if (selectedMeme != null && !displayMemes.contains(selectedMeme)) {
-                    displayMemes.add(selectedMeme);
-                }
-
-                if (displayMemes.isEmpty()) {
-                    battleContentTable.add(new VisLabel("Нет мемов в руке!")).center();
-                    break;
-                }
-
-                int selectionColumn = 0;
-                for (Meme meme : displayMemes) {
-                    boolean isSelected = (selectedMeme != null && meme.id == selectedMeme.id);
-
-                    battleContentTable.add(createMemeCard(meme, isSelected, isSelected, () -> {
-                        if (!isSelected) {
-                            System.out.println("[CLIENT_LOG] Кликнули карточку мема с ID: " + meme.id);
-                            sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0);
-                        }
-                    })).width(200f).height(170f).pad(6f);
-
-                    if (++selectionColumn % 4 == 0) {
-                        battleContentTable.row();
-                    }
-                }
-
-                if (selectedMeme != null) {
-                    battleContentTable.row();
-                    VisLabel selectionWaitLabel = new VisLabel("Мем выбран. Ждём остальных игроков...");
-                    selectionWaitLabel.setColor(Color.WHITE);
-                    battleContentTable.add(selectionWaitLabel).colspan(4).center().padTop(12f);
-                }
-                break;
-            }
-
-            case VOTING:
-                if (state.battleMemes == null || state.battleMemes.isEmpty()) {
-                    battleContentTable.add(new VisLabel("Мемы загружаются...")).center();
-                    break;
-                }
-                boolean hasVoted = state.battleVoters != null && state.battleVoters.contains(localId);
-                if (hasVoted) {
-                    battleContentTable.add(new VisLabel("Ты уже проголосовал. Ждём остальных...")).center();
-                    break;
-                }
-                int voteColumn = 0;
-                for (int i = 0; i < state.battleMemes.size(); i++) {
-                    Meme meme = state.battleMemes.get(i);
-                    final int memeId = meme.id;
-                    boolean ownMeme = meme.ownerId == localId;
-                    battleContentTable.add(createMemeCard(meme, ownMeme, ownMeme, () ->
-                        sendAction(GameActionRequest.ActionType.VOTE_MEME, memeId, 0)
-                    )).width(200f).height(170f).pad(6f);
-                    if (++voteColumn % 4 == 0) {
-                        battleContentTable.row();
-                    }
-                }
-                break;
-
-            case RESULTS:
-                VisLabel resultsLabel = new VisLabel(state.lastActionLog == null ? "Баттл завершён!" : state.lastActionLog);
-                resultsLabel.setColor(ACCENT_GOLD);
-                resultsLabel.setWrap(true);
-                battleContentTable.add(resultsLabel).width(600f).center();
-                break;
-        }
     }
 
     private Meme getSubmittedBattleMeme(GameState state, int playerId) {
@@ -736,72 +521,300 @@ public class GameScreen extends BaseScreen {
     }
 
     private void refreshBattleOverlay(GameState state) {
-        if (state == null || state.currentPhase != GameState.GamePhase.MEME_BATTLE) {
+        boolean inBattle = state != null && state.currentPhase == GameState.GamePhase.MEME_BATTLE;
+        boardRenderer.setBattleMode(inBattle);
+        diceOverlay.setVisible(!inBattle); // убирает «Твой ход» поверх баттла
+        if (!inBattle) {
+            battleOverlay.clearChildren();
             battleOverlay.setVisible(false);
             battleOverlay.setTouchable(Touchable.disabled);
             lastBattleSignature = "";
+            selectedBattleMemeId = -1;
+            battleTimerLabel = null;
             return;
         }
-
         battleOverlay.setVisible(true);
         battleOverlay.setTouchable(Touchable.enabled);
-        int timerValue = state.battleTimerSeconds > 0 ? state.battleTimerSeconds : state.currentAuctionTime;
-        battleTimerLabel.setText(String.valueOf(Math.max(0, timerValue)));
-        battleTopicLabel.setText("Тема: " + (state.battleTopic == null ? "—" : state.battleTopic));
-
         int localId = game.getClient().getLocalPlayerId();
-        boolean isParticipant = state.battleParticipants.contains(localId);
-        boolean isInvited = state.battleInvited != null && state.battleInvited.contains(localId);
-
         String signature = buildBattleSignature(state, localId);
-        boolean needsRebuild = !signature.equals(lastBattleSignature);
-        lastBattleSignature = signature;
-
+        if (!signature.equals(lastBattleSignature)) {
+            lastBattleSignature = signature;
+            selectedBattleMemeId = -1;
+            rebuildBattleContent(state);
+        }
+        if (battleTimerLabel != null) {
+            int t = state.battleTimerSeconds > 0 ? state.battleTimerSeconds : state.currentAuctionTime;
+            battleTimerLabel.setText(String.valueOf(Math.max(0, t)));
+        }
+    }
+    private void rebuildBattleContent(GameState state) {
+        battleOverlay.clearChildren();
+        battleTimerLabel = null;
+        int localId = game.getClient().getLocalPlayerId();
+        boolean isOwner = state.battleOwnerId == localId;
+        Table panel = new Table();
+        panel.center();
         switch (state.battlePhase) {
             case BATTLE_SETUP:
-                battleTitleLabel.setText("Мем-баттл: настройка");
-                battleYesButton.setVisible(false);
-                battleNoButton.setVisible(false);
-                if (needsRebuild) rebuildBattleContent(state, BattleContentMode.SETUP);
+                panel.add(isOwner ? buildStakePanel() : buildWaitPanel(t("organizer_chooses"))).center().expand();
                 break;
-
             case INVITE:
-                battleTitleLabel.setText("Мем-баттл! Ставка: " + state.battleStakes);
-                battleYesButton.setVisible(isInvited);
-                battleNoButton.setVisible(isInvited);
-                if (needsRebuild) rebuildBattleContent(state, BattleContentMode.INVITE);
+                panel.add(isOwner ? buildWaitPanel(t("waiting_answers")) : buildInvitePanel(state)).center().expand();
                 break;
-
             case COLLECTING_MEMES:
-                battleTitleLabel.setText("Выбери мем!");
-                battleYesButton.setVisible(false);
-                battleNoButton.setVisible(false);
-                if (needsRebuild) {
-                    if (isParticipant) {
-                        rebuildBattleContent(state, BattleContentMode.MEME_SELECTION);
-                    } else {
-                        rebuildBattleContent(state, BattleContentMode.WAITING);
-                    }
-                }
+                panel.add(buildCollectingPanel(state, isOwner, localId)).center().expand();
                 break;
-
             case VOTING:
-                battleTitleLabel.setText("Голосование!");
-                battleYesButton.setVisible(false);
-                battleNoButton.setVisible(false);
-                if (needsRebuild) rebuildBattleContent(state, BattleContentMode.VOTING);
+                panel.add(buildVotingPanel(state, localId)).center().expand();
                 break;
-
             case RESULTS:
-                battleTitleLabel.setText("Результаты!");
-                battleYesButton.setVisible(false);
-                battleNoButton.setVisible(false);
-                if (needsRebuild) rebuildBattleContent(state, BattleContentMode.RESULTS);
+                panel.add(buildWaitPanel(state.lastActionLog == null ? t("battle_finished") : state.lastActionLog)).center().expand();
                 break;
-
             default:
                 break;
         }
+        battleOverlay.add(panel).width(860f).height(920f).center();
+    }
+
+    private void addTimerRow(Table p) {
+        battleTimerLabel = new VisLabel("");
+        battleTimerLabel.setColor(BATTLE_TEXT_COLOR);
+        battleTimerLabel.setFontScale(1.1f);
+        p.add(battleTimerLabel).center().padBottom(10f).row();
+    }
+
+    private Table buildWaitPanel(String text) {
+        Table p = new Table();
+        addTimerRow(p);
+        VisLabel label = new VisLabel(text);
+        label.setColor(BATTLE_TEXT_COLOR);
+        label.setWrap(true);
+        label.setFontScale(1.1f);
+        p.add(label).width(600f).center();
+        return p;
+    }
+
+    private Table buildStakePanel() {
+        Table p = new Table();
+        p.center();
+        addTimerRow(p);
+
+        VisLabel title = new VisLabel(t("choose_stakes"));
+        title.setColor(BATTLE_TEXT_COLOR);
+        title.setFontScale(1.2f);
+        p.add(title).center().padBottom(18f).row();
+
+        localStake = 50;
+        stakeValueLabel = new VisLabel(String.valueOf(localStake));
+        stakeValueLabel.setColor(BATTLE_TEXT_COLOR);
+        stakeValueLabel.setFontScale(1.2f);
+        Image moneyIcon = new Image(new TextureRegionDrawable(new TextureRegion(moneyTexture)));
+        moneyIcon.setScaling(Scaling.fit);
+        Table stakeRow = new Table();
+        stakeRow.add(stakeValueLabel).padRight(8f);
+        stakeRow.add(moneyIcon).size(28f, 28f);
+        p.add(stakeRow).center().padBottom(26f).row();
+
+        ImageButton minusBtn = createActionButton(tenDownTexture);
+        minusBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                localStake = Math.max(10, localStake - 10);
+                stakeValueLabel.setText(String.valueOf(localStake));
+            }
+        });
+        ImageButton plusBtn = createActionButton(tenUpTexture);
+        plusBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                localStake = Math.min(200, localStake + 10);
+                stakeValueLabel.setText(String.valueOf(localStake));
+            }
+        });
+        ImageButton proposeBtn = createActionButton(placeBidButtonTexture);
+        proposeBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendAction(GameActionRequest.ActionType.START_MEME_BATTLE, 0, localStake, "");
+            }
+        });
+        ImageButton declineBtn = createActionButton(declineButtonTexture);
+        declineBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendAction(GameActionRequest.ActionType.CANCEL_MEME_BATTLE, 0, 0, null);
+            }
+        });
+
+        Table btnRow = new Table();
+        btnRow.add(minusBtn).size(70f, 70f).padRight(10f);
+        btnRow.add(plusBtn).size(70f, 70f).padRight(30f);
+        btnRow.add(proposeBtn).size(170f, 60f).padRight(10f);
+        btnRow.add(declineBtn).size(170f, 60f);
+        p.add(btnRow).center().row();
+        return p;
+    }
+
+    private Table buildInvitePanel(GameState state) {
+        Table p = new Table();
+        p.center();
+        addTimerRow(p);
+        VisLabel label = new VisLabel(t("invite_battle") + " " + state.battleStakes);
+        label.setColor(BATTLE_TEXT_COLOR);
+        label.setWrap(true);
+        label.setFontScale(1.1f);
+        p.add(label).width(700f).center().padBottom(20f).row();
+
+        ImageButton yes = createActionButton(participateButtonTexture);
+        yes.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                BattleResponsePacket packet = new BattleResponsePacket();
+                packet.playerId = game.getClient().getLocalPlayerId();
+                packet.accepted = true;
+                game.getClient().sendBattleResponse(packet);
+            }
+        });
+        ImageButton no = createActionButton(declineButtonTexture);
+        no.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                BattleResponsePacket packet = new BattleResponsePacket();
+                packet.playerId = game.getClient().getLocalPlayerId();
+                packet.accepted = false;
+                game.getClient().sendBattleResponse(packet);
+            }
+        });
+        Table btnRow = new Table();
+        btnRow.add(yes).size(180f, 64f).padRight(14f);
+        btnRow.add(no).size(180f, 64f);
+        p.add(btnRow).center().row();
+        return p;
+    }
+
+    private Table buildCollectingPanel(GameState state, boolean isOwner, int localId) {
+        Table p = new Table();
+        p.center();
+        addTimerRow(p);
+        Meme submitted = getSubmittedBattleMeme(state, localId);
+
+        Table topRow = new Table();
+        if (isOwner && submitted == null) {
+            topicField = new VisTextField();
+            topicField.setMessageText(t("topic_placeholder"));
+            applyBattleInputFieldStyle(topicField);
+            topicField.setMaxLength(120);
+            topRow.add(topicField).width(470f).height(60f).padRight(14f);
+        } else {
+            String topic = state.battleTopic == null || state.battleTopic.isBlank() ? t("waiting_topic") : state.battleTopic;
+            VisLabel topicLabel = new VisLabel(topic);
+            topicLabel.setColor(BATTLE_TEXT_COLOR);
+            topicLabel.setWrap(true);
+            topRow.add(topicLabel).width(470f).padRight(14f);
+        }
+        startBattleButton = createActionButton(startBattleTexture);
+        startBattleButton.setDisabled(selectedBattleMemeId == -1 || submitted != null);
+        startBattleButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (selectedBattleMemeId == -1) return;
+                String topic = (topicField != null) ? topicField.getText().trim() : "";
+                sendAction(GameActionRequest.ActionType.SUBMIT_MEME, selectedBattleMemeId, 0, topic);
+            }
+        });
+        topRow.add(startBattleButton).size(120f, 60f);
+        p.add(topRow).center().padBottom(14f).row();
+
+        VisLabel choose = new VisLabel(t("choose_funniest"));
+        choose.setColor(BATTLE_TEXT_COLOR);
+        choose.setFontScale(0.8f);
+        choose.setWrap(true);
+        p.add(choose).width(800f).center().padBottom(12f).row();
+
+        Table grid = new Table();
+        int col = 0, count = 0;
+        Player localPlayer = state.getPlayerById(localId);
+        if (localPlayer != null && localPlayer.handMemes != null) {
+            for (Meme meme : localPlayer.handMemes) {
+                if (count >= 6) break;
+                boolean selected = meme.id == selectedBattleMemeId;
+                grid.add(createBattleMemeCard(meme, selected, submitted != null, () -> {
+                    selectedBattleMemeId = (selectedBattleMemeId == meme.id) ? -1 : meme.id;
+                    rebuildBattleContent(state);
+                })).size(330f, 248f).pad(10f);
+                count++;
+                if (++col % 2 == 0) grid.row();
+            }
+        }
+        p.add(grid).center().row();
+        return p;
+    }
+
+    private Table buildVotingPanel(GameState state, int localId) {
+        Table p = new Table();
+        p.center();
+        addTimerRow(p);
+        boolean hasVoted = state.battleVoters != null && state.battleVoters.contains(localId);
+        if (hasVoted) {
+            return buildWaitPanelInner(p, t("already_voted"));
+        }
+        VisLabel hint = new VisLabel(t("vote_hint"));
+        hint.setColor(BATTLE_TEXT_COLOR);
+        hint.setFontScale(0.9f);
+        p.add(hint).center().padBottom(12f).row();
+        Table grid = new Table();
+        int col = 0;
+        if (state.battleMemes != null) {
+            for (Meme meme : state.battleMemes) {
+                final int memeId = meme.id;
+                boolean ownMeme = meme.ownerId == localId;
+                grid.add(createBattleMemeCard(meme, false, ownMeme, () ->
+                    sendAction(GameActionRequest.ActionType.VOTE_MEME, memeId, 0, null)
+                )).size(330f, 248f).pad(10f);
+                if (++col % 2 == 0) grid.row();
+            }
+        }
+        p.add(grid).center().row();
+        return p;
+    }
+
+    private Table buildWaitPanelInner(Table p, String text) {
+        VisLabel label = new VisLabel(text);
+        label.setColor(BATTLE_TEXT_COLOR);
+        label.setWrap(true);
+        p.add(label).width(600f).center();
+        return p;
+    }
+
+    private Table createBattleMemeCard(Meme meme, boolean selected, boolean disabled, Runnable action) {
+        Table card = new Table();
+
+        TextureRegionDrawable baseFrame = new TextureRegionDrawable(new TextureRegion(cardBoardTexture));
+        Drawable frame = selected ? baseFrame.tint(new Color(0.55f, 0.55f, 0.62f, 1f)) : baseFrame;
+        card.setBackground(frame);
+        card.pad(10f);
+
+        Drawable memeDrawable = getMemeDrawable(meme);
+        if (memeDrawable != null) {
+            Image image = new Image(memeDrawable);
+            image.setScaling(Scaling.fill);
+            card.add(image).expand().fill();
+        } else {
+            VisLabel placeholder = new VisLabel("Нет превью");
+            placeholder.setColor(BATTLE_TEXT_COLOR);
+            card.add(placeholder).expand();
+        }
+
+        card.setTouchable(disabled ? Touchable.disabled : Touchable.enabled);
+        if (!disabled && action != null) {
+            card.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+                @Override
+                public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                    action.run();
+                }
+            });
+        }
+        return card;
     }
 
     private String buildBattleSignature(GameState state, int localId) {
@@ -844,10 +857,15 @@ public class GameScreen extends BaseScreen {
     }
 
     private void sendAction(GameActionRequest.ActionType type, int targetId, int amount) {
+        sendAction(type, targetId, amount, null);
+    }
+
+    private void sendAction(GameActionRequest.ActionType type, int targetId, int amount, String data) {
         GameActionRequest request = new GameActionRequest();
         request.actionType = type;
         request.targetId = targetId;
         request.amount = amount;
+        request.data = data;
         game.getClient().sendGameAction(request);
     }
 
@@ -871,6 +889,24 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (state.players != null) {
+            Set<Integer> currentPlayerIds = new HashSet<>();
+            for (Player p : state.players) {
+                currentPlayerIds.add(p.id);
+                Integer lastPos = lastKnownPositions.get(p.id);
+                if (lastPos == null) {
+                    // Первая встреча игрока — просто запоминаем позицию без анимации
+                    lastKnownPositions.put(p.id, p.position);
+                } else if (lastPos != p.position) {
+                    // Позиция изменилась — запускаем пошаговую анимацию
+                    boardRenderer.animateMovement(p.id, lastPos, p.position);
+                    lastKnownPositions.put(p.id, p.position);
+                }
+            }
+            // Удаляем записи для игроков, которые покинули игру
+            lastKnownPositions.keySet().retainAll(currentPlayerIds);
+        }
+
         Player current = state.getCurrentPlayer();
         int localPlayerId = game.getClient().getLocalPlayerId();
         Player localPlayer = state.getPlayerById(localPlayerId);
@@ -891,7 +927,6 @@ public class GameScreen extends BaseScreen {
         auctionModalCellImage.setDrawable(auctionCellDrawable);
         diceHintLabel.setText(buildDiceHint(state, current, localPlayer));
         feedDescriptionLabel.setText(buildFeedDescription(state, current, currentCell, localPlayer));
-        turnModalLabel.setText(current == null ? "Ход: -" : "Сейчас ходит: " + current.name);
         buyAuctionModalLabel.setText(buildCellMeta(currentCell, state));
 
         rebuildPlayersIfNeeded(state, current, localPlayerId);
@@ -931,20 +966,19 @@ public class GameScreen extends BaseScreen {
 
     private void rebuildPlayers(GameState state, Player current, int localPlayerId) {
         playersTable.clearChildren();
+        if (state == null || state.players == null) {
+            return;
+        }
         for (Player player : state.players) {
-            String marker = player.id == localPlayerId ? " (ты)" : "";
-            String active = current != null && current.id == player.id ? " <- ход" : "";
             String bankrupt = player.isBankrupt ? " [банкрот]" : "";
             Table row = new Table();
-            row.setBackground(panel(new Color(0.22f, 0.20f, 0.33f, 0.95f)));
             row.pad(8, 10, 8, 10);
-            VisLabel nameLabel = new VisLabel(player.name + marker + active + bankrupt);
-            nameLabel.setColor(Color.WHITE);
+            VisLabel nameLabel = new VisLabel(player.name + bankrupt);
             nameLabel.setWrap(true);
             Table moneyCell = createMoneyValue(player.money);
-            row.add(nameLabel).width(190).left().padRight(8);
+            row.add(nameLabel).width(220).left().padRight(8);
             row.add(moneyCell).right();
-            playersTable.add(row).width(298).left().padBottom(8).row();
+            playersTable.add(row).width(340).left().padBottom(8).row();
         }
     }
 
@@ -952,30 +986,20 @@ public class GameScreen extends BaseScreen {
         ownedCellsTable.clearChildren();
         if (localPlayer == null || localPlayer.ownedCells.isEmpty()) {
             VisLabel emptyLabel = new VisLabel("Пока нет купленных клеток");
-            emptyLabel.setColor(TEXT_SOFT);
             emptyLabel.setWrap(true);
             emptyLabel.setFontScale(0.7f);
-            ownedCellsTable.add(emptyLabel).width(290).left().padLeft(12).padTop(10).row();
+            ownedCellsTable.add(emptyLabel).width(300).center().padTop(10).row();
             return;
         }
-
+        int count = 0;
         for (int cellId : localPlayer.ownedCells) {
             BoardCell cell = boardCells.get(cellId);
             boolean mortgaged = state.cellMortgaged.getOrDefault(cellId, false);
 
-            Table row = new Table();
-            row.setBackground(panel(new Color(0.22f, 0.20f, 0.33f, 0.95f)));
-            row.pad(6, 8, 6, 8);
-            row.left();
-
-            VisLabel cellInfo = new VisLabel(cell.name + (mortgaged ? " (Залог)" : ""));
-            cellInfo.setColor(Color.WHITE);
-            cellInfo.setEllipsis(true);
-            cellInfo.setFontScale(0.82f);
-
-            row.add(cellInfo).width(140f).left().padRight(4);
-
-            row.add(createMoneyValue(cell.price)).width(66f).right().padRight(4);
+            Table cellCard = new Table();
+            Image cellImage = new Image(new TextureRegionDrawable(new TextureRegion(cellTextures[cellId])));
+            cellImage.setScaling(Scaling.fit);
+            cellCard.add(cellImage).size(160f, 200f).row();
 
             ImageButton actionButton = createActionButton(mortgaged ? buyBackButtonTexture : mortgageButtonTexture);
             boolean canManageCell = myTurn && currentPhase != GameState.GamePhase.AUCTION && currentPhase != GameState.GamePhase.MEME_BATTLE;
@@ -991,9 +1015,23 @@ public class GameScreen extends BaseScreen {
                 }
             });
 
-            row.add(actionButton).size(68f, 38f).right();
+            VisLabel priceLabel = new VisLabel(String.valueOf(cell.price / 2));
+            priceLabel.setFontScale(0.45f);
+            priceLabel.setColor(canManageCell ? Color.valueOf("000A3E") : Color.WHITE);
 
-            ownedCellsTable.add(row).width(298f).fillX().center().padBottom(6).row();
+            Table priceOverlay = new Table();
+            priceOverlay.center().bottom();
+            priceOverlay.add(priceLabel).padBottom(4f);
+
+            Stack buttonStack = new Stack();
+            buttonStack.add(actionButton);
+            buttonStack.add(priceOverlay);
+            cellCard.add(buttonStack).width(150f).height(48f).padTop(6f);
+
+            ownedCellsTable.add(cellCard).pad(6f);
+            if (++count % 2 == 0) {
+                ownedCellsTable.row();
+            }
         }
     }
 
@@ -1001,24 +1039,14 @@ public class GameScreen extends BaseScreen {
         handMemesTable.clearChildren();
         if (localPlayer == null || localPlayer.handMemes == null || localPlayer.handMemes.isEmpty()) {
             VisLabel emptyLabel = new VisLabel("Колода ещё не выдала мемы");
-            emptyLabel.setColor(TEXT_SOFT);
             emptyLabel.setWrap(true);
-            handMemesTable.add(emptyLabel).width(250).left().row();
+            handMemesTable.add(emptyLabel).width(300).left().row();
             return;
         }
-
-        int count = 0; // Счетчик для отслеживания количества карточек в ряду
-
         for (Meme meme : localPlayer.handMemes) {
-            // Убрали .row() из конца этой цепочки, чтобы карты шли в ряд
             handMemesTable.add(createMemeCard(meme, false, !canSubmitBattleMeme, () ->
                 sendAction(GameActionRequest.ActionType.SUBMIT_MEME, meme.id, 0)
-            )).width(250).pad(10f); // Изменили padBottom на общий pad для красивых отступов в сетке
-
-            count++;
-            if (count % 3 == 0) {
-                handMemesTable.row();
-            }
+            )).width(300f).height(225f).pad(8f).row(); // 4:3, одна в ряд
         }
     }
 
@@ -1049,11 +1077,10 @@ public class GameScreen extends BaseScreen {
      */
     private Table createMemeCard(Meme meme, boolean isSelected, boolean disabled, Runnable action) {
         Table card = new Table();
-        // Highlight selected card with a gold tint, others use the regular frame
-        if (isSelected) {
-            card.setBackground(panel(new Color(0.85f, 0.70f, 0.10f, 0.55f)));
-        }
-        card.pad(4f);
+        TextureRegionDrawable baseFrame = new TextureRegionDrawable(new TextureRegion(cardBoardTexture));
+        Drawable frame = isSelected ? baseFrame.tint(new Color(0.55f, 0.55f, 0.62f, 1f)) : baseFrame;
+        card.setBackground(frame);
+        card.pad(10f);
 
         Drawable memeDrawable = getMemeDrawable(meme);
         if (memeDrawable != null) {
@@ -1062,22 +1089,19 @@ public class GameScreen extends BaseScreen {
             card.add(image).expand().fill();
         } else {
             VisLabel placeholder = new VisLabel("Нет превью");
-            placeholder.setColor(Color.WHITE);
-            card.add(placeholder).expand().fill();
+            placeholder.setColor(BATTLE_TEXT_COLOR);
+            card.add(placeholder).expand();
         }
 
+        card.setTouchable(disabled ? Touchable.disabled : Touchable.enabled);
         if (!disabled && action != null) {
-            card.setTouchable(Touchable.enabled);
             card.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
                 @Override
                 public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
                     action.run();
                 }
             });
-        } else {
-            card.setTouchable(Touchable.disabled);
         }
-
         return card;
     }
 
@@ -1145,7 +1169,6 @@ public class GameScreen extends BaseScreen {
         if (memeBankSkipButton instanceof VisTextButton) {
             ((VisTextButton) memeBankSkipButton).setDisabled(!canUseMemeBank);
         }
-        setModalVisible(turnNotificationModal, false);
         setModalVisible(buyOrAuctionModal, canBuyOrPass);
         setModalVisible(auctionModal, state.currentPhase == GameState.GamePhase.AUCTION);
         setModalVisible(memeBankModal, state.currentPhase == GameState.GamePhase.MEME_BANK_ACTION && canUseMemeBank);
@@ -1199,8 +1222,10 @@ public class GameScreen extends BaseScreen {
         renderBackground();
 
         GameState state = game.getLatestGameState();
+        boardRenderer.update(delta);
         boardRenderer.render(boardCells, state);
         refreshUi(state);
+        refreshNotification(state, delta);
 
         if (chatWidget != null) {
             chatWidget.refresh();
@@ -1214,6 +1239,32 @@ public class GameScreen extends BaseScreen {
         game.getBatch().begin();
         game.getBatch().draw(backgroundTexture, 0f, 0f, WORLD_WIDTH, WORLD_HEIGHT);
         game.getBatch().end();
+    }
+
+    private void refreshNotification(GameState state, float delta) {
+        if (state == null) {
+            setModalVisible(turnNotificationModal, false);
+            notificationVisibleTime = 0f;
+            return;
+        }
+
+        if (state.notificationTimestamp != 0L
+            && state.notificationTimestamp != lastShownNotificationTimestamp
+            && state.notificationText != null
+            && !state.notificationText.isBlank()) {
+            lastShownNotificationTimestamp = state.notificationTimestamp;
+            turnModalLabel.setText(state.notificationText);
+            setModalVisible(turnNotificationModal, true);
+            turnNotificationModal.setTouchable(Touchable.disabled);
+            notificationVisibleTime = 3f;
+        }
+
+        if (notificationVisibleTime > 0f) {
+            notificationVisibleTime -= delta;
+            if (notificationVisibleTime <= 0f) {
+                setModalVisible(turnNotificationModal, false);
+            }
+        }
     }
 
     @Override
@@ -1238,6 +1289,9 @@ public class GameScreen extends BaseScreen {
         mortgageButtonTexture.dispose();
         buyBackButtonTexture.dispose();
         gameOverlayWindowTexture.dispose();
+        playersWindowTexture.dispose();
+        myCellsWindowTexture.dispose();
+        memesWindowTexture.dispose();
         if (exitToMenuButtonTexture != null) {
             exitToMenuButtonTexture.dispose();
         }
@@ -1256,10 +1310,11 @@ public class GameScreen extends BaseScreen {
         notificationWindowTexture.dispose();
         buyAndAuctionWindowTexture.dispose();
         auctionOrMemeBankWindowTexture.dispose();
-        sidebarWindowTexture.dispose();
-        if (memeBattleOverlayTexture != null) {
-            memeBattleOverlayTexture.dispose();
-        }
+        tenUpTexture.dispose();
+        tenDownTexture.dispose();
+        startBattleTexture.dispose();
+        inputMemeBattleTexture.dispose();
+        cardBoardTexture.dispose();
         inputTexture.dispose();
         backgroundTexture.dispose();
         for (Texture cellTexture : cellTextures) {
@@ -1318,7 +1373,7 @@ public class GameScreen extends BaseScreen {
             return "Ждём первого активного игрока.";
         }
         if (localPlayer != null && current.id == localPlayer.id) {
-            return "← Твой ход";
+            return "Твой ход";
         }
         return "Сейчас ходит " + current.name;
     }
@@ -1331,6 +1386,7 @@ public class GameScreen extends BaseScreen {
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(diceButtonTexture));
         style.imageUp = drawable;
+        style.imageOver = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
         style.imageDown = drawable.tint(new Color(0.88f, 0.88f, 0.88f, 1f));
         style.imageDisabled = drawable.tint(new Color(0.45f, 0.45f, 0.45f, 1f));
         Drawable transparent = panel(new Color(1f, 1f, 1f, 0f));
@@ -1369,8 +1425,8 @@ public class GameScreen extends BaseScreen {
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         style.imageUp = drawable;
-        style.imageOver = drawable.tint(new Color(1f, 1f, 1f, 0.97f));
-        style.imageDown = drawable.tint(new Color(0.86f, 0.86f, 0.86f, 1f));
+        style.imageOver = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        style.imageDown = drawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
         style.imageDisabled = drawable.tint(new Color(0.45f, 0.45f, 0.45f, 1f));
         Drawable transparent = panel(new Color(1f, 1f, 1f, 0f));
         style.up = transparent;
@@ -1400,55 +1456,46 @@ public class GameScreen extends BaseScreen {
         return textures;
     }
 
-    private Drawable window(Texture texture) {
-        return new TextureRegionDrawable(new TextureRegion(texture));
-    }
-
     private void layoutBoardOverlays() {
-        com.badlogic.gdx.math.Rectangle diceBounds = boardRenderer.getDicePanelBounds();
-            com.badlogic.gdx.math.Rectangle currentBounds = boardRenderer.getCurrentCellPanelBounds();
-        com.badlogic.gdx.math.Rectangle feedBounds = boardRenderer.getFeedPanelBounds();
         com.badlogic.gdx.math.Rectangle boardBounds = boardRenderer.getBoardBounds();
 
-        diceOverlay.setBounds(diceBounds.x, diceBounds.y, diceBounds.width, diceBounds.height);
-        currentCellOverlay.setBounds(currentBounds.x, currentBounds.y, currentBounds.width, currentBounds.height);
-        feedOverlay.setBounds(feedBounds.x, feedBounds.y, feedBounds.width, feedBounds.height);
-        if (sidePanelContainer != null) {
-            sidePanelContainer.setHeight(boardBounds.height);
-            sidePanelContainer.setY(boardBounds.y);
-        }
+        // Кнопки хода и подсказка — в центре экрана
+        float diceW = 640f;
+        float diceH = 160f;
+        diceOverlay.setBounds(
+            boardBounds.x + (boardBounds.width - diceW) / 2f,
+            boardBounds.y + (boardBounds.height - diceH) / 2f,
+            diceW,
+            diceH
+        );
+        // CURRENT CELL и FEED временно отключены
+        //com.badlogic.gdx.math.Rectangle currentBounds = boardRenderer.getCurrentCellPanelBounds();
+        //com.badlogic.gdx.math.Rectangle feedBounds = boardRenderer.getFeedPanelBounds();
+        //currentCellOverlay.setBounds(currentBounds.x, currentBounds.y, currentBounds.width, currentBounds.height);
+        //feedOverlay.setBounds(feedBounds.x, feedBounds.y, feedBounds.width, feedBounds.height);
 
         turnNotificationModal.setFillParent(true);
         buyOrAuctionModal.setFillParent(true);
         auctionModal.setFillParent(true);
         memeBankModal.setFillParent(true);
-        if (battleWindowCell != null) {
-            com.badlogic.gdx.math.Rectangle battleBounds = boardRenderer.getBoardBounds();
-            float battleSize = battleBounds.width * 0.76f;
-            battleWindowCell.size(battleSize, battleSize);
-            battleOverlay.invalidateHierarchy();
-        }
     }
 
-    private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float scale, boolean centerText) {
+    private void configureModal(Table modal, Texture texture, VisLabel contentLabel, float minWidth, float minHeight, boolean centerText) {
         modal.setVisible(false);
         modal.center();
         Table window = new Table();
         window.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
-        window.pad(20f);
-        window.top().left();
+        window.pad(24f);
         modal.clearChildren();
-        float modalWidth = texture.getWidth() * scale;
-        float modalHeight = texture.getHeight() * scale;
         contentLabel.setWrap(true);
         if (centerText) {
             contentLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-            window.add(contentLabel).width(modalWidth * 0.8f).expand().center().pad(12f).row();
+            window.add(contentLabel).width(minWidth * 0.85f).expand().center().pad(12f).row();
         } else {
-            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.left);
-            window.add(contentLabel).width(modalWidth * 0.8f).left().top().pad(12f).row();
+            contentLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+            window.add(contentLabel).width(minWidth * 0.85f).center().pad(12f).row();
         }
-        modal.add(window).size(modalWidth, modalHeight).center();
+        modal.add(window).minSize(minWidth, minHeight).fill().center();
     }
 
     private void setupModalControls() {
@@ -1517,12 +1564,13 @@ public class GameScreen extends BaseScreen {
     private void addMemeBankControls() {
         Table window = (Table) memeBankModal.getCells().first().getActor();
         Table controls = new Table();
-        controls.add(memeBankAmountField).width(220f).height(32f).padRight(10f);
-        controls.add(memeBankDepositButton).width(180f).height(COMMON_BUTTON_HEIGHT).row();
-        controls.add(memeBankErrorLabel).colspan(2).padTop(4f).left().row();
-        controls.add(memeBankWithdrawButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
-        controls.add(memeBankSkipButton).width(180f).height(COMMON_BUTTON_HEIGHT).padTop(10f).left();
-        window.add(controls).left().padTop(16f);
+        controls.center();
+        controls.add(memeBankAmountField).width(220f).height(44f).padRight(12f);
+        controls.add(memeBankDepositButton).size(150f, 56f).row();
+        controls.add(memeBankErrorLabel).colspan(2).center().padTop(6f).row();
+        controls.add(memeBankWithdrawButton).size(150f, 56f).padRight(12f);
+        controls.add(memeBankSkipButton).size(150f, 56f).row();
+        window.add(controls).center().expand().padTop(10f);
     }
 
     private Actor createOptionalActionButton(Texture texture, String fallbackText) {
@@ -1551,6 +1599,15 @@ public class GameScreen extends BaseScreen {
         field.setStyle(style);
     }
 
+    private void applyBattleInputFieldStyle(VisTextField field) {
+        VisTextField.VisTextFieldStyle style = new VisTextField.VisTextFieldStyle(field.getStyle());
+        Drawable bg = new TextureRegionDrawable(new TextureRegion(inputMemeBattleTexture));
+        style.background = bg;
+        style.backgroundOver = bg;
+        style.focusedBackground = bg;
+        style.disabledBackground = bg;
+        field.setStyle(style);
+    }
     private String buildPlayersSignature(GameState state, Player current, int localPlayerId) {
         if (state == null || state.players == null) {
             return "none";
@@ -1608,5 +1665,20 @@ public class GameScreen extends BaseScreen {
         Player player = state.getPlayerById(state.auctionCurrentPlayerId);
         return player == null ? "—" : player.name;
     }
-
+    private String t(String key) {
+        boolean ru = language == Language.RU;
+        return switch (key) {
+            case "waiting_answers" -> ru ? "Ждём ответов игроков..." : "Waiting for players' answers...";
+            case "choose_stakes" -> ru ? "Выбери ставку" : "Choose the stakes";
+            case "invite_battle" -> ru ? "Тебя приглашают на мем-баттл! Ставка:" : "You are invited to a meme battle! Stakes:";
+            case "organizer_chooses" -> ru ? "Организатор выбирает ставку..." : "Organizer is choosing the stakes...";
+            case "topic_placeholder" -> ru ? "Тема или ситуация..." : "Write the situation or topic";
+            case "waiting_topic" -> ru ? "Ждём тему от организатора..." : "Waiting for the topic...";
+            case "choose_funniest" -> ru ? "Выбери самый смешной мем для ситуации" : "CHOOSE THE FUNNIEST CARD FOR THE SITUATION";
+            case "vote_hint" -> ru ? "Голосуй за лучший мем!" : "Vote for the best meme!";
+            case "already_voted" -> ru ? "Ты уже проголосовал. Ждём остальных..." : "You already voted. Waiting for others...";
+            case "battle_finished" -> ru ? "Баттл завершён!" : "Battle finished!";
+            default -> key;
+        };
+    }
 }

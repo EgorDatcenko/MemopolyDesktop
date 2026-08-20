@@ -93,7 +93,39 @@ public class DeckRepository {
             return sourcePath;
         }
     }
+    public void deleteDeck(String deckName) {
+        if (deckName == null || deckName.isBlank()) {
+            return;
+        }
+        Array<MemeDeck> decks = loadDecks();
+        for (int i = decks.size - 1; i >= 0; i--) {
+            MemeDeck deck = decks.get(i);
+            if (deck != null && deckName.equals(deck.name)) {
+                deleteDeckImages(deck);
+                decks.removeIndex(i);
+            }
+        }
+        saveDecks(decks);
+    }
 
+    private void deleteDeckImages(MemeDeck deck) {
+        if (deck.memes == null) {
+            return;
+        }
+        for (Meme meme : deck.memes) {
+            if (meme.imageUrl == null || meme.imageUrl.isBlank()) {
+                continue;
+            }
+            String normalized = meme.imageUrl.replace('\\', '/');
+            if (!normalized.startsWith(DECK_IMAGES_DIR + "/")) {
+                continue;
+            }
+            FileHandle parent = Gdx.files.local(normalized).parent();
+            if (parent != null && parent.exists()) {
+                parent.deleteDirectory();
+            }
+        }
+    }
     private String sanitizeFileName(String raw) {
         if (raw == null || raw.isBlank()) {
             return "deck";

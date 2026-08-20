@@ -18,7 +18,10 @@ public class GameActionRequest {
         MEME_BANK_SKIP,
         PLACE_AUCTION_BID,
         CANCEL_AUCTION,
-        END_TURN
+        PAY_JAIL_FINE,
+        END_TURN,
+        CANCEL_MEME,
+        CANCEL_MEME_BATTLE
     }
 
     public ActionType actionType;

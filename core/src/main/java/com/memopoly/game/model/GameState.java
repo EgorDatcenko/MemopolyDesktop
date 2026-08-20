@@ -38,6 +38,8 @@ public class GameState {
     public int diceValue;
     public boolean hasRolledThisTurn;
     public String lastActionLog;
+    public String notificationText;
+    public long notificationTimestamp;
     public int turnCount;
     public String selectedDeckName;
     public ArrayList<Meme> memeDeckDrawPile;
@@ -76,6 +78,8 @@ public class GameState {
         this.diceValue = 0;
         this.hasRolledThisTurn = false;
         this.lastActionLog = "Игра началась";
+        this.notificationText = "";
+        this.notificationTimestamp = 0L;
         this.turnCount = 0;
         this.selectedDeckName = null;
         this.memeDeckDrawPile = new ArrayList<>();
@@ -101,9 +105,21 @@ public class GameState {
     }
 
     public void nextPlayer() {
+        int checkedPlayers = 0;
         do {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        } while (players.get(currentPlayerIndex).isBankrupt);
+            Player candidate = players.get(currentPlayerIndex);
+            if (!candidate.isBankrupt && candidate.skipNextTurn) {
+                candidate.skipNextTurn = false;
+                lastActionLog = candidate.name + " пропускает ход";
+                checkedPlayers++;
+                continue;
+            }
+            if (!candidate.isBankrupt) {
+                break;
+            }
+            checkedPlayers++;
+        } while (checkedPlayers <= players.size());
 
         turnCount++;
         diceValue = 0;
@@ -116,6 +132,11 @@ public class GameState {
     public void addPlayer(Player player) {
         players.add(player);
         lastActionLog = "Игрок " + player.name + " присоединился";
+    }
+
+    public void showNotification(String text) {
+        notificationText = text == null ? "" : text;
+        notificationTimestamp = System.currentTimeMillis();
     }
 
     public void removePlayer(int playerId) {

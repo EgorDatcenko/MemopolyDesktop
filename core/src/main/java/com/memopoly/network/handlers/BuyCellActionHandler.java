@@ -56,6 +56,7 @@ public class BuyCellActionHandler implements GameActionHandler {
         current.pay(currentCell.price);
         gameState.cellOwners.put(currentCell.id, current.id);
         current.ownedCells.add(currentCell.id);
+        gameState.showNotification(current.name + " купил " + currentCell.name);
         gameState.lastActionLog = current.name + " купил " + currentCell.name;
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         return true;

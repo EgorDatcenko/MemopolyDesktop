@@ -26,6 +26,10 @@ public final class TexturePathResolver {
         };
     }
 
+    public static String resolveBattleBoardMapTexture(LanguageManager.Language language) {
+        return "gamescreen_ui_" + language.code() + "/map_for_memebattle.png";
+    }
+
     private static String normalizeGameFileName(String fileName, LanguageManager.Language language) {
         return switch (fileName) {
             case "make_a_bet_btn.png" -> "create_bet_btn.png";

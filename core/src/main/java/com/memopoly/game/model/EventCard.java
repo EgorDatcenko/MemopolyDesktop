@@ -10,7 +10,13 @@ public class EventCard {
         COLLECT_FROM_ALL, 
         PAY_MONEY,        
         DRAW_MEME,        
-        RECEIVE_MONEY_LARGE 
+        RECEIVE_MONEY_LARGE,
+        RECEIVE_PER_OWNED_CELL,
+        PAY_PER_OWNED_CELL,
+        SKIP_NEXT_RENT_COLLECTION,
+        EXTRA_ROLL,
+        RETURN_TO_START,
+        MARKET_CRASH
     }
 
     public int id;
