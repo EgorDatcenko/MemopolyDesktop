@@ -3,27 +3,23 @@
 *.o
 *.obj
 *.out
-*.exe
-*.dll
-*.so
-*.a
+build/
+target/
 
 # Dependencies
+lib/
+libs/
+dependencies/
 node_modules/
 venv/
 .venv/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
-target/
 .gradle/
-
-# Build directories
-dist/
-build/
-coverage/
-htmlcov/
-*.egg-info/
+.cargo/
+.npm/
+.yarn/
 
 # Editors
 .vscode/
@@ -32,17 +28,22 @@ htmlcov/
 *.swo
 *.tmp
 
-# System
+# Logs
+*.log
+
+# System files
 .DS_Store
 Thumbs.db
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
-# Compressed files
+# Archives
 *.zip
 *.gz
 *.tar
