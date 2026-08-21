@@ -47,6 +47,17 @@ public class BattleManager {
      * Enters BATTLE_SETUP so the organizer can pick topic and stakes.
      */
     public void startSetup(int organizerId, int cellIndex) {
+        // Отмена активной сделки при начале баттла
+        if (gameState.tradeId != 0) {
+            gameState.tradeId = 0;
+            gameState.tradeProposerId = -1;
+            gameState.tradeTargetId = -1;
+            gameState.tradeProposerCells.clear();
+            gameState.tradeTargetCells.clear();
+            gameState.tradeProposerMoney = 0;
+            gameState.tradeTargetMoney = 0;
+        }
+
         gameState.currentPhase = GameState.GamePhase.MEME_BATTLE;
         gameState.isInBattle = true;
         gameState.battleType = MEME_BATTLE_CELL;

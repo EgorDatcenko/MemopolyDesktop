@@ -71,6 +71,15 @@ public class GameState {
 
     public int memeBankPlayerId = -1;
 
+    // Trade fields
+    public int tradeId = 0;                    // 0 = нет активной сделки
+    public int tradeProposerId = -1;           // ID инициатора сделки
+    public int tradeTargetId = -1;             // ID цели сделки
+    public ArrayList<Integer> tradeProposerCells = new ArrayList<>();  // Клетки инициатора
+    public ArrayList<Integer> tradeTargetCells = new ArrayList<>();    // Клетки цели
+    public int tradeProposerMoney = 0;         // Монеты инициатора
+    public int tradeTargetMoney = 0;           // Монеты цели
+
     public GameState() {
         this.cellOwners = new HashMap<>();
         this.cellMortgaged = new HashMap<>();

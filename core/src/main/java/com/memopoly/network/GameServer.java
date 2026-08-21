@@ -213,6 +213,12 @@ public class GameServer {
             battleManager.handleBattleResponse((BattleResponsePacket) packet);
         } else if (packet instanceof ChatMessage) {
             handleChatMessage(connection, (ChatMessage) packet);
+        } else if (packet instanceof TradeOfferPacket) {
+            handleTradeOffer(connection, (TradeOfferPacket) packet);
+        } else if (packet instanceof TradeResponsePacket) {
+            handleTradeResponse(connection, (TradeResponsePacket) packet);
+        } else if (packet instanceof TradeCancelPacket) {
+            handleTradeCancel(connection);
         } else {
             AppLog.warn("Server", "Неизвестный тип пакета: " + packet.getClass());
         }
@@ -235,6 +241,228 @@ public class GameServer {
         broadcast.isSystem = false;
         broadcast.timestamp = System.currentTimeMillis();
         sendAllTcpSafely(broadcast);
+    }
+
+    private void handleTradeOffer(Connection connection, TradeOfferPacket packet) {
+        synchronized (stateLock) {
+            Player proposer = gameState.getPlayerById(connection.getID());
+            if (proposer == null) return;
+
+            // Валидация: инициатор — текущий игрок, фаза PLAYING, не в баттле/аукционе, нет активной сделки
+            if (!isCurrentPlayer(connection.getID())) {
+                AppLog.warn("Server", "Trade offer rejected: not current player");
+                return;
+            }
+            if (gameState.currentPhase != GameState.GamePhase.PLAYING) {
+                AppLog.warn("Server", "Trade offer rejected: invalid phase " + gameState.currentPhase);
+                return;
+            }
+            if (gameState.isInBattle || gameState.isInAuction) {
+                AppLog.warn("Server", "Trade offer rejected: in battle or auction");
+                return;
+            }
+            if (gameState.tradeId != 0) {
+                AppLog.warn("Server", "Trade offer rejected: active trade exists");
+                return;
+            }
+
+            // >= 1 клетка в предложении
+            if (packet.myCells == null || packet.myCells.isEmpty()) {
+                AppLog.warn("Server", "Trade offer rejected: no cells from proposer");
+                return;
+            }
+
+            // Проверка что клетки реально принадлежат заявленным владельцам и без филиалов
+            for (int cellId : packet.myCells) {
+                Integer ownerId = gameState.cellOwners.get(cellId);
+                if (ownerId == null || ownerId != proposer.id) {
+                    AppLog.warn("Server", "Trade offer rejected: cell " + cellId + " not owned by proposer");
+                    return;
+                }
+                if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
+                    AppLog.warn("Server", "Trade offer rejected: cell " + cellId + " has houses");
+                    return;
+                }
+            }
+
+            // Цель должна существовать и быть не банкротом
+            Player target = gameState.getPlayerById(packet.targetId);
+            if (target == null || target.isBankrupt) {
+                AppLog.warn("Server", "Trade offer rejected: invalid target");
+                return;
+            }
+
+            // Все theirCells должны принадлежать ОДНОМУ сопернику (target)
+            if (packet.theirCells != null && !packet.theirCells.isEmpty()) {
+                for (int cellId : packet.theirCells) {
+                    Integer ownerId = gameState.cellOwners.get(cellId);
+                    if (ownerId == null || ownerId != target.id) {
+                        AppLog.warn("Server", "Trade offer rejected: cell " + cellId + " not owned by target");
+                        return;
+                    }
+                    if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
+                        AppLog.warn("Server", "Trade offer rejected: cell " + cellId + " has houses");
+                        return;
+                    }
+                }
+            }
+
+            // Проверка балансов монет
+            if (packet.myMoney < 0 || packet.myMoney > proposer.money) {
+                AppLog.warn("Server", "Trade offer rejected: proposer money invalid");
+                return;
+            }
+            if (packet.theirMoney < 0 || packet.theirMoney > target.money) {
+                AppLog.warn("Server", "Trade offer rejected: target money invalid");
+                return;
+            }
+
+            // Сделка должна содержать >= 1 клетку (проверено выше для myCells, но их клетки могут быть пустыми)
+            if ((packet.myCells == null || packet.myCells.isEmpty()) && (packet.theirCells == null || packet.theirCells.isEmpty())) {
+                AppLog.warn("Server", "Trade offer rejected: no cells at all");
+                return;
+            }
+
+            // Сохраняем сделку
+            gameState.tradeId = ++gameState.turnCount; // уникальный ID
+            gameState.tradeProposerId = proposer.id;
+            gameState.tradeTargetId = target.id;
+            gameState.tradeProposerCells = new ArrayList<>(packet.myCells);
+            gameState.tradeTargetCells = packet.theirCells != null ? new ArrayList<>(packet.theirCells) : new ArrayList<>();
+            gameState.tradeProposerMoney = packet.myMoney;
+            gameState.tradeTargetMoney = packet.theirMoney;
+
+            gameState.lastActionLog = proposer.name + " предложил сделку игроку " + target.name;
+            broadcastGameStateUnsafe();
+        }
+    }
+
+    private void handleTradeResponse(Connection connection, TradeResponsePacket packet) {
+        synchronized (stateLock) {
+            Player target = gameState.getPlayerById(connection.getID());
+            if (target == null) return;
+
+            // Только цель может ответить и только при активной сделке
+            if (gameState.tradeId == 0 || gameState.tradeTargetId != target.id) {
+                AppLog.warn("Server", "Trade response rejected: not target or no active trade");
+                return;
+            }
+
+            Player proposer = gameState.getPlayerById(gameState.tradeProposerId);
+            if (proposer == null || proposer.isBankrupt) {
+                // Инициатор банкрот — отмена
+                cancelTradeInternal();
+                return;
+            }
+
+            if (packet.accept) {
+                // ПОВТОРНАЯ валидация перед исполнением
+                // Проверка владения клетками
+                for (int cellId : gameState.tradeProposerCells) {
+                    Integer ownerId = gameState.cellOwners.get(cellId);
+                    if (ownerId == null || ownerId != proposer.id) {
+                        AppLog.warn("Server", "Trade execution rejected: proposer no longer owns cell " + cellId);
+                        cancelTradeInternal();
+                        return;
+                    }
+                    if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
+                        AppLog.warn("Server", "Trade execution rejected: cell " + cellId + " has houses");
+                        cancelTradeInternal();
+                        return;
+                    }
+                }
+                for (int cellId : gameState.tradeTargetCells) {
+                    Integer ownerId = gameState.cellOwners.get(cellId);
+                    if (ownerId == null || ownerId != target.id) {
+                        AppLog.warn("Server", "Trade execution rejected: target no longer owns cell " + cellId);
+                        cancelTradeInternal();
+                        return;
+                    }
+                    if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
+                        AppLog.warn("Server", "Trade execution rejected: cell " + cellId + " has houses");
+                        cancelTradeInternal();
+                        return;
+                    }
+                }
+
+                // Проверка балансов
+                if (gameState.tradeProposerMoney > proposer.money || gameState.tradeTargetMoney > target.money) {
+                    AppLog.warn("Server", "Trade execution rejected: insufficient funds");
+                    cancelTradeInternal();
+                    return;
+                }
+
+                // Атомарное исполнение: обмен клетками
+                for (int cellId : gameState.tradeProposerCells) {
+                    gameState.cellOwners.put(cellId, target.id);
+                    proposer.ownedCells.remove(Integer.valueOf(cellId));
+                    target.ownedCells.add(cellId);
+                }
+                for (int cellId : gameState.tradeTargetCells) {
+                    gameState.cellOwners.put(cellId, proposer.id);
+                    target.ownedCells.remove(Integer.valueOf(cellId));
+                    proposer.ownedCells.add(cellId);
+                }
+
+                // Перевод монет в обе стороны
+                proposer.pay(gameState.tradeProposerMoney);
+                target.receive(gameState.tradeProposerMoney);
+                target.pay(gameState.tradeTargetMoney);
+                proposer.receive(gameState.tradeTargetMoney);
+
+                gameState.lastActionLog = "Сделка между " + proposer.name + " и " + target.name + " завершена!";
+                gameState.showNotification(proposer.name + " и " + target.name + " обменялись клетками и монетами");
+
+                // Завершение сделки
+                gameState.tradeId = 0;
+                gameState.tradeProposerId = -1;
+                gameState.tradeTargetId = -1;
+                gameState.tradeProposerCells.clear();
+                gameState.tradeTargetCells.clear();
+                gameState.tradeProposerMoney = 0;
+                gameState.tradeTargetMoney = 0;
+
+                broadcastGameStateUnsafe();
+            } else {
+                // Decline
+                gameState.lastActionLog = target.name + " отклонил сделку";
+                gameState.tradeId = 0;
+                gameState.tradeProposerId = -1;
+                gameState.tradeTargetId = -1;
+                gameState.tradeProposerCells.clear();
+                gameState.tradeTargetCells.clear();
+                gameState.tradeProposerMoney = 0;
+                gameState.tradeTargetMoney = 0;
+                broadcastGameStateUnsafe();
+            }
+        }
+    }
+
+    private void handleTradeCancel(Connection connection) {
+        synchronized (stateLock) {
+            Player proposer = gameState.getPlayerById(connection.getID());
+            if (proposer == null) return;
+
+            // Только инициатор может отменить
+            if (gameState.tradeId == 0 || gameState.tradeProposerId != proposer.id) {
+                AppLog.warn("Server", "Trade cancel rejected: not proposer or no active trade");
+                return;
+            }
+
+            gameState.lastActionLog = proposer.name + " отменил сделку";
+            cancelTradeInternal();
+        }
+    }
+
+    private void cancelTradeInternal() {
+        gameState.tradeId = 0;
+        gameState.tradeProposerId = -1;
+        gameState.tradeTargetId = -1;
+        gameState.tradeProposerCells.clear();
+        gameState.tradeTargetCells.clear();
+        gameState.tradeProposerMoney = 0;
+        gameState.tradeTargetMoney = 0;
+        broadcastGameStateUnsafe();
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
@@ -583,6 +811,10 @@ public class GameServer {
                 if (!isCurrentPlayer(connection.getID())) {
                     rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN, "завершить ход может только текущий игрок");
                     return;
+                }
+                // Отмена активной сделки при завершении хода
+                if (gameState.tradeId != 0 && gameState.tradeProposerId == actingPlayer.id) {
+                    cancelTradeInternal();
                 }
                 if (gameState.currentPhase == GameState.GamePhase.PLAYING && gameState.hasRolledThisTurn) {
                     gameState.nextPlayer();
