@@ -58,7 +58,10 @@ public class BoardCell {
     }
 
     public int getEntranceFee() {
-        if (!isActive()) return 0;
-        return Math.max(10, price / 5);
+        return type == Type.SITUATION ? Math.max(10, price / 5) : 0;
+    }
+
+    public boolean isBuildableSituation() {
+        return type == Type.SITUATION && group != null && group != Group.SPECIAL;
     }
 }

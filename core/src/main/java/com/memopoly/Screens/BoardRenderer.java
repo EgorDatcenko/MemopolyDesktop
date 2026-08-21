@@ -267,6 +267,7 @@ public class BoardRenderer {
         shapeRenderer.end();
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        renderHouses(gameState);
         renderPlayers(gameState);
         shapeRenderer.end();
     }
@@ -393,6 +394,30 @@ public class BoardRenderer {
         }
     }
 
+    private void renderHouses(GameState gameState) {
+        if (gameState == null || gameState.cellHouses == null) {
+            return;
+        }
+
+        shapeRenderer.setColor(Color.valueOf("000A3E"));
+        for (Map.Entry<Integer, Integer> entry : gameState.cellHouses.entrySet()) {
+            int cellId = entry.getKey();
+            int houses = entry.getValue() == null ? 0 : entry.getValue();
+            if (cellId < 0 || cellId >= 40 || houses <= 0) {
+                continue;
+            }
+            Rectangle bounds = getCellBounds(cellId);
+            float size = Math.max(6f, Math.min(bounds.width, bounds.height) * 0.14f);
+            float gap = size * 0.25f;
+            float totalWidth = houses * size + (houses - 1) * gap;
+            float startX = bounds.x + (bounds.width - totalWidth) * 0.5f;
+            float y = bounds.y + (bounds.height - size) * 0.5f;
+            for (int i = 0; i < houses; i++) {
+                // Placeholder for future branch icons; it stays on the cell, not the owner plaque.
+                shapeRenderer.rect(startX + i * (size + gap), y, size, size);
+            }
+        }
+    }
     private void renderPlayers(GameState gameState) {
         if (gameState == null || gameState.players == null) {
             return;

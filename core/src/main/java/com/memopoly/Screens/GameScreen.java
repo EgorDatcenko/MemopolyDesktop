@@ -995,6 +995,7 @@ public class GameScreen extends BaseScreen {
         for (int cellId : localPlayer.ownedCells) {
             BoardCell cell = boardCells.get(cellId);
             boolean mortgaged = state.cellMortgaged.getOrDefault(cellId, false);
+            int houses = state.cellHouses.getOrDefault(cellId, 0);
 
             Table cellCard = new Table();
             Image cellImage = new Image(new TextureRegionDrawable(new TextureRegion(cellTextures[cellId])));
@@ -1027,6 +1028,34 @@ public class GameScreen extends BaseScreen {
             buttonStack.add(actionButton);
             buttonStack.add(priceOverlay);
             cellCard.add(buttonStack).width(150f).height(48f).padTop(6f);
+
+            VisLabel housesLabel = new VisLabel(t("branches") + ": " + houses + "/4");
+            housesLabel.setFontScale(0.55f);
+            housesLabel.setColor(Color.valueOf("000A3E"));
+            cellCard.row();
+            cellCard.add(housesLabel).padTop(6f).row();
+
+            boolean canManageHouses = canManageCell && !mortgaged;
+            VisTextButton buildHouseButton = new VisTextButton(t("build_branch"));
+            buildHouseButton.setDisabled(!canManageHouses);
+            buildHouseButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    sendAction(GameActionRequest.ActionType.BUY_HOUSE, cellId, 0);
+                }
+            });
+            VisTextButton sellHouseButton = new VisTextButton(t("sell_branch"));
+            sellHouseButton.setDisabled(!canManageHouses || houses == 0);
+            sellHouseButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    sendAction(GameActionRequest.ActionType.SELL_HOUSE, cellId, 0);
+                }
+            });
+            Table houseActions = new Table();
+            houseActions.add(buildHouseButton).width(142f).height(34f).padRight(4f);
+            houseActions.add(sellHouseButton).width(142f).height(34f);
+            cellCard.add(houseActions).colspan(2).padTop(4f).row();
 
             ownedCellsTable.add(cellCard).pad(6f);
             if (++count % 2 == 0) {
@@ -1640,6 +1669,7 @@ public class GameScreen extends BaseScreen {
         for (int cellId : localPlayer.ownedCells) {
             builder.append(cellId).append(':')
                 .append(state.cellMortgaged.getOrDefault(cellId, false))
+                .append(':').append(state.cellHouses.getOrDefault(cellId, 0))
                 .append(';');
         }
         return builder.toString();
@@ -1678,6 +1708,9 @@ public class GameScreen extends BaseScreen {
             case "vote_hint" -> ru ? "Голосуй за лучший мем!" : "Vote for the best meme!";
             case "already_voted" -> ru ? "Ты уже проголосовал. Ждём остальных..." : "You already voted. Waiting for others...";
             case "battle_finished" -> ru ? "Баттл завершён!" : "Battle finished!";
+            case "branches" -> ru ? "Филиалы" : "Branches";
+            case "build_branch" -> ru ? "Построить" : "Build";
+            case "sell_branch" -> ru ? "Продать" : "Sell";
             default -> key;
         };
     }

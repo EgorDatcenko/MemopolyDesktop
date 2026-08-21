@@ -48,6 +48,8 @@ public class GameServer {
     private static final String REJECT_AUCTION_NOT_ACTIVE = "AUCTION_NOT_ACTIVE";
     private static final String REJECT_AUCTION_OTHER_PLAYER_TURN = "AUCTION_OTHER_PLAYER_TURN";
     private static final int JAIL_CELL_ID = 30;
+    private static final int BAN_CELL_ID = 10;
+    private static final int MAX_HOUSES_PER_CELL = 4;
     private static final int JAIL_FINE = 50;
     private static final int MAX_JAIL_ATTEMPTS = 3;
 
@@ -365,7 +367,9 @@ public class GameServer {
             case JAIL:
                 current.inJail = true;
                 current.jailTurns = 0;
-                gameState.lastActionLog = current.name + " попал в тюрьму (Copyright Infringement)";
+                // Ban is a relocation, not a normal landing: no cell effect or Start reward.
+                current.position = BAN_CELL_ID;
+                gameState.lastActionLog = current.name + " попал в тюрьму (Copyright Infringement) и отправлен в Ban";
                 break;
             case TAX:
                 current.pay(100);
@@ -384,7 +388,7 @@ public class GameServer {
                 } else if (gameState.cellOwners.get(cellIndex) != current.id) {
                     boolean mortgaged = gameState.cellMortgaged.getOrDefault(cellIndex, false);
                     if (!mortgaged) {
-                        int fee = cell.getEntranceFee();
+                        int fee = calculateRent(cell);
                         current.pay(fee);
                         Player owner = gameState.getPlayerById(gameState.cellOwners.get(cellIndex));
                         if (owner != null) owner.receive(fee);
@@ -514,6 +518,12 @@ public class GameServer {
                 break;
             case BUY_BACK_CELL:
                 buyBackCellActionHandler.handle(connection, actingPlayer, request);
+                break;
+            case BUY_HOUSE:
+                handleBuyHouse(connection, actingPlayer, request.targetId);
+                break;
+            case SELL_HOUSE:
+                handleSellHouse(connection, actingPlayer, request.targetId);
                 break;
             case MEME_BANK_DEPOSIT:
                 memeBankActionHandler.handle(connection, actingPlayer, request);
@@ -786,6 +796,10 @@ public class GameServer {
         if (gameState.cellMortgaged.getOrDefault(cellId, false)) {
             return;
         }
+        if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
+            gameState.lastActionLog = current.name + " не может заложить клетку с филиалами";
+            return;
+        }
 
         BoardCell targetCell = board.get(cellId);
         current.receive(targetCell.price / 2);
@@ -905,6 +919,7 @@ public class GameServer {
         for (int cellIndex : player.ownedCells) {
             gameState.cellOwners.remove(cellIndex);
             gameState.cellMortgaged.remove(cellIndex);
+            gameState.cellHouses.remove(cellIndex);
         }
         player.ownedCells.clear();
 
@@ -947,6 +962,97 @@ public class GameServer {
         return total;
     }
 
+    /**
+     * Rent rule: base entrance fee, doubled for an intact monopoly, then multiplied
+     * by one plus the number of branches on the landed cell.
+     */
+    private int calculateRent(BoardCell cell) {
+        int baseFee = cell.getEntranceFee();
+        if (baseFee == 0) {
+            return 0;
+        }
+        int monopolyMultiplier = hasFullMonopoly(cell, gameState.cellOwners.get(cell.id)) ? 2 : 1;
+        int houses = gameState.cellHouses.getOrDefault(cell.id, 0);
+        return baseFee * monopolyMultiplier * (1 + houses);
+    }
+
+    private void handleBuyHouse(Connection connection, Player player, int cellId) {
+        if (!canManageHouses(connection, player, cellId)) {
+            return;
+        }
+        BoardCell cell = board.get(cellId);
+        List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
+        int houses = gameState.cellHouses.getOrDefault(cellId, 0);
+        int minimumHouses = groupCells.stream().mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).min().orElse(0);
+        int buildPrice = getHouseBuildPrice(cell);
+
+        if (houses >= MAX_HOUSES_PER_CELL) {
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "HOUSE_LIMIT", "на клетке уже максимум филиалов");
+        } else if (houses != minimumHouses) {
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "UNEVEN_BUILDING", "филиалы нужно строить равномерно по группе");
+        } else if (player.money < buildPrice) {
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "INSUFFICIENT_FUNDS", "недостаточно монет для филиала");
+        } else {
+            player.pay(buildPrice);
+            gameState.cellHouses.put(cellId, houses + 1);
+            gameState.lastActionLog = player.name + " построил филиал на " + cell.name;
+        }
+    }
+
+    private void handleSellHouse(Connection connection, Player player, int cellId) {
+        if (!canManageHouses(connection, player, cellId)) {
+            return;
+        }
+        BoardCell cell = board.get(cellId);
+        List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
+        int houses = gameState.cellHouses.getOrDefault(cellId, 0);
+        int maximumHouses = groupCells.stream().mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).max().orElse(0);
+
+        if (houses <= 0) {
+            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "NO_HOUSES", "на клетке нет филиалов для продажи");
+        } else if (houses != maximumHouses) {
+            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "UNEVEN_SELLING", "филиалы нужно продавать равномерно по группе");
+        } else {
+            gameState.cellHouses.put(cellId, houses - 1);
+            player.receive(getHouseBuildPrice(cell) / 2);
+            gameState.lastActionLog = player.name + " продал филиал на " + cell.name;
+        }
+    }
+
+    private boolean canManageHouses(Connection connection, Player player, int cellId) {
+        if (!isCurrentPlayer(connection.getID())) {
+            rejectAction(connection, player, null, REJECT_NOT_YOUR_TURN, "управлять филиалами можно только в свой ход");
+            return false;
+        }
+        if (gameState.currentPhase != GameState.GamePhase.PLAYING) {
+            rejectAction(connection, player, null, REJECT_INVALID_PHASE, "управление филиалами доступно только во время хода");
+            return false;
+        }
+        if (cellId < 0 || cellId >= board.size()) {
+            return false;
+        }
+        BoardCell cell = board.get(cellId);
+        if (!cell.isBuildableSituation() || !hasFullMonopoly(cell, player.id)) {
+            rejectAction(connection, player, null, "NO_MONOPOLY", "нужна полная группа клеток без залогов");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasFullMonopoly(BoardCell cell, int ownerId) {
+        if (cell == null || ownerId < 0 || !cell.isBuildableSituation()) {
+            return false;
+        }
+        List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
+        return groupCells.size() >= 2 && groupCells.stream().allMatch(groupCell ->
+            gameState.cellOwners.getOrDefault(groupCell.id, -1) == ownerId
+                && !gameState.cellMortgaged.getOrDefault(groupCell.id, false)
+        );
+    }
+
+    private int getHouseBuildPrice(BoardCell cell) {
+        return Math.max(1, cell.price / 2);
+    }
     private boolean isCurrentPlayer(int connectionId) {
         return TurnGuard.isCurrentPlayer(gameState, connectionId);
     }

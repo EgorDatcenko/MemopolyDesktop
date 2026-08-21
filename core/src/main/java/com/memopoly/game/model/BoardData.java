@@ -7,6 +7,19 @@ import java.util.List;
  * Фабрика игрового поля: настраивает и создаёт конфигурацию из 40 клеток на доске Memopoly.
  */
 public class BoardData {
+    public static List<BoardCell> getCellsInGroup(List<BoardCell> cells, BoardCell.Group group) {
+        List<BoardCell> groupCells = new ArrayList<>();
+        if (cells == null || group == null || group == BoardCell.Group.SPECIAL) {
+            return groupCells;
+        }
+
+        for (BoardCell cell : cells) {
+            if (cell != null && cell.isBuildableSituation() && cell.group == group) {
+                groupCells.add(cell);
+            }
+        }
+        return groupCells;
+    }
 //    public static List<BoardCell> buildCells() {
 //        List<BoardCell> cells = new ArrayList<>();
 //

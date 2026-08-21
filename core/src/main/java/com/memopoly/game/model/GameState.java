@@ -10,6 +10,8 @@ import java.util.HashMap;
 public class GameState {
     public HashMap<Integer, Integer> cellOwners;
     public HashMap<Integer, Boolean> cellMortgaged;
+    /** Number of branches built on each situation cell (0..4). */
+    public HashMap<Integer, Integer> cellHouses;
     public enum GamePhase {
         WAITING,
         PLAYING,
@@ -72,6 +74,7 @@ public class GameState {
     public GameState() {
         this.cellOwners = new HashMap<>();
         this.cellMortgaged = new HashMap<>();
+        this.cellHouses = new HashMap<>();
         this.players = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;

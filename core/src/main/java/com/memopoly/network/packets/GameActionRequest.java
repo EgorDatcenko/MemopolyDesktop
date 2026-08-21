@@ -9,6 +9,8 @@ public class GameActionRequest {
         PASS_BUY,
         MORTGAGE_CELL,
         BUY_BACK_CELL,
+        BUY_HOUSE,
+        SELL_HOUSE,
         START_MEME_BATTLE,
         SUBMIT_MEME,
         VOTE_MEME,
