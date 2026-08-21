@@ -166,7 +166,7 @@ public class GameScreen extends BaseScreen {
 
     // Trade UI fields
     private VisTextButton dealButton;
-    private Table tradeWindow;
+    private Window tradeWindow;
     private VisLabel tradeInitiatorNameLabel;
     private VisLabel tradeTargetNameLabel;
     private VisSlider tradeInitiatorMoneySlider;
@@ -490,8 +490,8 @@ public class GameScreen extends BaseScreen {
         memesTitleLabel.setFontScale(1.2f);
 
         // Создаём кнопку сделки
-        dealButton = new VisTextButton("DEAL");
-        dealButton.setSize(60f, 60f);
+        dealButton = new VisTextButton(t("btn_deal"));
+        dealButton.setSize(140f, 50f);
 
         Table ownedPanel = new Table();
         ownedPanel.setBackground(window(myCellsWindowTexture));
@@ -500,7 +500,7 @@ public class GameScreen extends BaseScreen {
         // Header с заголовком и кнопкой сделки справа
         Table header = new Table();
         header.add(ownedTitleLabel).center().expandX();
-        header.add(dealButton).size(60f, 60f).padLeft(8f);
+        header.add(dealButton).size(140f, 50f).padLeft(8f);
         ownedPanel.add(header).growX().padBottom(10f).row();
         ownedPanel.add(ownedScroll).grow();
 
@@ -508,9 +508,9 @@ public class GameScreen extends BaseScreen {
         dealButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                GameState state = game.getLatestGameState();
-                if (state != null && state.tradeId == 0) {
-                    openTradeWindow();
+                GameState gs = game.getLatestGameState();
+                if (gs != null && gs.tradeId == 0) {
+                    openTradeWindow(gs);
                 }
             }
         });
@@ -556,22 +556,21 @@ public class GameScreen extends BaseScreen {
     }
 
     /** Открывает окно создания сделки (Инициатор) */
-    private void openTradeWindow() {
+    private void openTradeWindow(GameState gs) {
         if (tradeWindow != null || isTradeWindowOpen) return;
-        
-        GameState gs = game.getLatestGameState();
-        if (gs == null) return;
         
         isInitiator = true;
         isIncomingTrade = false;
         tradeTargetId = null;
         selectedMyCells.clear();
         selectedTheirCells.clear();
+        draftMyMoney = 0;
+        draftTheirMoney = 0;
         
         // Скрываем оверлей кубиков
         if (diceOverlay != null) diceOverlay.setVisible(false);
         
-        tradeWindow = new Window(t("window_trade_title"), skin);
+        tradeWindow = new Window(t("window_trade_title"), VisUI.getSkin());
         tradeWindow.setModal(true);
         tradeWindow.setResizable(false);
         tradeWindow.setSize(700, 420);
@@ -583,14 +582,14 @@ public class GameScreen extends BaseScreen {
         mainTable.pad(10);
         
         Table leftPanel = new Table();
-        leftPanel.setBackground(skin.getDrawable("white"));
+        leftPanel.setBackground(VisUI.getSkin().getDrawable("white"));
         leftPanel.pad(10);
-        leftPanel.color.set(Color.LIGHT_GRAY);
+        leftPanel.setColor(Color.LIGHT_GRAY);
         
         Table rightPanel = new Table();
-        rightPanel.setBackground(skin.getDrawable("white"));
+        rightPanel.setBackground(VisUI.getSkin().getDrawable("white"));
         rightPanel.pad(10);
-        rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+        rightPanel.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
         
         mainTable.add(leftPanel).expand().fill();
         mainTable.add(rightPanel).expand().fill();
@@ -601,7 +600,7 @@ public class GameScreen extends BaseScreen {
         
         // Кнопки управления
         Table btnTable = new Table();
-        VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), skin);
+        VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), VisUI.getSkin());
         proposeBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -609,7 +608,7 @@ public class GameScreen extends BaseScreen {
             }
         });
         
-        VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), skin);
+        VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), VisUI.getSkin());
         cancelBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -625,10 +624,10 @@ public class GameScreen extends BaseScreen {
         stage.addActor(tradeWindow);
         
         // Включаем режим выбора на поле
-        boardRenderer.setTradeDimming(getTradeableCellsList(gs));
+        boardRenderer.setTradeDimming(getTradeableCellsList(gs), null);
         
         // Добавляем невидимый слой для кликов по полю
-        addTradeTouchLayer();
+        addTradeTouchLayer(gs);
         
         isTradeWindowOpen = true;
     }
@@ -643,7 +642,7 @@ public class GameScreen extends BaseScreen {
         // Скрываем оверлей кубиков
         if (diceOverlay != null) diceOverlay.setVisible(false);
         
-        tradeWindow = new Window(t("window_trade_title"), skin);
+        tradeWindow = new Window(t("window_trade_title"), VisUI.getSkin());
         tradeWindow.setModal(true);
         tradeWindow.setResizable(false);
         tradeWindow.setSize(700, 420);
@@ -654,14 +653,14 @@ public class GameScreen extends BaseScreen {
         mainTable.pad(10);
         
         Table leftPanel = new Table();
-        leftPanel.setBackground(skin.getDrawable("white"));
+        leftPanel.setBackground(VisUI.getSkin().getDrawable("white"));
         leftPanel.pad(10);
-        leftPanel.color.set(Color.LIGHT_GRAY);
+        leftPanel.setColor(Color.LIGHT_GRAY);
         
         Table rightPanel = new Table();
-        rightPanel.setBackground(skin.getDrawable("white"));
+        rightPanel.setBackground(VisUI.getSkin().getDrawable("white"));
         rightPanel.pad(10);
-        rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+        rightPanel.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
         
         mainTable.add(leftPanel).expand().fill();
         mainTable.add(rightPanel).expand().fill();
@@ -672,7 +671,7 @@ public class GameScreen extends BaseScreen {
         
         // Кнопки только для принимающего
         Table btnTable = new Table();
-        VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), skin);
+        VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), VisUI.getSkin());
         acceptBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -680,7 +679,7 @@ public class GameScreen extends BaseScreen {
             }
         });
         
-        VisTextButton declineBtn = new VisTextButton(t("btn_decline"), skin);
+        VisTextButton declineBtn = new VisTextButton(t("btn_decline"), VisUI.getSkin());
         declineBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -703,7 +702,7 @@ public class GameScreen extends BaseScreen {
         leftPanel.clear();
         rightPanel.clear();
         
-        Player localPlayer = gs.getLocalPlayer();
+        Player localPlayer = gs.players.get(gs.localPlayerIndex >= 0 && gs.localPlayerIndex < gs.players.size() ? gs.localPlayerIndex : 0);
         String initiatorName = isInitiator ? (localPlayer != null ? localPlayer.name : "You") : getPlayerName(gs, gs.tradeProposerId);
         String targetName = isInitiator ? getOpponentName(gs) : (localPlayer != null ? localPlayer.name : "You");
         
@@ -786,7 +785,7 @@ public class GameScreen extends BaseScreen {
     /** Возвращает список торгуемых клеток для затемнения */
     private Set<Integer> getTradeableCellsList(GameState gs) {
         Set<Integer> tradeable = new HashSet<>();
-        Player localPlayer = gs.getLocalPlayer();
+        Player localPlayer = gs.players.get(gs.localPlayerIndex >= 0 && gs.localPlayerIndex < gs.players.size() ? gs.localPlayerIndex : 0);
         if (localPlayer == null) return tradeable;
         
         // Свои клетки (без филиалов)
@@ -811,16 +810,17 @@ public class GameScreen extends BaseScreen {
     }
     
     /** Добавляет невидимый слой для обработки кликов по полю */
-    private void addTradeTouchLayer() {
+    private void addTradeTouchLayer(GameState gs) {
         if (tradeTouchLayer != null) tradeTouchLayer.remove();
         
         tradeTouchLayer = new Actor();
-        tradeTouchLayer.setBounds(boardRenderer.getBoardBounds());
+        com.badlogic.gdx.math.Rectangle bounds = boardRenderer.getBoardBounds();
+        tradeTouchLayer.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
         tradeTouchLayer.setTouchable(Touchable.enabled);
         tradeTouchLayer.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
-                handleCellClickForTrade(x, y);
+                handleCellClickForTrade(gs, x, y);
                 return true;
             }
         });
@@ -829,8 +829,7 @@ public class GameScreen extends BaseScreen {
     }
     
     /** Обрабатывает клик по клетке во время выбора для сделки */
-    private void handleCellClickForTrade(float stageX, float stageY) {
-        GameState gs = game.getLatestGameState();
+    private void handleCellClickForTrade(GameState gs, float stageX, float stageY) {
         if (gs == null || !isTradeWindowOpen) return;
         
         // Преобразуем координаты
@@ -840,7 +839,7 @@ public class GameScreen extends BaseScreen {
         int cellId = boardRenderer.getCellAt(worldX, worldY);
         if (cellId < 0 || cellId >= 40) return;
         
-        Player localPlayer = gs.getLocalPlayer();
+        Player localPlayer = gs.players.get(gs.localPlayerIndex >= 0 && gs.localPlayerIndex < gs.players.size() ? gs.localPlayerIndex : 0);
         if (localPlayer == null) return;
         
         // Проверяем, принадлежит ли клетка
@@ -885,14 +884,14 @@ public class GameScreen extends BaseScreen {
             mainTable.pad(10);
             
             Table leftPanel = new Table();
-            leftPanel.setBackground(skin.getDrawable("white"));
+            leftPanel.setBackground(VisUI.getSkin().getDrawable("white"));
             leftPanel.pad(10);
-            leftPanel.color.set(Color.LIGHT_GRAY);
+            leftPanel.setColor(Color.LIGHT_GRAY);
             
             Table rightPanel = new Table();
-            rightPanel.setBackground(skin.getDrawable("white"));
+            rightPanel.setBackground(VisUI.getSkin().getDrawable("white"));
             rightPanel.pad(10);
-            rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+            rightPanel.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
             
             mainTable.add(leftPanel).expand().fill();
             mainTable.add(rightPanel).expand().fill();
@@ -904,7 +903,7 @@ public class GameScreen extends BaseScreen {
             // Восстанавливаем кнопки
             Table btnTable = new Table();
             if (isInitiator) {
-                VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), skin);
+                VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), VisUI.getSkin());
                 proposeBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
@@ -912,7 +911,7 @@ public class GameScreen extends BaseScreen {
                     }
                 });
                 
-                VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), skin);
+                VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), VisUI.getSkin());
                 cancelBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
@@ -923,7 +922,7 @@ public class GameScreen extends BaseScreen {
                 btnTable.add(proposeBtn).padRight(10);
                 btnTable.add(cancelBtn);
             } else {
-                VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), skin);
+                VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), VisUI.getSkin());
                 acceptBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
@@ -931,7 +930,7 @@ public class GameScreen extends BaseScreen {
                     }
                 });
                 
-                VisTextButton declineBtn = new VisTextButton(t("btn_decline"), skin);
+                VisTextButton declineBtn = new VisTextButton(t("btn_decline"), VisUI.getSkin());
                 declineBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
@@ -947,14 +946,14 @@ public class GameScreen extends BaseScreen {
         }
         
         // Обновляем затемнение
-        boardRenderer.setTradeDimming(getTradeableCellsList(gs));
+        boardRenderer.setTradeDimming(getTradeableCellsList(gs), null);
     }
     
     /** Отправляет предложение сделки на сервер */
     private void sendTradeOffer() {
         GameState gs = game.getLatestGameState();
         if (gs == null || tradeTargetId == null) return;
-        if (selectedMyCells.isEmpty()) return; //至少要有一间房子
+        if (selectedMyCells.isEmpty()) return;
         
         TradeOfferPacket packet = new TradeOfferPacket();
         packet.targetId = tradeTargetId;
@@ -963,7 +962,7 @@ public class GameScreen extends BaseScreen {
         packet.myMoney = draftMyMoney;
         packet.theirMoney = draftTheirMoney;
         
-        game.sendToServer(packet);
+        game.getClient().sendToServer(packet);
         
         // Закрываем окно и показываем статус ожидания
         closeTradeWindow();
@@ -974,14 +973,14 @@ public class GameScreen extends BaseScreen {
     private void sendTradeResponse(boolean accept) {
         TradeResponsePacket packet = new TradeResponsePacket();
         packet.accept = accept;
-        game.sendToServer(packet);
+        game.getClient().sendToServer(packet);
         closeTradeWindow();
     }
     
     /** Отменяет сделку (для инициатора) */
     private void cancelTrade() {
         TradeCancelPacket packet = new TradeCancelPacket();
-        game.sendToServer(packet);
+        game.getClient().sendToServer(packet);
         closeTradeWindow();
     }
     
