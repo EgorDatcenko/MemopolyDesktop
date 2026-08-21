@@ -31,6 +31,9 @@ import com.memopoly.game.model.*;
 import com.memopoly.network.packets.BattleResponsePacket;
 import com.memopoly.network.packets.GameActionRequest;
 import com.memopoly.network.packets.RollDiceRequest;
+import com.memopoly.network.packets.TradeOfferPacket;
+import com.memopoly.network.packets.TradeResponsePacket;
+import com.memopoly.network.packets.TradeCancelPacket;
 
 import javax.swing.event.ChangeEvent;
 import java.util.*;
@@ -177,6 +180,9 @@ public class GameScreen extends BaseScreen {
     private Integer tradeTargetId = null;
     private boolean isTradeWindowOpen = false;
     private boolean isIncomingTrade = false;
+    private boolean isInitiator = false;
+    private int draftMyMoney = 0;
+    private int draftTheirMoney = 0;
     private Actor tradeTouchLayer;
 
     private final Language language;
@@ -546,6 +552,476 @@ public class GameScreen extends BaseScreen {
         battleOverlay.setVisible(false);
         battleOverlay.setTouchable(Touchable.disabled);
         stage.addActor(battleOverlay);
+    }
+
+    /** Открывает окно создания сделки (Инициатор) */
+    private void openTradeWindow() {
+        if (tradeWindow != null || isTradeWindowOpen) return;
+        
+        GameState gs = game.getLatestGameState();
+        if (gs == null) return;
+        
+        isInitiator = true;
+        isIncomingTrade = false;
+        tradeTargetId = null;
+        selectedMyCells.clear();
+        selectedTheirCells.clear();
+        
+        // Скрываем оверлей кубиков
+        if (diceOverlay != null) diceOverlay.setVisible(false);
+        
+        tradeWindow = new Window(t("window_trade_title"), skin);
+        tradeWindow.setModal(true);
+        tradeWindow.setResizable(false);
+        tradeWindow.setSize(700, 420);
+        tradeWindow.centerWindow();
+        
+        // Основной контейнер: две половины
+        Table mainTable = new Table();
+        mainTable.setFillParent(true);
+        mainTable.pad(10);
+        
+        Table leftPanel = new Table();
+        leftPanel.setBackground(skin.getDrawable("white"));
+        leftPanel.pad(10);
+        leftPanel.color.set(Color.LIGHT_GRAY);
+        
+        Table rightPanel = new Table();
+        rightPanel.setBackground(skin.getDrawable("white"));
+        rightPanel.pad(10);
+        rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+        
+        mainTable.add(leftPanel).expand().fill();
+        mainTable.add(rightPanel).expand().fill();
+        
+        rebuildTradeWindowContent(gs, leftPanel, rightPanel);
+        
+        tradeWindow.add(mainTable).grow();
+        
+        // Кнопки управления
+        Table btnTable = new Table();
+        VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), skin);
+        proposeBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendTradeOffer();
+            }
+        });
+        
+        VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), skin);
+        cancelBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                closeTradeWindow();
+            }
+        });
+        
+        btnTable.add(proposeBtn).padRight(10);
+        btnTable.add(cancelBtn);
+        
+        tradeWindow.button(btnTable);
+        
+        stage.addActor(tradeWindow);
+        
+        // Включаем режим выбора на поле
+        boardRenderer.setTradeDimming(getTradeableCellsList(gs));
+        
+        // Добавляем невидимый слой для кликов по полю
+        addTradeTouchLayer();
+        
+        isTradeWindowOpen = true;
+    }
+    
+    /** Открывает окно входящей сделки (Цель, read-only) */
+    private void showIncomingTradeWindow(GameState gs) {
+        if (tradeWindow != null || isTradeWindowOpen) return;
+        
+        isInitiator = false;
+        isIncomingTrade = true;
+        
+        // Скрываем оверлей кубиков
+        if (diceOverlay != null) diceOverlay.setVisible(false);
+        
+        tradeWindow = new Window(t("window_trade_title"), skin);
+        tradeWindow.setModal(true);
+        tradeWindow.setResizable(false);
+        tradeWindow.setSize(700, 420);
+        tradeWindow.centerWindow();
+        
+        Table mainTable = new Table();
+        mainTable.setFillParent(true);
+        mainTable.pad(10);
+        
+        Table leftPanel = new Table();
+        leftPanel.setBackground(skin.getDrawable("white"));
+        leftPanel.pad(10);
+        leftPanel.color.set(Color.LIGHT_GRAY);
+        
+        Table rightPanel = new Table();
+        rightPanel.setBackground(skin.getDrawable("white"));
+        rightPanel.pad(10);
+        rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+        
+        mainTable.add(leftPanel).expand().fill();
+        mainTable.add(rightPanel).expand().fill();
+        
+        rebuildTradeWindowContent(gs, leftPanel, rightPanel);
+        
+        tradeWindow.add(mainTable).grow();
+        
+        // Кнопки только для принимающего
+        Table btnTable = new Table();
+        VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), skin);
+        acceptBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendTradeResponse(true);
+            }
+        });
+        
+        VisTextButton declineBtn = new VisTextButton(t("btn_decline"), skin);
+        declineBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                sendTradeResponse(false);
+            }
+        });
+        
+        btnTable.add(acceptBtn).padRight(10);
+        btnTable.add(declineBtn);
+        
+        tradeWindow.button(btnTable);
+        
+        stage.addActor(tradeWindow);
+        
+        isTradeWindowOpen = true;
+    }
+    
+    /** Пересобирает содержимое окна сделки */
+    private void rebuildTradeWindowContent(GameState gs, Table leftPanel, Table rightPanel) {
+        leftPanel.clear();
+        rightPanel.clear();
+        
+        Player localPlayer = gs.getLocalPlayer();
+        String initiatorName = isInitiator ? (localPlayer != null ? localPlayer.name : "You") : getPlayerName(gs, gs.tradeProposerId);
+        String targetName = isInitiator ? getOpponentName(gs) : (localPlayer != null ? localPlayer.name : "You");
+        
+        // Левая панель (инициатор)
+        VisLabel initNameLabel = new VisLabel(initiatorName);
+        initNameLabel.setFontScale(1.1f);
+        leftPanel.add(initNameLabel).center().padBottom(5f).row();
+        
+        // Слайдер денег инициатора (только если не read-only)
+        if (!isIncomingTrade && isInitiator) {
+            int maxMoney = localPlayer != null ? localPlayer.money : 0;
+            VisSlider initSlider = createMoneySlider(0, maxMoney, 1, 0);
+            initSlider.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    draftMyMoney = (int)initSlider.getValue();
+                }
+            });
+            tradeInitiatorMoneySlider = initSlider;
+            leftPanel.add(initSlider).width(200).padBottom(10f).row();
+            initSlider.setVisible(selectedMyCells.size() > 0);
+        } else if (isIncomingTrade) {
+            VisLabel initMoneyLabel = new VisLabel(t("money_offered") + ": " + gs.tradeProposerMoney);
+            leftPanel.add(initMoneyLabel).padBottom(10f).row();
+        }
+        
+        // Чипы клеток инициатора
+        Table initCellsTable = new Table();
+        initCellsTable.defaults().size(50, 50).pad(2);
+        ArrayList<Integer> cells = isInitiator ? new ArrayList<>(selectedMyCells) : gs.tradeProposerCells;
+        for (int cellId : cells) {
+            Image cellImg = new Image(cellTextures[cellId % cellTextures.length]);
+            initCellsTable.add(cellImg);
+        }
+        leftPanel.add(initCellsTable).row();
+        
+        // Правая панель (цель)
+        VisLabel targetNameLabel = new VisLabel(targetName);
+        targetNameLabel.setFontScale(1.1f);
+        rightPanel.add(targetNameLabel).center().padBottom(5f).row();
+        
+        // Слайдер денег цели (только если выбрана цель и не read-only)
+        if (!isIncomingTrade && isInitiator && tradeTargetId != null) {
+            Player targetPlayer = gs.getPlayerById(tradeTargetId);
+            int maxMoney = targetPlayer != null ? targetPlayer.money : 0;
+            VisSlider targetSlider = createMoneySlider(0, maxMoney, 1, 0);
+            targetSlider.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    draftTheirMoney = (int)targetSlider.getValue();
+                }
+            });
+            tradeTargetMoneySlider = targetSlider;
+            rightPanel.add(targetSlider).width(200).padBottom(10f).row();
+            targetSlider.setVisible(selectedTheirCells.size() > 0);
+        } else if (isIncomingTrade) {
+            VisLabel targetMoneyLabel = new VisLabel(t("money_requested") + ": " + gs.tradeTargetMoney);
+            rightPanel.add(targetMoneyLabel).padBottom(10f).row();
+        }
+        
+        // Чипы клеток цели
+        Table targetCellsTable = new Table();
+        targetCellsTable.defaults().size(50, 50).pad(2);
+        ArrayList<Integer> targetCells = isInitiator ? new ArrayList<>(selectedTheirCells) : gs.tradeTargetCells;
+        for (int cellId : targetCells) {
+            Image cellImg = new Image(cellTextures[cellId % cellTextures.length]);
+            targetCellsTable.add(cellImg);
+        }
+        rightPanel.add(targetCellsTable).row();
+    }
+    
+    /** Создаёт слайдер для выбора суммы */
+    private VisSlider createMoneySlider(float min, float max, float step, float defaultValue) {
+        VisSlider slider = new VisSlider(min, max, step, false);
+        slider.setValue(defaultValue);
+        slider.setAnimateDuration(0.2f);
+        return slider;
+    }
+    
+    /** Возвращает список торгуемых клеток для затемнения */
+    private Set<Integer> getTradeableCellsList(GameState gs) {
+        Set<Integer> tradeable = new HashSet<>();
+        Player localPlayer = gs.getLocalPlayer();
+        if (localPlayer == null) return tradeable;
+        
+        // Свои клетки (без филиалов)
+        for (int cellId : localPlayer.ownedCells) {
+            if (gs.cellHouses.getOrDefault(cellId, 0) == 0) {
+                tradeable.add(cellId);
+            }
+        }
+        
+        // Клетки других игроков (для выбора цели)
+        for (Player p : gs.players) {
+            if (p.id != localPlayer.id && !p.isBankrupt) {
+                for (int cellId : p.ownedCells) {
+                    if (gs.cellHouses.getOrDefault(cellId, 0) == 0) {
+                        tradeable.add(cellId);
+                    }
+                }
+            }
+        }
+        
+        return tradeable;
+    }
+    
+    /** Добавляет невидимый слой для обработки кликов по полю */
+    private void addTradeTouchLayer() {
+        if (tradeTouchLayer != null) tradeTouchLayer.remove();
+        
+        tradeTouchLayer = new Actor();
+        tradeTouchLayer.setBounds(boardRenderer.getBoardBounds());
+        tradeTouchLayer.setTouchable(Touchable.enabled);
+        tradeTouchLayer.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                handleCellClickForTrade(x, y);
+                return true;
+            }
+        });
+        
+        stage.addActor(tradeTouchLayer);
+    }
+    
+    /** Обрабатывает клик по клетке во время выбора для сделки */
+    private void handleCellClickForTrade(float stageX, float stageY) {
+        GameState gs = game.getLatestGameState();
+        if (gs == null || !isTradeWindowOpen) return;
+        
+        // Преобразуем координаты
+        float worldX = stageX;
+        float worldY = stageY;
+        
+        int cellId = boardRenderer.getCellAt(worldX, worldY);
+        if (cellId < 0 || cellId >= 40) return;
+        
+        Player localPlayer = gs.getLocalPlayer();
+        if (localPlayer == null) return;
+        
+        // Проверяем, принадлежит ли клетка
+        Integer ownerId = gs.cellOwners.get(cellId);
+        if (ownerId == null) return;
+        
+        // Проверяем наличие филиалов
+        if (gs.cellHouses.getOrDefault(cellId, 0) > 0) return;
+        
+        if (ownerId == localPlayer.id) {
+            // Своя клетка: добавляем/удаляем из selectedMyCells
+            if (selectedMyCells.contains(cellId)) {
+                selectedMyCells.remove(cellId);
+            } else {
+                selectedMyCells.add(cellId);
+            }
+        } else {
+            // Чужая клетка: фиксируем цель и добавляем в selectedTheirCells
+            if (tradeTargetId == null) {
+                tradeTargetId = ownerId;
+            } else if (!tradeTargetId.equals(ownerId)) {
+                // Нельзя выбирать клетки разных игроков
+                return;
+            }
+            
+            if (selectedTheirCells.contains(cellId)) {
+                selectedTheirCells.remove(cellId);
+                // Если больше нет клеток цели, сбрасываем targetId
+                if (selectedTheirCells.isEmpty()) {
+                    tradeTargetId = null;
+                }
+            } else {
+                selectedTheirCells.add(cellId);
+            }
+        }
+        
+        // Пересобираем окно
+        if (tradeWindow != null) {
+            tradeWindow.clear();
+            Table mainTable = new Table();
+            mainTable.setFillParent(true);
+            mainTable.pad(10);
+            
+            Table leftPanel = new Table();
+            leftPanel.setBackground(skin.getDrawable("white"));
+            leftPanel.pad(10);
+            leftPanel.color.set(Color.LIGHT_GRAY);
+            
+            Table rightPanel = new Table();
+            rightPanel.setBackground(skin.getDrawable("white"));
+            rightPanel.pad(10);
+            rightPanel.color.set(new Color(0.8f, 0.8f, 0.8f, 1f));
+            
+            mainTable.add(leftPanel).expand().fill();
+            mainTable.add(rightPanel).expand().fill();
+            
+            rebuildTradeWindowContent(gs, leftPanel, rightPanel);
+            
+            tradeWindow.add(mainTable).grow();
+            
+            // Восстанавливаем кнопки
+            Table btnTable = new Table();
+            if (isInitiator) {
+                VisTextButton proposeBtn = new VisTextButton(t("btn_propose"), skin);
+                proposeBtn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        sendTradeOffer();
+                    }
+                });
+                
+                VisTextButton cancelBtn = new VisTextButton(t("btn_cancel"), skin);
+                cancelBtn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        closeTradeWindow();
+                    }
+                });
+                
+                btnTable.add(proposeBtn).padRight(10);
+                btnTable.add(cancelBtn);
+            } else {
+                VisTextButton acceptBtn = new VisTextButton(t("btn_accept"), skin);
+                acceptBtn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        sendTradeResponse(true);
+                    }
+                });
+                
+                VisTextButton declineBtn = new VisTextButton(t("btn_decline"), skin);
+                declineBtn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        sendTradeResponse(false);
+                    }
+                });
+                
+                btnTable.add(acceptBtn).padRight(10);
+                btnTable.add(declineBtn);
+            }
+            
+            tradeWindow.button(btnTable);
+        }
+        
+        // Обновляем затемнение
+        boardRenderer.setTradeDimming(getTradeableCellsList(gs));
+    }
+    
+    /** Отправляет предложение сделки на сервер */
+    private void sendTradeOffer() {
+        GameState gs = game.getLatestGameState();
+        if (gs == null || tradeTargetId == null) return;
+        if (selectedMyCells.isEmpty()) return; //至少要有一间房子
+        
+        TradeOfferPacket packet = new TradeOfferPacket();
+        packet.targetId = tradeTargetId;
+        packet.myCells = new ArrayList<>(selectedMyCells);
+        packet.theirCells = new ArrayList<>(selectedTheirCells);
+        packet.myMoney = draftMyMoney;
+        packet.theirMoney = draftTheirMoney;
+        
+        game.sendToServer(packet);
+        
+        // Закрываем окно и показываем статус ожидания
+        closeTradeWindow();
+        showTradeWaitingStatus();
+    }
+    
+    /** Отправляет ответ на сделку */
+    private void sendTradeResponse(boolean accept) {
+        TradeResponsePacket packet = new TradeResponsePacket();
+        packet.accept = accept;
+        game.sendToServer(packet);
+        closeTradeWindow();
+    }
+    
+    /** Отменяет сделку (для инициатора) */
+    private void cancelTrade() {
+        TradeCancelPacket packet = new TradeCancelPacket();
+        game.sendToServer(packet);
+        closeTradeWindow();
+    }
+    
+    /** Закрывает окно сделки */
+    private void closeTradeWindow() {
+        if (tradeWindow != null) {
+            tradeWindow.remove();
+            tradeWindow = null;
+        }
+        if (tradeTouchLayer != null) {
+            tradeTouchLayer.remove();
+            tradeTouchLayer = null;
+        }
+        boardRenderer.setTradeDimming(null);
+        isTradeWindowOpen = false;
+        isIncomingTrade = false;
+        tradeTargetId = null;
+        selectedMyCells.clear();
+        selectedTheirCells.clear();
+        
+        // Восстанавливаем оверлей кубиков
+        if (diceOverlay != null) diceOverlay.setVisible(true);
+    }
+    
+    /** Показывает статус ожидания ответа */
+    private void showTradeWaitingStatus() {
+        // Можно показать уведомление или изменить состояние кнопки
+    }
+    
+    /** Получает имя игрока по ID */
+    private String getPlayerName(GameState gs, int playerId) {
+        Player p = gs.getPlayerById(playerId);
+        return p != null ? p.name : "?";
+    }
+    
+    /** Получает имя соперника для сделки */
+    private String getOpponentName(GameState gs) {
+        if (tradeTargetId != null) {
+            return getPlayerName(gs, tradeTargetId);
+        }
+        return t("select_opponent");
     }
 
     private Meme getSubmittedBattleMeme(GameState state, int playerId) {
@@ -975,6 +1451,21 @@ public class GameScreen extends BaseScreen {
         rebuildHandMemesIfNeeded(localPlayer, canSubmitBattleMeme);
         refreshActions(state, myTurn, currentCell);
         refreshBattleOverlay(state);
+        
+        // Обновляем состояние кнопки сделки
+        if (dealButton != null) {
+            boolean canTrade = myTurn && 
+                               state.currentPhase == GameState.GamePhase.PLAYING && 
+                               !state.isInBattle && 
+                               !state.isInAuction && 
+                               state.tradeId == 0;
+            dealButton.setDisabled(!canTrade);
+        }
+        
+        // Проверяем входящую сделку
+        if (state.tradeId != 0 && state.tradeTargetId == localPlayerId && !isTradeWindowOpen) {
+            showIncomingTradeWindow(state);
+        }
     }
 
     private void rebuildPlayersIfNeeded(GameState state, Player current, int localPlayerId) {
