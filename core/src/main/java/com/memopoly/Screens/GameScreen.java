@@ -23,6 +23,7 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.VisTextButton;
+import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
@@ -158,6 +159,25 @@ public class GameScreen extends BaseScreen {
     // Input validation error labels
     private VisLabel memeBankErrorLabel;
     private VisLabel auctionErrorLabel;
+
+    // Trade UI fields
+    private VisTextButton dealButton;
+    private Table tradeWindow;
+    private VisLabel tradeInitiatorNameLabel;
+    private VisLabel tradeTargetNameLabel;
+    private VisSlider tradeInitiatorMoneySlider;
+    private VisSlider tradeTargetMoneySlider;
+    private Table tradeInitiatorCellsTable;
+    private Table tradeTargetCellsTable;
+    private VisTextButton tradeConfirmButton;
+    private VisTextButton tradeCancelButton;
+    private VisLabel tradeStatusLabel;
+    private Set<Integer> selectedMyCells = new HashSet<>();
+    private Set<Integer> selectedTheirCells = new HashSet<>();
+    private Integer tradeTargetId = null;
+    private boolean isTradeWindowOpen = false;
+    private boolean isIncomingTrade = false;
+    private Actor tradeTouchLayer;
 
     private final Language language;
     private Table battleOverlay;
@@ -462,11 +482,30 @@ public class GameScreen extends BaseScreen {
         VisLabel memesTitleLabel = new VisLabel("MEMES");
         memesTitleLabel.setFontScale(1.2f);
 
+        // Создаём кнопку сделки
+        dealButton = new VisTextButton("DEAL");
+        dealButton.setSize(60f, 60f);
+
         Table ownedPanel = new Table();
         ownedPanel.setBackground(window(myCellsWindowTexture));
         ownedPanel.pad(24f, 12f, 14f, 12f);
-        ownedPanel.add(ownedTitleLabel).center().padBottom(10f).row();
+        
+        // Header с заголовком и кнопкой сделки справа
+        Table header = new Table();
+        header.add(ownedTitleLabel).center().expandX();
+        header.add(dealButton).size(60f, 60f).padLeft(8f);
+        ownedPanel.add(header).growX().padBottom(10f).row();
         ownedPanel.add(ownedScroll).grow();
+
+        // Слушатель кнопки сделки
+        dealButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (gameState != null && gameState.tradeId == 0) {
+                    openTradeWindow();
+                }
+            }
+        });
 
         Table memesPanel = new Table();
         memesPanel.setBackground(window(memesWindowTexture));
