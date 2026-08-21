@@ -1,0 +1,925 @@
+{
+decks: [
+	{
+		name: ЯЧ
+		memes: [
+			{
+				id: 1965262187
+				imageUrl: modding/decks/__3722/meme_0.png
+				description: ""
+				deckName: ЯЧ
+			}
+		]
+	}
+	{
+		name: asd
+		memes: [
+			{
+				id: 356536043
+				imageUrl: modding/decks/asd_4696/meme_0.png
+				description: ""
+				deckName: asd
+			}
+		]
+	}
+	{
+		name: BASE
+		memes: [
+			{
+				id: 1379286726
+				imageUrl: modding/decks/BASE_4179/meme_0.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 296325191
+				imageUrl: modding/decks/BASE_4179/meme_1.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1182847346
+				imageUrl: modding/decks/BASE_4179/meme_2.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1648045338
+				imageUrl: modding/decks/BASE_4179/meme_3.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1091977921
+				imageUrl: modding/decks/BASE_4179/meme_4.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 54750664
+				imageUrl: modding/decks/BASE_4179/meme_5.png
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 182968652
+				imageUrl: modding/decks/BASE_4179/meme_6.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1953651595
+				imageUrl: modding/decks/BASE_4179/meme_7.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1684146421
+				imageUrl: modding/decks/BASE_4179/meme_8.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 400506488
+				imageUrl: modding/decks/BASE_4179/meme_9.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 881290163
+				imageUrl: modding/decks/BASE_4179/meme_10.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1141841244
+				imageUrl: modding/decks/BASE_4179/meme_11.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1247531181
+				imageUrl: modding/decks/BASE_4179/meme_12.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 544015425
+				imageUrl: modding/decks/BASE_4179/meme_13.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1082892627
+				imageUrl: modding/decks/BASE_4179/meme_14.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1302986641
+				imageUrl: modding/decks/BASE_4179/meme_15.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2111280222
+				imageUrl: modding/decks/BASE_4179/meme_16.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1473115937
+				imageUrl: modding/decks/BASE_4179/meme_17.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 158180425
+				imageUrl: modding/decks/BASE_4179/meme_18.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1312364729
+				imageUrl: modding/decks/BASE_4179/meme_19.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2109035062
+				imageUrl: modding/decks/BASE_4179/meme_20.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 179021671
+				imageUrl: modding/decks/BASE_4179/meme_21.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2074223394
+				imageUrl: modding/decks/BASE_4179/meme_22.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 605160694
+				imageUrl: modding/decks/BASE_4179/meme_23.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1654277771
+				imageUrl: modding/decks/BASE_4179/meme_24.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1541311058
+				imageUrl: modding/decks/BASE_4179/meme_25.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1152976595
+				imageUrl: modding/decks/BASE_4179/meme_26.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 54528168
+				imageUrl: modding/decks/BASE_4179/meme_27.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 218843823
+				imageUrl: modding/decks/BASE_4179/meme_28.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1888434725
+				imageUrl: modding/decks/BASE_4179/meme_29.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1312387686
+				imageUrl: modding/decks/BASE_4179/meme_30.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1120470952
+				imageUrl: modding/decks/BASE_4179/meme_31.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 782120903
+				imageUrl: modding/decks/BASE_4179/meme_32.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1733013248
+				imageUrl: modding/decks/BASE_4179/meme_33.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1922891092
+				imageUrl: modding/decks/BASE_4179/meme_34.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1539100882
+				imageUrl: modding/decks/BASE_4179/meme_35.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1780814178
+				imageUrl: modding/decks/BASE_4179/meme_36.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1670085254
+				imageUrl: modding/decks/BASE_4179/meme_37.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 339331482
+				imageUrl: modding/decks/BASE_4179/meme_38.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 529054361
+				imageUrl: modding/decks/BASE_4179/meme_39.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1911927124
+				imageUrl: modding/decks/BASE_4179/meme_40.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 89510274
+				imageUrl: modding/decks/BASE_4179/meme_41.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 121044867
+				imageUrl: modding/decks/BASE_4179/meme_42.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1847271959
+				imageUrl: modding/decks/BASE_4179/meme_43.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 201972914
+				imageUrl: modding/decks/BASE_4179/meme_44.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 561764016
+				imageUrl: modding/decks/BASE_4179/meme_45.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1805903834
+				imageUrl: modding/decks/BASE_4179/meme_46.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 447813780
+				imageUrl: modding/decks/BASE_4179/meme_47.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1376814447
+				imageUrl: modding/decks/BASE_4179/meme_48.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1152413798
+				imageUrl: modding/decks/BASE_4179/meme_49.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1591708189
+				imageUrl: modding/decks/BASE_4179/meme_50.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 96979688
+				imageUrl: modding/decks/BASE_4179/meme_51.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1320995152
+				imageUrl: modding/decks/BASE_4179/meme_52.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 857515877
+				imageUrl: modding/decks/BASE_4179/meme_53.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1757482902
+				imageUrl: modding/decks/BASE_4179/meme_54.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 63363145
+				imageUrl: modding/decks/BASE_4179/meme_55.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1367840140
+				imageUrl: modding/decks/BASE_4179/meme_56.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1781892138
+				imageUrl: modding/decks/BASE_4179/meme_57.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 967144069
+				imageUrl: modding/decks/BASE_4179/meme_58.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1263372161
+				imageUrl: modding/decks/BASE_4179/meme_59.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1645698122
+				imageUrl: modding/decks/BASE_4179/meme_60.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1655114112
+				imageUrl: modding/decks/BASE_4179/meme_61.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2108344490
+				imageUrl: modding/decks/BASE_4179/meme_62.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 369240274
+				imageUrl: modding/decks/BASE_4179/meme_63.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 982139824
+				imageUrl: modding/decks/BASE_4179/meme_64.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 560484762
+				imageUrl: modding/decks/BASE_4179/meme_65.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 991353885
+				imageUrl: modding/decks/BASE_4179/meme_66.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1728932309
+				imageUrl: modding/decks/BASE_4179/meme_67.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 788220204
+				imageUrl: modding/decks/BASE_4179/meme_68.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1925012406
+				imageUrl: modding/decks/BASE_4179/meme_69.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2057911860
+				imageUrl: modding/decks/BASE_4179/meme_70.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 768845758
+				imageUrl: modding/decks/BASE_4179/meme_71.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 924752108
+				imageUrl: modding/decks/BASE_4179/meme_72.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 900973912
+				imageUrl: modding/decks/BASE_4179/meme_73.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1028343046
+				imageUrl: modding/decks/BASE_4179/meme_74.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1791831829
+				imageUrl: modding/decks/BASE_4179/meme_75.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 559571902
+				imageUrl: modding/decks/BASE_4179/meme_76.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 141919464
+				imageUrl: modding/decks/BASE_4179/meme_77.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 580031768
+				imageUrl: modding/decks/BASE_4179/meme_78.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1847667426
+				imageUrl: modding/decks/BASE_4179/meme_79.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1999139686
+				imageUrl: modding/decks/BASE_4179/meme_80.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 136946855
+				imageUrl: modding/decks/BASE_4179/meme_81.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1572530101
+				imageUrl: modding/decks/BASE_4179/meme_82.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 445366573
+				imageUrl: modding/decks/BASE_4179/meme_83.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1799434420
+				imageUrl: modding/decks/BASE_4179/meme_84.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1853453960
+				imageUrl: modding/decks/BASE_4179/meme_85.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1277399433
+				imageUrl: modding/decks/BASE_4179/meme_86.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1152580619
+				imageUrl: modding/decks/BASE_4179/meme_87.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1930597350
+				imageUrl: modding/decks/BASE_4179/meme_88.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1895667448
+				imageUrl: modding/decks/BASE_4179/meme_89.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 121619083
+				imageUrl: modding/decks/BASE_4179/meme_90.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 962955531
+				imageUrl: modding/decks/BASE_4179/meme_91.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 910325028
+				imageUrl: modding/decks/BASE_4179/meme_92.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1620496410
+				imageUrl: modding/decks/BASE_4179/meme_93.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 676721123
+				imageUrl: modding/decks/BASE_4179/meme_94.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 139994218
+				imageUrl: modding/decks/BASE_4179/meme_95.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1805632987
+				imageUrl: modding/decks/BASE_4179/meme_96.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 880649230
+				imageUrl: modding/decks/BASE_4179/meme_97.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2036424888
+				imageUrl: modding/decks/BASE_4179/meme_98.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1459649617
+				imageUrl: modding/decks/BASE_4179/meme_99.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 852407507
+				imageUrl: modding/decks/BASE_4179/meme_100.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1274817602
+				imageUrl: modding/decks/BASE_4179/meme_101.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 66180657
+				imageUrl: modding/decks/BASE_4179/meme_102.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 273935098
+				imageUrl: modding/decks/BASE_4179/meme_103.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 227527997
+				imageUrl: modding/decks/BASE_4179/meme_104.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2126877840
+				imageUrl: modding/decks/BASE_4179/meme_105.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2129754537
+				imageUrl: modding/decks/BASE_4179/meme_106.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1076096145
+				imageUrl: modding/decks/BASE_4179/meme_107.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1267178802
+				imageUrl: modding/decks/BASE_4179/meme_108.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1054453267
+				imageUrl: modding/decks/BASE_4179/meme_109.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 518582567
+				imageUrl: modding/decks/BASE_4179/meme_110.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 720672680
+				imageUrl: modding/decks/BASE_4179/meme_111.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1627396297
+				imageUrl: modding/decks/BASE_4179/meme_112.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 351323518
+				imageUrl: modding/decks/BASE_4179/meme_113.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 499405788
+				imageUrl: modding/decks/BASE_4179/meme_114.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1547215015
+				imageUrl: modding/decks/BASE_4179/meme_115.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 88566959
+				imageUrl: modding/decks/BASE_4179/meme_116.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 990331874
+				imageUrl: modding/decks/BASE_4179/meme_117.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1910503384
+				imageUrl: modding/decks/BASE_4179/meme_118.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 646107782
+				imageUrl: modding/decks/BASE_4179/meme_119.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 139221629
+				imageUrl: modding/decks/BASE_4179/meme_120.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1173952764
+				imageUrl: modding/decks/BASE_4179/meme_121.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1348132051
+				imageUrl: modding/decks/BASE_4179/meme_122.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 96477095
+				imageUrl: modding/decks/BASE_4179/meme_123.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 238633022
+				imageUrl: modding/decks/BASE_4179/meme_124.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 153628513
+				imageUrl: modding/decks/BASE_4179/meme_125.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 697192336
+				imageUrl: modding/decks/BASE_4179/meme_126.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1753697723
+				imageUrl: modding/decks/BASE_4179/meme_127.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1392089787
+				imageUrl: modding/decks/BASE_4179/meme_128.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 788060106
+				imageUrl: modding/decks/BASE_4179/meme_129.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1768171022
+				imageUrl: modding/decks/BASE_4179/meme_130.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 670195235
+				imageUrl: modding/decks/BASE_4179/meme_131.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1814902057
+				imageUrl: modding/decks/BASE_4179/meme_132.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1126398119
+				imageUrl: modding/decks/BASE_4179/meme_133.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 334585336
+				imageUrl: modding/decks/BASE_4179/meme_134.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1041024058
+				imageUrl: modding/decks/BASE_4179/meme_135.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 2015668272
+				imageUrl: modding/decks/BASE_4179/meme_136.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 106956307
+				imageUrl: modding/decks/BASE_4179/meme_137.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1301887084
+				imageUrl: modding/decks/BASE_4179/meme_138.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1295495961
+				imageUrl: modding/decks/BASE_4179/meme_139.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1954560826
+				imageUrl: modding/decks/BASE_4179/meme_140.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1942707242
+				imageUrl: modding/decks/BASE_4179/meme_141.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 121443792
+				imageUrl: modding/decks/BASE_4179/meme_142.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 440356702
+				imageUrl: modding/decks/BASE_4179/meme_143.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 998774315
+				imageUrl: modding/decks/BASE_4179/meme_144.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 108679278
+				imageUrl: modding/decks/BASE_4179/meme_145.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 1598777662
+				imageUrl: modding/decks/BASE_4179/meme_146.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 224388055
+				imageUrl: modding/decks/BASE_4179/meme_147.jpg
+				description: ""
+				deckName: BASE
+			}
+			{
+				id: 464809979
+				imageUrl: modding/decks/BASE_4179/meme_148.jpg
+				description: ""
+				deckName: BASE
+			}
+		]
+	}
+]
+}

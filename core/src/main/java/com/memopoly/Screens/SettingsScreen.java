@@ -20,15 +20,17 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
-import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
-
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.utils.Array;
+/**
+ * Экран настроек: содержит регуляторы громкости музыки/эффектов и переключатель полноэкранного режима.
+ */
 public class SettingsScreen extends BaseScreen {
-    private static final float COMMON_BUTTON_HEIGHT = 48f;
-    private static final float SETTINGS_WINDOW_SCALE = 0.5f;
+    private static final float COMMON_BUTTON_HEIGHT = 110f;
+    private static final float SETTINGS_WINDOW_SCALE = 1f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
-    private static final Color PANEL_COLOR = new Color(0.18f, 0.16f, 0.27f, 0.98f);
-    private static final Color PANEL_SHADOW = new Color(0.06f, 0.05f, 0.10f, 0.95f);
     private static final Color TITLE_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
@@ -45,11 +47,12 @@ public class SettingsScreen extends BaseScreen {
     private final VisSlider musicSlider;
     private final VisSlider sfxSlider;
     private final CheckBox fullscreenCheckBox;
-    private final CheckBox russianLanguageCheckBox;
     private final VisLabel musicValueLabel;
     private final VisLabel sfxValueLabel;
     private final VisLabel statusLabel;
-    private final Language language;
+    private final com.memopoly.utils.LanguageManager.Language language;
+
+    private final Array<Texture> styleTextures = new Array<>();
 
     public SettingsScreen(Memopoly game) {
         super(game);
@@ -60,10 +63,9 @@ public class SettingsScreen extends BaseScreen {
         applyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(APPLY_BUTTON_TEXTURE_PATH, language));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         preferences = game.getSettingsPreferences();
-        musicSlider = new VisSlider(0f, 1f, 0.01f, false);
-        sfxSlider = new VisSlider(0f, 1f, 0.01f, false);
-        fullscreenCheckBox = new CheckBox(" " + t("fullscreen"), VisUI.getSkin());
-        russianLanguageCheckBox = new CheckBox(" " + t("russian"), VisUI.getSkin());
+        musicSlider = new VisSlider(0f, 1f, 0.01f, false, createSliderStyle());
+        sfxSlider = new VisSlider(0f, 1f, 0.01f, false, createSliderStyle());
+        fullscreenCheckBox = new CheckBox(" " + t("fullscreen"), createCheckBoxStyle());
         musicValueLabel = new VisLabel();
         sfxValueLabel = new VisLabel();
         statusLabel = new VisLabel(t("status_hint"));
@@ -86,7 +88,7 @@ public class SettingsScreen extends BaseScreen {
 
         VisLabel titleLabel = new VisLabel(t("settings"));
         titleLabel.setFontScale(1.8f);
-        titleLabel.setColor(TITLE_COLOR);
+        titleLabel.setColor(Color.WHITE);
 
         VisLabel musicLabel = new VisLabel(t("music"));
         VisLabel sfxLabel = new VisLabel(t("effects"));
@@ -97,14 +99,12 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
             }
         });
         sfxSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
             }
         });
@@ -125,8 +125,12 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
-        panel.add(titleLabel).row();
+        Table titleRow = new Table();
+        titleRow.add(titleLabel).left();
+        titleRow.add().expandX();
+        titleRow.add(backButton).width(90f).height(80f).padRight(25f).right();
 
+        panel.add(titleRow).padLeft(300f).growX().row();
         Table musicRow = new Table();
         musicRow.add(musicLabel).width(180f).left().padRight(14f);
         musicRow.add(musicSlider).width(320f).padRight(14f);
@@ -140,12 +144,10 @@ public class SettingsScreen extends BaseScreen {
         panel.add(sfxRow).row();
 
         panel.add(fullscreenCheckBox).left().row();
-        panel.add(russianLanguageCheckBox).left().row();
         panel.add(statusLabel).width(520f).left().padTop(4f).row();
 
         Table buttonRow = new Table();
-        buttonRow.add(applyButton).width(170f).height(COMMON_BUTTON_HEIGHT).padRight(14f);
-        buttonRow.add(backButton).width(170f).height(COMMON_BUTTON_HEIGHT);
+        buttonRow.add(applyButton).width(220f).height(COMMON_BUTTON_HEIGHT).padRight(14f);
         panel.add(buttonRow).left().padTop(8f);
 
         root.add(panel).size(lobbyWindowTexture.getWidth() * SETTINGS_WINDOW_SCALE, lobbyWindowTexture.getHeight() * SETTINGS_WINDOW_SCALE).expand().center();
@@ -156,7 +158,6 @@ public class SettingsScreen extends BaseScreen {
         musicSlider.setValue(preferences.getFloat("music_volume", 0.7f));
         sfxSlider.setValue(preferences.getFloat("sfx_volume", 0.85f));
         fullscreenCheckBox.setChecked(preferences.getBoolean("fullscreen", false));
-        russianLanguageCheckBox.setChecked(game.getLanguageManager().getLanguage() == Language.RU);
         updateValueLabels();
     }
 
@@ -169,27 +170,25 @@ public class SettingsScreen extends BaseScreen {
         float musicVolume = musicSlider.getValue();
         float sfxVolume = sfxSlider.getValue();
         boolean fullscreen = fullscreenCheckBox.isChecked();
-
         preferences.putFloat("music_volume", musicVolume);
         preferences.putFloat("sfx_volume", sfxVolume);
         preferences.putBoolean("fullscreen", fullscreen);
-        game.getLanguageManager().setLanguage(russianLanguageCheckBox.isChecked() ? Language.RU : Language.EN);
         preferences.flush();
-
         game.applySettings(musicVolume, sfxVolume, fullscreen);
         statusLabel.setText(t("saved"));
-        game.openSettings();
     }
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getBatch().setColor(Color.WHITE);
         stage.getBatch().begin();
         stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
+        stage.getBatch().setColor(Color.WHITE);
     }
 
     private Drawable window(Texture texture) {
@@ -210,8 +209,9 @@ public class SettingsScreen extends BaseScreen {
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         style.imageUp = drawable;
-        style.imageOver = drawable.tint(new Color(1f, 1f, 1f, 0.96f));
-        style.imageDown = drawable.tint(new Color(0.86f, 0.86f, 0.86f, 1f));
+        style.imageOver    = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        style.imageDown    = drawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
+        style.imageDisabled = drawable.tint(new Color(0.45f, 0.45f, 0.45f, 1f));
         Drawable transparent = panel(new Color(1f, 1f, 1f, 0f));
         style.up = transparent;
         style.over = transparent;
@@ -221,7 +221,54 @@ public class SettingsScreen extends BaseScreen {
         button.getImageCell().grow();
         return button;
     }
+    private TextureRegionDrawable styleDrawable(String path) {
+        if (!Gdx.files.internal(path).exists()) {
+            return null;
+        }
+        Texture texture = loadTexture(path);
+        styleTextures.add(texture);
+        return new TextureRegionDrawable(new TextureRegion(texture));
+    }
 
+    private CheckBox.CheckBoxStyle createCheckBoxStyle() {
+        CheckBox.CheckBoxStyle style = new CheckBox.CheckBoxStyle(VisUI.getSkin().get(CheckBox.CheckBoxStyle.class));
+        TextureRegionDrawable off = styleDrawable("screen_ui/checkboxOff.png");
+        TextureRegionDrawable on = styleDrawable("screen_ui/checkboxOn.png");
+        if (off != null) {
+            style.checkboxOff = off;
+        }
+        if (on != null) {
+            style.checkboxOn = on;
+            style.checkboxOnOver = on;
+        }
+        return style;
+    }
+
+    private Slider.SliderStyle createSliderStyle() {
+        Slider.SliderStyle style = new Slider.SliderStyle(
+            VisUI.getSkin().get("default-horizontal", Slider.SliderStyle.class));
+        TextureRegionDrawable track = styleDrawable("screen_ui/background.png");
+        TextureRegionDrawable knob = styleDrawable("screen_ui/knob.png");
+        if (track != null) {
+            track.setMinHeight(12f);
+            style.background = track;
+            style.backgroundOver = track;
+        }
+        if (knob != null) {
+            knob.setMinWidth(32f);
+            knob.setMinHeight(32f);
+            style.knob = knob;
+            Drawable knobOver = knob.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+            knobOver.setMinWidth(32f);
+            knobOver.setMinHeight(32f);
+            Drawable knobDown = knob.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
+            knobDown.setMinWidth(32f);
+            knobDown.setMinHeight(32f);
+            style.knobOver = knobOver;
+            style.knobDown = knobDown;
+        }
+        return style;
+    }
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
@@ -229,6 +276,9 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        for (Texture texture : styleTextures) {
+            texture.dispose();
+        }
         backgroundTexture.dispose();
         backButtonTexture.dispose();
         applyButtonTexture.dispose();
@@ -237,10 +287,9 @@ public class SettingsScreen extends BaseScreen {
     }
 
     private String t(String key) {
-        boolean ru = language == Language.RU;
+        boolean ru = language == LanguageManager.Language.RU;
         return switch (key) {
             case "fullscreen" -> ru ? "Полноэкранный режим" : "Fullscreen mode";
-            case "russian" -> ru ? "Русский язык" : "Russian language";
             case "status_hint" -> ru ? "Изменения сохраняются после нажатия \"Применить\"" : "Changes are saved after pressing \"Apply\"";
             case "settings" -> ru ? "Настройки" : "Settings";
             case "music" -> ru ? "Музыка" : "Music";

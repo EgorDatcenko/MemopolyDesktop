@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Юнит-тесты логики GameState: проверяют смену ходов, логику банкротства и базовые правила аукционов.
+ */
 class GameStateBaselineTest {
 
     @Test

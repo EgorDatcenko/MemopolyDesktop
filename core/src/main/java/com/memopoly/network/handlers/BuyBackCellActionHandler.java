@@ -8,6 +8,9 @@ import com.memopoly.network.packets.GameActionRequest;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
+/**
+ * Обработчик выкупа клетки: обрабатывает запросы игроков на выкуп ранее заложенного (ипотечного) имущества.
+ */
 public class BuyBackCellActionHandler implements GameActionHandler {
     private final GameState gameState;
     private final IntPredicate isCurrentPlayer;

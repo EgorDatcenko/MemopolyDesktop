@@ -9,8 +9,13 @@ import com.memopoly.Memopoly;
 
 import java.util.function.Supplier;
 
+/**
+ * Экран загрузки: отображает анимацию загрузки при переходах между экранами.
+ */
 public class LoadingScreen extends BaseScreen {
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
+    private static final String LOAD_TEXTURE_PATH = "load.png";
+    private static final String GAME_OVERLAY_WINDOW_TEXTURE_PATH = "game_overlay_window.png";
 
     private final Supplier<BaseScreen> nextScreenSupplier;
     private final String title;
@@ -19,6 +24,7 @@ public class LoadingScreen extends BaseScreen {
 
     private ShapeRenderer shapeRenderer;
     private Texture backgroundTexture;
+    private Texture loadTexture;
     private float elapsed;
     private boolean switched;
 
@@ -37,6 +43,7 @@ public class LoadingScreen extends BaseScreen {
     public void show() {
         shapeRenderer = new ShapeRenderer();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
+        loadTexture = loadTexture(LOAD_TEXTURE_PATH);
         elapsed = 0f;
         switched = false;
     }
@@ -69,20 +76,28 @@ public class LoadingScreen extends BaseScreen {
     private void drawProgressBar(float progress) {
         float screenW = Gdx.graphics.getWidth();
         float screenH = Gdx.graphics.getHeight();
+
         float barWidth = screenW * 0.42f;
-        float barHeight = 24f;
+        float barHeight = 40f;
         float x = (screenW - barWidth) / 2f;
         float y = screenH * 0.48f;
 
         shapeRenderer.setProjectionMatrix(screenProjection);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.18f, 0.16f, 0.24f, 1f);
-        shapeRenderer.rect(x, y, barWidth, barHeight);
         shapeRenderer.setColor(0.97f, 0.83f, 0.25f, 1f);
-        shapeRenderer.rect(x + 3f, y + 3f, (barWidth - 6f) * progress, barHeight - 6f);
+        shapeRenderer.rect(x + 4f, y + 4f, (barWidth - 8f) * progress, barHeight - 8f);
         shapeRenderer.end();
-    }
 
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        game.getBatch().setProjectionMatrix(screenProjection);
+        game.getBatch().begin();
+        game.getBatch().draw(loadTexture, x, y, barWidth, barHeight);
+        game.getBatch().end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -91,11 +106,8 @@ public class LoadingScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        if (shapeRenderer != null) {
-            shapeRenderer.dispose();
-        }
-        if (backgroundTexture != null) {
-            backgroundTexture.dispose();
-        }
+        if (shapeRenderer != null) shapeRenderer.dispose();
+        if (backgroundTexture != null) backgroundTexture.dispose();
+        if (loadTexture != null) loadTexture.dispose();
     }
 }

@@ -2,6 +2,9 @@ package com.memopoly.game.model;
 
 import java.util.ArrayList;
 
+/**
+ * Состояние игрока: хранит баланс денег, позицию на поле, статус банкротства, карты мемов в руке, купленные клетки и баланс в банке мемов.
+ */
 public class Player {
     public int id;
     public String name;
@@ -12,6 +15,10 @@ public class Player {
     public ArrayList<Integer> ownedCells;
     public int maxAffordable;
     public int memeBankBalance;
+    public boolean skipNextTurn;
+    public boolean skipNextRentCollection;
+    public boolean inJail;
+    public int jailTurns;
 
     public Player(){
         this.handMemes = new ArrayList<>();
@@ -26,6 +33,10 @@ public class Player {
         this.position = 0;
         this.isBankrupt = false;
         this.memeBankBalance = 0;
+        this.skipNextTurn = false;
+        this.skipNextRentCollection = false;
+        this.inJail = false;
+        this.jailTurns = 0;
     }
 
     public boolean canAfford(int amount){

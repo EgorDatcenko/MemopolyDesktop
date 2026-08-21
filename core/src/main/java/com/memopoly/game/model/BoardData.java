@@ -3,7 +3,23 @@ package com.memopoly.game.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Фабрика игрового поля: настраивает и создаёт конфигурацию из 40 клеток на доске Memopoly.
+ */
 public class BoardData {
+    public static List<BoardCell> getCellsInGroup(List<BoardCell> cells, BoardCell.Group group) {
+        List<BoardCell> groupCells = new ArrayList<>();
+        if (cells == null || group == null || group == BoardCell.Group.SPECIAL) {
+            return groupCells;
+        }
+
+        for (BoardCell cell : cells) {
+            if (cell != null && cell.isBuildableSituation() && cell.group == group) {
+                groupCells.add(cell);
+            }
+        }
+        return groupCells;
+    }
 //    public static List<BoardCell> buildCells() {
 //        List<BoardCell> cells = new ArrayList<>();
 //
@@ -87,7 +103,6 @@ public class BoardData {
         cells.add(new BoardCell(29, "Meme server",          300, BoardCell.Group.DISCORD));
         cells.add(new BoardCell(30, BoardCell.Type.JAIL,        "Copyright Infringement"));
 
-// Правая сторона (31-39, сверху вниз)
         cells.add(new BoardCell(31, "Video comments",       320, BoardCell.Group.YOUTUBE));
         cells.add(new BoardCell(32, "Shorts",               330, BoardCell.Group.YOUTUBE));
         cells.add(new BoardCell(33, BoardCell.Type.TAX,         "Tax"));

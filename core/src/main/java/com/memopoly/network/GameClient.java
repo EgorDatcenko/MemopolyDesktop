@@ -11,6 +11,9 @@ import com.memopoly.utils.AppLog;
 
 import java.io.IOException;
 
+/**
+ * Сетевой клиент игры на KryoNet: отвечает за подключение к серверу, отправку действий и получение обновлений состояния.
+ */
 public class GameClient {
     private final Client client;
     private volatile GameState gameState;
@@ -135,6 +138,9 @@ public class GameClient {
             Gdx.app.postRunnable(() ->
                 listener.onActionRejected(response.actionType, response.reasonCode, response.reason)
             );
+        } else if (packet instanceof ChatMessage) {
+            ChatMessage message = (ChatMessage) packet;
+            Gdx.app.postRunnable(() -> listener.onChatMessage(message));
         }
     }
 
@@ -177,6 +183,16 @@ public class GameClient {
         client.sendTCP(request);
     }
 
+    public void sendChatMessage(String text) {
+        if (!client.isConnected() || text == null || text.trim().isEmpty()) {
+            return;
+        }
+        ChatMessage message = new ChatMessage();
+        message.message = text.trim();
+        message.playerId = localPlayerId;
+        client.sendTCP(message);
+    }
+
     public int getLocalPlayerId() {
         return localPlayerId;
     }
@@ -188,6 +204,21 @@ public class GameClient {
     }
 
     public void sendBattleResponse(BattleResponsePacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
+
+    public void sendTradeOffer(TradeOfferPacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
+
+    public void sendTradeResponse(TradeResponsePacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
+
+    public void sendTradeCancel(TradeCancelPacket packet) {
         if (!client.isConnected() || packet == null) return;
         client.sendTCP(packet);
     }
