@@ -32,6 +32,9 @@ public class NetworkRegistry {
         kryo.register(BattleInvitePacket.class);
         kryo.register(BattleResponsePacket.class);
         kryo.register(ActionRejectedPacket.class);
+        kryo.register(TradeOfferPacket.class);
+        kryo.register(TradeResponsePacket.class);
+        kryo.register(TradeCancelPacket.class);
 
         kryo.register(GameActionRequest.ActionType.class);
         kryo.register(GameState.GamePhase.class);
