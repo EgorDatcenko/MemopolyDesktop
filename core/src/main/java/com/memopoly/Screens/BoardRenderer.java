@@ -85,6 +85,38 @@ public class BoardRenderer {
     }
 
     private boolean debugGrid = false;
+    private Set<Integer> tradeDimmedCells = null;
+
+    public int getCellAt(float worldX, float worldY) {
+        for (int i = 0; i < 40; i++) {
+            Rectangle c = getCellBounds(i);
+            if (c.contains(worldX, worldY)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void setTradeDimming(Set<Integer> selectableCells) {
+        this.tradeDimmedCells = selectableCells;
+    }
+
+    public void clearTradeDimming() {
+        this.tradeDimmedCells = null;
+    }
+
+    private void renderTradeDimming(SpriteBatch batch) {
+        if (tradeDimmedCells == null) return;
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.7f);
+        for (int i = 0; i < 40; i++) {
+            if (!tradeDimmedCells.contains(i)) {
+                Rectangle c = getCellBounds(i);
+                shapeRenderer.rect(c.x, c.y, c.width, c.height);
+            }
+        }
+        shapeRenderer.end();
+    }
 
     private void renderDebugGrid() {
         if (!debugGrid) return;
@@ -270,6 +302,11 @@ public class BoardRenderer {
         renderHouses(gameState);
         renderPlayers(gameState);
         shapeRenderer.end();
+        
+        // Рендерим затемнение для режима сделки поверх всего
+        if (tradeDimmedCells != null) {
+            renderTradeDimming(batch);
+        }
     }
 
     private void renderCurrentCell(SpriteBatch batch, GameState gameState) {
