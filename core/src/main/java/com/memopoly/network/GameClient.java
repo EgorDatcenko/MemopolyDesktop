@@ -207,4 +207,19 @@ public class GameClient {
         if (!client.isConnected() || packet == null) return;
         client.sendTCP(packet);
     }
+
+    public void sendTradeOffer(TradeOfferPacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
+
+    public void sendTradeResponse(TradeResponsePacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
+
+    public void sendTradeCancel(TradeCancelPacket packet) {
+        if (!client.isConnected() || packet == null) return;
+        client.sendTCP(packet);
+    }
 }
