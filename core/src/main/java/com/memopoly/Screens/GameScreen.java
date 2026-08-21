@@ -501,7 +501,8 @@ public class GameScreen extends BaseScreen {
         dealButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (gameState != null && gameState.tradeId == 0) {
+                GameState state = game.getLatestGameState();
+                if (state != null && state.tradeId == 0) {
                     openTradeWindow();
                 }
             }
