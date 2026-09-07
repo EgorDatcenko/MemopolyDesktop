@@ -7,5 +7,6 @@ public class JoinRoomRequest {
     public String playerName;
     public String hostIP;
     public int port;
+    public long steamId;
     public JoinRoomRequest() {}
 }

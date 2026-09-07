@@ -17,6 +17,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.memopoly.Memopoly;
 import com.memopoly.network.packets.ChatMessage;
+import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.UiScrollStyle;
 
 import java.util.List;
 
@@ -26,7 +28,7 @@ import java.util.List;
 public class ChatWidget extends Table {
     private static final Color PANEL_BACKGROUND = new Color(0.06f, 0.05f, 0.10f, 0.82f);
     private static final Color LOG_BACKGROUND = new Color(0.13f, 0.12f, 0.20f, 0.88f);
-    private static final Color TEXT_COLOR = Color.WHITE;
+    private static final Color TEXT_COLOR = Color.valueOf("000A3E");
     private static final Color SYSTEM_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final float MESSAGES_TOP_PADDING = 14f;
     private static final float MESSAGE_FONT_SCALE = 0.72f;
@@ -67,10 +69,10 @@ public class ChatWidget extends Table {
         scrollPane = new ScrollPane(messagesTable, VisUI.getSkin());
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(true, false);
-        scrollPane.getStyle().background = null;
+        UiScrollStyle.apply(scrollPane, game.getLanguageManager().getLanguage());
 
         inputField = new VisTextField();
-        inputField.setMessageText("Чат");
+        inputField.setMessageText(t("chat_placeholder"));
         applyInputFieldStyle(inputField);
         Actor sendButton = createSendButton();
         sendButton.addListener(new ChangeListener() {
@@ -125,13 +127,33 @@ public class ChatWidget extends Table {
         scrollPane.setScrollPercentY(1f);
     }
 
+    public void showSystemMessage(String text) {
+        VisLabel label = new VisLabel(text);
+        label.setFontScale(MESSAGE_FONT_SCALE);
+        label.setWrap(true);
+        label.setColor(SYSTEM_COLOR);
+        messagesTable.add(label).width(Math.max(160f, contentWidth - 18f)).left().pad(3f, 5f, 3f, 5f).row();
+        scrollPane.layout();
+        scrollPane.setScrollPercentY(1f);
+    }
+
     private String format(ChatMessage message) {
         String text = message.message == null ? "" : message.message;
         if (message.isSystem) {
             return text;
         }
-        String name = message.playerName == null || message.playerName.isBlank() ? "Игрок" : message.playerName;
+        String name = message.playerName == null || message.playerName.isBlank() ? t("chat_default_name") : message.playerName;
         return name + ": " + text;
+    }
+
+    private String t(String key) {
+        boolean ru = game.getLanguageManager().getLanguage() == Language.RU;
+        return switch (key) {
+            case "chat_placeholder" -> ru ? "Чат" : "Chat";
+            case "chat_default_name" -> ru ? "Игрок" : "Player";
+            case "ok" -> ru ? "OK" : "OK";
+            default -> key;
+        };
     }
 
     private void sendCurrentMessage() {
@@ -145,7 +167,7 @@ public class ChatWidget extends Table {
 
     private Actor createSendButton() {
         if (enterButtonTexture == null) {
-            return new VisTextButton("OK");
+            return new VisTextButton(t("ok"));
         }
         TextureRegionDrawable buttonDrawable = new TextureRegionDrawable(new TextureRegion(enterButtonTexture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
@@ -178,7 +200,7 @@ public class ChatWidget extends Table {
             return null;
         }
         Texture texture = new Texture(path);
-        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
 

@@ -5,7 +5,8 @@ package com.memopoly.network.packets;
  */
 public class StartGameRequest {
     public String deckName;
-
+    public boolean rolesEnabled;
+    
     public StartGameRequest() {
     }
 }

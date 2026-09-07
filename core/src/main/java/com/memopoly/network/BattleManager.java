@@ -130,6 +130,7 @@ public class BattleManager {
         gameState.battleInvited = battleInvited;
         gameState.battleParticipants.clear();
         gameState.battleParticipants.add(organizerId);
+        gameState.recordAchievement(organizerId, "FIRST_BATTLE");
 
         gameState.battleMemes.clear();
         gameState.votes.clear();
@@ -146,6 +147,7 @@ public class BattleManager {
 
         if (packet.accepted) {
             gameState.battleParticipants.add(packet.playerId);
+            gameState.recordAchievement(packet.playerId, "FIRST_BATTLE");
             Player player = gameState.getPlayerById(packet.playerId);
             if (player != null && gameState.battleStakes > 0) {
                 player.pay(gameState.battleStakes);
@@ -389,6 +391,10 @@ public class BattleManager {
         if (winnerMeme != null && winnerMeme.ownerId != -999) {
             Player winner = gameState.getPlayerById(winnerMeme.ownerId);
             winner.money += battleBank;
+            winner.battleWins++;
+            if (winner.battleWins >= 3) {
+                gameState.recordAchievement(winner.id, "MEME_LORD");
+            }
             gameState.lastActionLog = winner.name + " победил в мем-баттле и получил " + battleBank + " монет!";
         } else {
             gameState.lastActionLog = "Победил мем бота. Банк сгорает!";

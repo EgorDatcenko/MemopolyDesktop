@@ -52,5 +52,6 @@ public class NetworkRegistry {
 
         kryo.register(ArrayList.class);
         kryo.register(HashMap.class);
+        kryo.register(java.util.HashSet.class);
     }
 }

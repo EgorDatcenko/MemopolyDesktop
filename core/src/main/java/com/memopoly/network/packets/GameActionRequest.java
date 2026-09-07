@@ -23,11 +23,21 @@ public class GameActionRequest {
         PAY_JAIL_FINE,
         END_TURN,
         CANCEL_MEME,
-        CANCEL_MEME_BATTLE
+        CANCEL_MEME_BATTLE,
+        STEAL_COINS,
+        PLUS_TWO,
+        CONFIRM_LANDING,
+        MODERATOR_SKIP_JAIL,
+        MODERATOR_TAKE_JAIL,
+        DEV_SET_TEST_MODE,
+        DEV_NEXT_GROUP_CELL,
+        DEV_SET_MONEY,
+        DEV_GRANT_MONOPOLY
     }
 
-    public ActionType actionType;
-    public int targetId;
+    public ActionType type;
     public int amount;
+    public ActionType actionType;
+    public int targetId;;
     public String data;
 }

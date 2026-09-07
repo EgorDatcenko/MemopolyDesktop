@@ -13,20 +13,27 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.kotcrab.vis.ui.VisUI;
 import com.memopoly.Screens.*;
 import com.memopoly.game.model.GameState;
+import com.memopoly.game.model.Player;
 import com.memopoly.network.GameClient;
 import com.memopoly.network.GameServer;
 import com.memopoly.network.NetworkListener;
 import com.memopoly.network.packets.RollDiceResponse;
 import com.memopoly.network.packets.ChatMessage;
+import com.memopoly.steam.SteamAchievementsManager;
+import com.memopoly.steam.SteamLobbyManager;
+import com.memopoly.steam.SteamManager;
 import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
+import com.memopoly.utils.UiFonts;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Главный класс игры: создаёт GameClient/GameServer, управляет переключением экранов через ScreenManager, хранит последнее состояние GameState и обрабатывает сетевые события.
+ * Главный класс игры: создаёт GameClient/GameServer, управляет переключением
+ * экранов через ScreenManager, хранит последнее состояние GameState и
+ * обрабатывает сетевые события.
  */
 public class Memopoly extends Game implements NetworkListener {
     private static final String SETTINGS_PREFS = "memopoly-settings";
@@ -44,20 +51,30 @@ public class Memopoly extends Game implements NetworkListener {
     private LanguageManager languageManager;
     private BitmapFont localizedUiFont;
     private final List<ChatMessage> chatMessages = new ArrayList<>();
+    private final java.util.Set<String> processedAchievements = new java.util.HashSet<>();
+    private volatile boolean connecting = false;
 
     @Override
     public void create() {
         VisUI.load();
+        patchVisUiSkin();
         screenManager = new ScreenManager(this);
         batch = new SpriteBatch();
         gameClient = new GameClient(this);
         languageManager = new LanguageManager(getSettingsPreferences());
         applyLocalizedFonts();
         applySettings(
-            Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("music_volume", 0.7f),
-            Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("sfx_volume", 0.85f),
-            Gdx.app.getPreferences(SETTINGS_PREFS).getBoolean("fullscreen", false)
-        );
+                Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("music_volume", 0.7f),
+                Gdx.app.getPreferences(SETTINGS_PREFS).getFloat("sfx_volume", 0.85f),
+                Gdx.app.getPreferences(SETTINGS_PREFS).getBoolean("fullscreen", false));
+
+        // Автоконнект при принятии инвайта через Steam
+        SteamLobbyManager.setJoinCallback((ip, port) -> {
+            Gdx.app.postRunnable(() -> {
+                connectAsGuest(ip, port);
+            });
+        });
+
         screenManager.set(new MainMenuScreen(this));
     }
 
@@ -69,6 +86,43 @@ public class Memopoly extends Game implements NetworkListener {
         if (isHost && !lobbyOpened && gameState != null && gameState.players != null && !gameState.players.isEmpty()) {
             lobbyOpened = true;
             Gdx.app.postRunnable(() -> openLobby());
+        }
+
+        if (gameState != null && gameState.achievementEvents != null) {
+            int localId = getClient().getLocalPlayerId();
+            for (String event : gameState.achievementEvents) {
+                if (processedAchievements.contains(event))
+                    continue;
+                String[] parts = event.split("\\|");
+                if (parts.length == 2 && Integer.parseInt(parts[0]) == localId) {
+                    processedAchievements.add(event);
+                    SteamAchievementsManager.unlock(parts[1]);
+                }
+            }
+        }
+
+        // TYCOON и UNSTOPPABLE при победе
+        if (gameState != null && gameState.currentPhase == GameState.GamePhase.GAME_OVER) {
+            Player winner = gameState.getWinner();
+            int localId = getClient().getLocalPlayerId();
+            if (winner != null && winner.id == localId) {
+                if (winner.money >= 5000) {
+                    SteamAchievementsManager.unlock("TYCOON");
+                }
+                // UNSTOPPABLE через Preferences
+                com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("memopoly-stats");
+                int winStreak = prefs.getInteger("win_streak", 0) + 1;
+                prefs.putInteger("win_streak", winStreak);
+                prefs.flush();
+                if (winStreak >= 3) {
+                    SteamAchievementsManager.unlock("UNSTOPPABLE");
+                }
+            } else if (winner != null && winner.id != localId) {
+                // Сброс стрика при поражении
+                com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("memopoly-stats");
+                prefs.putInteger("win_streak", 0);
+                prefs.flush();
+            }
         }
     }
 
@@ -85,17 +139,21 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void onJoinedRoom() {
+        connecting = false;
         lobbyOpened = true;
         Gdx.app.postRunnable(() -> openLobby());
     }
 
     @Override
     public void onDisconnected() {
+        connecting = false;
         AppLog.info("Network", "Disconnected from server!");
     }
 
     @Override
-    public void onConnectionFailed(String reason) {}
+    public void onConnectionFailed(String reason) {
+        connecting = false;
+    }
 
     @Override
     public void onActionRejected(String actionType, String reasonCode, String reason) {
@@ -125,6 +183,7 @@ public class Memopoly extends Game implements NetworkListener {
 
     @Override
     public void render() {
+        SteamManager.update();
         super.render();
     }
 
@@ -157,18 +216,22 @@ public class Memopoly extends Game implements NetworkListener {
         applyLocalizedFonts();
         screenManager.set(new MainMenuScreen(this));
     }
+
     public void openSettings() {
         applyLocalizedFonts();
         screenManager.set(new SettingsScreen(this));
     }
+
     public void openGame() {
         applyLocalizedFonts();
         screenManager.set(new GameScreen(this));
     }
+
     public void openGameLoading() {
         applyLocalizedFonts();
         screenManager.set(new LoadingScreen(this, "Загрузка матча", () -> new GameScreen(this)));
     }
+
     public void leaveRoomToMenu() {
         if (gameServer != null) {
             gameServer.stop();
@@ -183,34 +246,50 @@ public class Memopoly extends Game implements NetworkListener {
         latestGameState = null;
         chatMessages.clear();
         isHost = false;
+        connecting = false;
         lobbyOpened = false;
+
+        // Очищаем Steam-лобби
+        SteamLobbyManager.clearLobby();
+
         openMenu();
     }
 
     public void startAsHost() {
+        if (gameServer != null) {
+            AppLog.warn("Server", "startAsHost проигнорирован: сервер уже запущен");
+            return;
+        }
         isHost = true;
         lobbyOpened = false;
         latestGameState = null;
         chatMessages.clear();
         gameServer = new GameServer();
-    }
 
-    public void startAsHost(String playerName) {
-        startAsHost();
+        // Создаём Steam-лобби и записываем IP/порт
+        if (SteamManager.isAvailable()) {
+            SteamLobbyManager.createLobby(gameServer.getHostIP(), 54555);
+        }
+
+        String playerName = resolvePlayerName();
         gameClient.connectAndJoin("127.0.0.1", 54555, playerName);
     }
 
-    public void connectAsGuest(String ip, int port, String playerName) {
-        isHost = false;
-        lobbyOpened = false;
-        latestGameState = null;
-        chatMessages.clear();
-        gameClient.connectAndJoin(ip, port, playerName);
+    /** Имя из Steam с фолбэком Player_XXXX, если Steam недоступен. */
+    private String resolvePlayerName() {
+        String steamName = SteamManager.getPersonaName();
+        if (steamName != null && !steamName.isBlank()) {
+            return steamName;
+        }
+        return "Player_" + (1000 + new java.util.Random().nextInt(9000));
     }
 
     public String getRoomCode() {
         if (gameServer != null) {
             return gameServer.getRoomCode();
+        }
+        if (latestGameState != null && latestGameState.roomCode != null) {
+            return latestGameState.roomCode;
         }
         return "UNKNOWN";
     }
@@ -243,16 +322,59 @@ public class Memopoly extends Game implements NetworkListener {
             return;
         }
         String fontPath = "fonts_ru/Rubik-Bold.ttf";
+        String source = "ttf";
         BitmapFont newFont = tryLoadBitmapFont(fontPath);
-        if (newFont == null) {
+        if (newFont != null) {
+            source = "fnt";
+        } else {
             newFont = tryGenerateFontFromTtf(fontPath);
         }
         if (newFont == null) {
-            AppLog.info("Fonts", "No font at " + fontPath + " (.fnt/.ttf/.otf). Keep default VisUI font.");
+            AppLog.info("Fonts", "No font at " + fontPath + ". Keep default VisUI font.");
             return;
         }
-        localizedUiFont = newFont;
+        localizedUiFont = normalizeFont(newFont, 45f); // приводим ЛЮБОЙ источник к размеру, под который сверстан UI
+        AppLog.info("Fonts", "Localized font: source=" + source + ", lineHeight=" + localizedUiFont.getLineHeight());
         applyFontToVisUiSkin(localizedUiFont);
+    }
+
+    private BitmapFont normalizeFont(BitmapFont font, float targetLineHeight) {
+        float k = targetLineHeight / font.getLineHeight();
+        font.getData().setScale(font.getScaleX() * k, font.getScaleY() * k);
+        font.setUseIntegerPositions(false);
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        return font;
+    }
+
+    private void patchVisUiSkin() {
+        Skin skin = VisUI.getSkin();
+        Color darkText = Color.valueOf("000A3E");
+
+        ObjectMap<String, Label.LabelStyle> labelStyles = skin.getAll(Label.LabelStyle.class);
+        if (labelStyles != null) {
+            for (Label.LabelStyle s : labelStyles.values()) {
+                s.fontColor = Color.WHITE;
+            }
+        }
+
+        ObjectMap<String, TextButton.TextButtonStyle> buttonStyles = skin.getAll(TextButton.TextButtonStyle.class);
+        if (buttonStyles != null) {
+            for (TextButton.TextButtonStyle s : buttonStyles.values()) {
+                s.fontColor = darkText;
+                s.downFontColor = darkText;
+                s.overFontColor = darkText;
+                s.checkedFontColor = darkText;
+                s.checkedOverFontColor = darkText;
+            }
+        }
+
+        ObjectMap<String, TextField.TextFieldStyle> fieldStyles = skin.getAll(TextField.TextFieldStyle.class);
+        if (fieldStyles != null) {
+            for (TextField.TextFieldStyle s : fieldStyles.values()) {
+                s.fontColor = darkText;
+                s.messageFontColor = new Color(0f, 10 / 255f, 62 / 255f, 0.55f);
+            }
+        }
     }
 
     private void applyFontToVisUiSkin(BitmapFont font) {
@@ -277,7 +399,7 @@ public class Memopoly extends Game implements NetworkListener {
             if (style instanceof Label.LabelStyle) {
                 Label.LabelStyle s = (Label.LabelStyle) style;
                 s.font = font;
-                s.fontColor = textColor;
+                s.fontColor = Color.WHITE;
             } else if (style instanceof TextButton.TextButtonStyle) {
                 TextButton.TextButtonStyle s = (TextButton.TextButtonStyle) style;
                 s.font = font;
@@ -287,7 +409,7 @@ public class Memopoly extends Game implements NetworkListener {
                 s.font = font;
                 s.fontColor = textColor;
                 s.messageFont = font;
-                s.messageFontColor = new Color(textColor.r, textColor.g, textColor.b, 0.5f);
+                s.messageFontColor = new Color(0f, 10 / 255f, 62 / 255f, 0.55f);
             } else if (style instanceof CheckBox.CheckBoxStyle) {
                 CheckBox.CheckBoxStyle s = (CheckBox.CheckBoxStyle) style;
                 s.font = font;
@@ -300,11 +422,6 @@ public class Memopoly extends Game implements NetworkListener {
         }
     }
 
-    private void applyPixelFontFiltering(BitmapFont font) {
-        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        font.setUseIntegerPositions(true);
-    }
-
     private BitmapFont tryLoadBitmapFont(String fontPath) {
         FileHandle file = Gdx.files.internal(fontPath);
         if (!file.exists() || !"fnt".equalsIgnoreCase(file.extension())) {
@@ -312,10 +429,12 @@ public class Memopoly extends Game implements NetworkListener {
         }
         try {
             BitmapFont font = new BitmapFont(file, false);
-            applyPixelFontFiltering(font);
+            font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            font.setUseIntegerPositions(false);
             return font;
         } catch (Throwable throwable) {
-            Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            Gdx.app.error("Fonts", "Failed to load bitmap font " + fontPath + ". Keep current/default VisUI font.",
+                    throwable);
             return null;
         }
     }
@@ -335,23 +454,45 @@ public class Memopoly extends Game implements NetworkListener {
             generator = new FreeTypeFontGenerator(file);
             FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
             param.size = 38;
-            param.minFilter = Texture.TextureFilter.Nearest;
-            param.magFilter = Texture.TextureFilter.Nearest;
-            param.mono = true;
+            param.minFilter = Texture.TextureFilter.Linear;
+            param.magFilter = Texture.TextureFilter.Linear;
             param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
-                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-                + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+                    + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+                    + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
             BitmapFont font = generator.generateFont(param);
-            applyPixelFontFiltering(font);
             return font;
         } catch (Throwable throwable) {
-            Gdx.app.error("Fonts", "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
+            Gdx.app.error("Fonts",
+                    "Failed to generate FreeType font " + fontPath + ". Keep current/default VisUI font.", throwable);
             return null;
         } finally {
             if (generator != null) {
                 generator.dispose();
             }
         }
+    }
+
+    public void connectAsGuest(String ip, int port) {
+        if (connecting) {
+            AppLog.warn("Network", "connectAsGuest проигнорирован: уже идёт подключение");
+            return;
+        }
+        connecting = true;
+        isHost = false;
+        lobbyOpened = false;
+        latestGameState = null;
+        chatMessages.clear();
+        String playerName = resolvePlayerName();
+        Thread t = new Thread(() -> {
+            try {
+                gameClient.connectAndJoin(ip, port, playerName);
+            } catch (Exception e) {
+                AppLog.warn("Network", "connectAndJoin error: " + e.getMessage());
+                connecting = false;
+            }
+        }, "memopoly-connect");
+        t.setDaemon(true);
+        t.start();
     }
 
     @Override
@@ -367,6 +508,7 @@ public class Memopoly extends Game implements NetworkListener {
         if (gameClient != null) {
             gameClient.disconnect();
         }
+        SteamManager.shutdown();
         super.dispose();
     }
 }

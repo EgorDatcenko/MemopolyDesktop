@@ -7,6 +7,7 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.minlog.Log;
 import com.memopoly.game.model.GameState;
 import com.memopoly.network.packets.*;
+import com.memopoly.steam.SteamManager;
 import com.memopoly.utils.AppLog;
 
 import java.io.IOException;
@@ -65,6 +66,7 @@ public class GameClient {
                 if (pendingJoinPlayerName != null) {
                     JoinRoomRequest request = new JoinRoomRequest();
                     request.playerName = pendingJoinPlayerName;
+                    request.steamId = SteamManager.getLocalSteamIdHandle(); // <-- добавить
                     sendJoinRoom(request);
                     pendingJoinPlayerName = null;
                 }

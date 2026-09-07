@@ -7,11 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Stack;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -23,6 +19,7 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.memopoly.Memopoly;
+import com.memopoly.steam.SteamLobbyManager;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.game.model.GameState;
@@ -31,6 +28,7 @@ import com.memopoly.game.model.Player;
 import com.memopoly.modding.DeckRepository;
 import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
+import com.memopoly.utils.UiScrollStyle;
 
 /**
  * Экран комнаты ожидания: показывает список подключённых игроков, позволяет выбирать колоду и запускать матч.
@@ -38,13 +36,13 @@ import com.memopoly.utils.ClipboardUtils;
 public class LobbyScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
-    private static final float LOBBY_WINDOW_WIDTH = 1116f;
-    private static final float LOBBY_WINDOW_HEIGHT = LOBBY_WINDOW_WIDTH / LOBBY_WINDOW_ASPECT;
+    private static final float LOBBY_WINDOW_WIDTH = 1050f;
+    private static final float LOBBY_WINDOW_HEIGHT = 700f;
     private static final float EXIT_DIALOG_SCALE = 0.6f;
     private static final float EXIT_DIALOG_TEXT_WIDTH = 440f;
     private static final float EXIT_DIALOG_BUTTON_BOTTOM_PADDING = 30f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
-    private static final Color TEXT_DARK = new Color(0.00f, 0.04f, 0.24f, 1f);   // #000A3E
+    private static final Color TEXT_DARK = Color.valueOf("000A3E");   // #000A3E
     private static final Color MONEY_COLOR = new Color(0.85f, 0.62f, 0.09f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CHOOSE_DECK_BTN_TEXTURE_PATH = "choose_deck_btn.png";
@@ -56,6 +54,7 @@ public class LobbyScreen extends BaseScreen {
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
     private static final String GAME_OVERLAY_WINDOW_TEXTURE_PATH = "game_overlay_window.png";
     private static final String YES_BUTTON_TEXTURE_PATH = "yes_btn.png";
+    private static final String DECK_WINDOW_TEXTURE_PATH = "chat_window.png";
 
     private final Stage stage;
     private final Texture backgroundTexture;
@@ -67,6 +66,11 @@ public class LobbyScreen extends BaseScreen {
     private final Texture yesButtonTexture;
     private final Texture lobbyWindowTexture;
     private final Texture gameOverlayWindowTexture;
+    private final Texture inviteFriendsTexture;
+    private final Texture rolesOnTexture;
+    private final Texture rolesOffTexture;
+    private final Texture selectTexture;
+    public final Texture deckWindowTexture;
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
@@ -77,7 +81,8 @@ public class LobbyScreen extends BaseScreen {
     private boolean gameStarted = false;
     private final Language language;
     private final DeckRepository deckRepository = new DeckRepository();
-
+    private boolean rolesEnabled = false;
+    private final Array<Dialog> openDialogs = new Array<>();
     public LobbyScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
@@ -91,7 +96,12 @@ public class LobbyScreen extends BaseScreen {
         noButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(NO_BUTTON_TEXTURE_PATH, language));
         cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         yesButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(YES_BUTTON_TEXTURE_PATH, language));
+        inviteFriendsTexture = loadTexture(TexturePathResolver.resolveScreenTexture("invite_friends_btn.png", language));
+        rolesOnTexture = loadTexture(TexturePathResolver.resolveScreenTexture("on_btn.png", language));
+        rolesOffTexture = loadTexture(TexturePathResolver.resolveScreenTexture("off_btn.png", language));
+        selectTexture = loadTexture(TexturePathResolver.resolveScreenTexture("select.png", language));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
+        deckWindowTexture = loadTexture(DECK_WINDOW_TEXTURE_PATH);
         gameOverlayWindowTexture = loadTexture(GAME_OVERLAY_WINDOW_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
         createUI();
@@ -109,6 +119,7 @@ public class LobbyScreen extends BaseScreen {
         // Заголовок по центру + кнопка выхода в правом верхнем углу
         VisLabel title = new VisLabel(t("lobby"));
         title.setFontScale(1.6f);
+        title.setColor(TEXT_DARK);
 
         ImageButton closeButton = createImageButton(cancelButtonTexture);
         closeButton.addListener(new ChangeListener() {
@@ -122,13 +133,33 @@ public class LobbyScreen extends BaseScreen {
         titleRow.add().expandX();
         titleRow.add(title).padLeft(100f);
         titleRow.add().expandX();
-        titleRow.add(closeButton).size(90f, 80f);
-        panel.add(titleRow).growX().padBottom(50f).row();
+        titleRow.add(closeButton).size(55f, 55f);
+        panel.add(titleRow).growX().padBottom(30f).row();
 
         // Код комнаты по центру
         VisLabel roomCode = new VisLabel(t("code") + ": " + game.getRoomCode());
         roomCode.setFontScale(0.8f);
+        roomCode.setColor(TEXT_DARK);
         panel.add(roomCode).center().padBottom(20f).row();
+
+        if (game.isHost()) {
+            Table rolesRow = new Table();
+            VisLabel rolesTitle = new VisLabel(t("roles") + ":");
+            rolesTitle.setFontScale(0.9f);
+            rolesTitle.setColor(TEXT_DARK);
+            ImageButton rolesButton = createImageButton(rolesOffTexture != null ? rolesOffTexture : noButtonTexture);
+            rolesButton.addListener(new ChangeListener() {
+                @Override public void changed(ChangeEvent event, Actor actor) {
+                    rolesEnabled = !rolesEnabled;
+                    setButtonTexture(rolesButton, rolesEnabled
+                        ? (rolesOnTexture != null ? rolesOnTexture : yesButtonTexture)
+                        : (rolesOffTexture != null ? rolesOffTexture : noButtonTexture));
+                }
+            });
+            rolesRow.add(rolesTitle).padRight(10f);
+            rolesRow.add(rolesButton).size(120f, 55f);
+            panel.add(rolesRow).center().padBottom(20f).row();
+        }
 
         playersTable = new Table();
         playersTable.top().left();
@@ -136,10 +167,7 @@ public class LobbyScreen extends BaseScreen {
         playersScroll.setFadeScrollBars(true);            // полоса прокрутки видна только во время скролла
         playersScroll.setScrollingDisabled(true, false);
         playersScroll.setOverscroll(false, false);        // без «резинового» смещения контента
-
-        ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle(playersScroll.getStyle());
-        scrollStyle.background = null;
-        playersScroll.setStyle(scrollStyle);
+        UiScrollStyle.apply(playersScroll, language);     // копия стиля: background=null + кастомные трек/ползунок
 
         Table playersBox = new Table();
         playersBox.setBackground(window(gameOverlayWindowTexture));
@@ -155,6 +183,7 @@ public class LobbyScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 StartGameRequest request = new StartGameRequest();
                 request.deckName = selectedDeckName;
+                request.rolesEnabled = rolesEnabled;
                 game.getClient().sendStartGame(request);
             }
         });
@@ -169,16 +198,26 @@ public class LobbyScreen extends BaseScreen {
 
         statusLabel = new VisLabel(t("waiting_players")); // пока не выводим на экран, оставляем на будущее
 
-        // Нижний ряд: START | COPY CODE | ... | DECK: [кнопка колоды]
         Table bottomRow = new Table();
         bottomRow.left();
-        bottomRow.add(startButton).size(220f, 110f).padRight(16f);
-        bottomRow.add(copyCodeButton).size(220f, 110f);
+        bottomRow.add(startButton).size(190f, 80f).padRight(16f);
+        if (game.isHost()) {
+            ImageButton inviteButton = createImageButton(inviteFriendsTexture != null ? inviteFriendsTexture : startButtonTexture);
+            inviteButton.addListener(new ChangeListener() {
+                @Override public void changed(ChangeEvent event, Actor actor) {
+                    SteamLobbyManager.inviteFriends();
+                }
+            });
+            bottomRow.add(inviteButton).size(190f, 80f).padRight(16f);
+        }
+        bottomRow.add(copyCodeButton).size(190f, 80f);
+
         bottomRow.add().expandX();
         if (game.isHost()) {
             VisLabel deckTitle = new VisLabel(t("selected_deck") + ":");
+            deckTitle.setColor(TEXT_DARK);
             bottomRow.add(deckTitle).padRight(10f);
-            bottomRow.add(createDeckButton()).size(220f, 110f);
+            bottomRow.add(createDeckButton()).size(190f, 80f);
         }
         panel.add(bottomRow).growX().row();
 
@@ -192,11 +231,20 @@ public class LobbyScreen extends BaseScreen {
         //stage.addActor(chatRoot);
     }
 
+    private void setButtonTexture(ImageButton button, Texture texture) {
+        TextureRegionDrawable d = new TextureRegionDrawable(new TextureRegion(texture));
+        ImageButton.ImageButtonStyle s = button.getStyle();
+        s.imageUp = d;
+        s.imageOver = d.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        s.imageDown = d.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
+    }
+
     /** Кнопка выбора колоды: текстура + имя выбранной колоды поверх неё. */
     private Actor createDeckButton() {
         selectedDeckName = resolveInitialDeckName();
         selectedDeckLabel = new VisLabel(deckDisplayName());
         selectedDeckLabel.setFontScale(0.9f);
+        selectedDeckLabel.setColor(TEXT_DARK);
 
         ImageButton chooseDeckButton = createImageButton(chooseDeckBtnTexture);
         chooseDeckButton.addListener(new ChangeListener() {
@@ -229,11 +277,28 @@ public class LobbyScreen extends BaseScreen {
 
     private void showDeckSelectionDialog() {
         Dialog dialog = new Dialog("", VisUI.getSkin());
-        dialog.setBackground(window(lobbyWindowTexture));
+        dialog.setBackground(window(deckWindowTexture));
 
         VisLabel title = new VisLabel(t("choose_deck"));
         title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).padTop(42f).padBottom(16f).row();
+        title.setColor(TEXT_DARK);
+
+        ImageButton closeButton = createImageButton(cancelButtonTexture);
+        closeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+
+        Table titleRow = new Table();
+        titleRow.add().size(55f).padLeft(30f);
+        titleRow.add(title).expandX();
+        titleRow.add(closeButton).size(55f, 55f).padRight(30f);
+
+        // прижимаем контент к верху — заголовок и крестик поднимаются к верхней кромке окна
+        dialog.getContentTable().top();
+        dialog.getContentTable().add(titleRow).growX().padTop(24f).padBottom(16f).row();
 
         Table deckRows = new Table();
         deckRows.defaults().left().growX().padBottom(8f);
@@ -250,20 +315,14 @@ public class LobbyScreen extends BaseScreen {
         ScrollPane decksScroll = new ScrollPane(deckRows, VisUI.getSkin());
         decksScroll.setFadeScrollBars(false);
         decksScroll.setScrollingDisabled(true, false);
-        dialog.getContentTable().add(decksScroll).width(470f).height(250f).padBottom(14f).row();
-
-        VisTextButton closeButton = new VisTextButton(t("cancel"));
-        closeButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                dialog.hide();
-            }
-        });
-        dialog.getButtonTable().add(closeButton).width(170f).height(44f).padBottom(26f);
+        // убираем рамку скина вокруг списка — тот самый синий контур
+        UiScrollStyle.apply(decksScroll, language);
+        dialog.getContentTable().add(decksScroll).width(400f).height(350f).padBottom(20f).row();
 
         dialog.show(stage);
-        float dialogWidth = lobbyWindowTexture.getWidth() * 0.52f;
-        float dialogHeight = lobbyWindowTexture.getHeight() * 0.52f;
+        openDialogs.add(dialog);
+        float dialogWidth = 700f;   // было 940f — окно уже
+        float dialogHeight = 520f;
         dialog.setSize(dialogWidth, dialogHeight);
         dialog.setPosition(
             (stage.getWidth() - dialogWidth) * 0.5f,
@@ -273,18 +332,31 @@ public class LobbyScreen extends BaseScreen {
 
     private void addDeckChoiceRow(Table deckRows, Dialog dialog, String deckName) {
         String displayName = deckName == null ? t("default_deck") : deckName;
-        VisTextButton deckButton = new VisTextButton(displayName);
+        VisTextButton deckButton;
+        if (selectTexture != null) {
+            VisTextButton.VisTextButtonStyle style = new VisTextButton.VisTextButtonStyle(
+                VisUI.getSkin().get("default", VisTextButton.VisTextButtonStyle.class));
+            style.font = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
+            style.fontColor = TEXT_DARK;
+            TextureRegionDrawable selectDrawable = new TextureRegionDrawable(new TextureRegion(selectTexture));
+            style.up = selectDrawable;
+            style.over = selectDrawable.tint(new Color(0.90f, 0.90f, 0.95f, 1f)); // ховер — та же рамка, чуть темнее
+            style.down = selectDrawable.tint(new Color(0.82f, 0.82f, 0.90f, 1f));
+            style.checked = selectDrawable;
+            deckButton = new VisTextButton(displayName, style);
+        } else {
+            deckButton = new VisTextButton(displayName);
+            deckButton.getLabel().setFontScale(1.3f);
+        }
+        deckButton.setFocusBorderEnabled(false);
         deckButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
+            @Override public void changed(ChangeEvent event, Actor actor) {
                 selectedDeckName = deckName;
-                if (selectedDeckLabel != null) {
-                    selectedDeckLabel.setText(deckDisplayName());
-                }
+                if (selectedDeckLabel != null) selectedDeckLabel.setText(deckDisplayName());
                 dialog.hide();
             }
         });
-        deckRows.add(deckButton).width(430f).height(42f).row();
+        deckRows.add(deckButton).width(350f).height(64f).row();
     }
 
     private void showExitDialog() {
@@ -297,11 +369,12 @@ public class LobbyScreen extends BaseScreen {
             }
         };
 
-        dialog.setBackground(window(lobbyWindowTexture));
+        dialog.setBackground(window(deckWindowTexture));
         VisLabel confirmLabel = new VisLabel(t("leave_room_confirm"));
         confirmLabel.setFontScale(1f);
         confirmLabel.setWrap(true);
         confirmLabel.setAlignment(Align.center);
+        confirmLabel.setColor(TEXT_DARK);
         dialog.getContentTable().add(confirmLabel)
             .width(EXIT_DIALOG_TEXT_WIDTH)
             .padTop(82f)
@@ -328,8 +401,9 @@ public class LobbyScreen extends BaseScreen {
         dialog.getButtonTable().add(backButton).size(150f, COMMON_BUTTON_HEIGHT);
         dialog.getButtonTable().add(cancelButton).size(150f, COMMON_BUTTON_HEIGHT);
         dialog.show(stage);
-        float dialogWidth = lobbyWindowTexture.getWidth() * EXIT_DIALOG_SCALE;
-        float dialogHeight = lobbyWindowTexture.getHeight() * EXIT_DIALOG_SCALE;
+        openDialogs.add(dialog);
+        float dialogWidth = 500f;
+        float dialogHeight = 300f;
         dialog.setSize(dialogWidth, dialogHeight);
         dialog.setPosition(
             (stage.getWidth() - dialogWidth) * 0.5f,
@@ -393,9 +467,24 @@ public class LobbyScreen extends BaseScreen {
         stage.getBatch().setColor(Color.WHITE);
     }
 
+    private void recenterOpenDialogs() {
+        for (int i = openDialogs.size - 1; i >= 0; i--) {
+            Dialog d = openDialogs.get(i);
+            if (d.getStage() != stage) {
+                openDialogs.removeIndex(i); // диалог закрыт
+            } else {
+                d.setPosition(
+                    (stage.getWidth() - d.getWidth()) * 0.5f,
+                    (stage.getHeight() - d.getHeight()) * 0.5f
+                );
+            }
+        }
+    }
+
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        recenterOpenDialogs();
     }
 
     private Drawable panel(Color color) {
@@ -408,7 +497,7 @@ public class LobbyScreen extends BaseScreen {
 
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
-        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
 
@@ -449,6 +538,10 @@ public class LobbyScreen extends BaseScreen {
             case "selected_deck" -> ru ? "Колода" : "DECK";
             case "default_deck" -> ru ? "Стандартная" : "Default";
             case "cancel" -> ru ? "Отмена" : "Cancel";
+            case "invite_friends" -> ru ? "Пригласить друзей" : "Invite friends";
+            case "roles" -> ru ? "Роли" : "Roles";
+            case "on" -> ru ? "ВКЛ" : "ON";
+            case "off" -> ru ? "ВЫКЛ" : "OFF";
             default -> key;
         };
     }
@@ -464,6 +557,10 @@ public class LobbyScreen extends BaseScreen {
         cancelButtonTexture.dispose();
         lobbyWindowTexture.dispose();
         gameOverlayWindowTexture.dispose();
+        if (inviteFriendsTexture != null) inviteFriendsTexture.dispose();
+        if (rolesOnTexture != null) rolesOnTexture.dispose();
+        if (rolesOffTexture != null) rolesOffTexture.dispose();
+        if (selectTexture != null) selectTexture.dispose();
         //if (chatWidget != null) {
         //    chatWidget.dispose();
         //}

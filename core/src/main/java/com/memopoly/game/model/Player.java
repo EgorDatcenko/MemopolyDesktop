@@ -19,6 +19,11 @@ public class Player {
     public boolean skipNextRentCollection;
     public boolean inJail;
     public int jailTurns;
+    public int successfulTrades = 0;
+    public int battleWins = 0;
+    public long steamId;
+    public int shields = 1;
+    public java.util.Set<Integer> tradedWith = new java.util.HashSet<>();
 
     public Player(){
         this.handMemes = new ArrayList<>();
@@ -37,6 +42,7 @@ public class Player {
         this.skipNextRentCollection = false;
         this.inJail = false;
         this.jailTurns = 0;
+        this.shields = 1;
     }
 
     public boolean canAfford(int amount){

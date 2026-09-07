@@ -1,8 +1,6 @@
 package com.memopoly.game.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Главная модель состояния матча: содержит список игроков, фазу игры, состояние аукционов и мем-баттлов, лог событий и баланс банка мемов.
@@ -10,6 +8,7 @@ import java.util.HashMap;
 public class GameState {
     public HashMap<Integer, Integer> cellOwners;
     public HashMap<Integer, Boolean> cellMortgaged;
+    public boolean testMode = false;
     /** Number of branches built on each situation cell (0..4). */
     public HashMap<Integer, Integer> cellHouses;
     public enum GamePhase {
@@ -35,6 +34,8 @@ public class GameState {
         RESULTS
     }
     public ArrayList<Player> players;
+    public String roomCode;
+    public ArrayList<String> achievementEvents = new ArrayList<>();
     public int currentPlayerIndex;
     public GamePhase currentPhase;
     public int diceValue;
@@ -71,6 +72,16 @@ public class GameState {
 
     public int memeBankPlayerId = -1;
 
+    public boolean rolesEnabled = false;
+    public HashMap<Integer, String> playerRoles = new HashMap<>();
+    public HashMap<Integer, Boolean> roleUsedThisRound = new HashMap<>();
+    public Set<Integer> rerollUsedThisRound = new HashSet<>();
+    public boolean awaitingReroll = false;
+    public int rerollPlayerId = -1;
+    public int rerollOrigin = -1;
+    public boolean moderatorChoicePending = false;
+    public int moderatorPlayerId = -1;
+
     // Trade fields
     public int tradeId = 0;                    // 0 = нет активной сделки
     public int tradeProposerId = -1;           // ID инициатора сделки
@@ -85,6 +96,7 @@ public class GameState {
         this.cellMortgaged = new HashMap<>();
         this.cellHouses = new HashMap<>();
         this.players = new ArrayList<>();
+        this.achievementEvents = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;
         this.diceValue = 0;
@@ -95,7 +107,7 @@ public class GameState {
         this.turnCount = 0;
         this.selectedDeckName = null;
         this.memeDeckDrawPile = new ArrayList<>();
-
+        this.roomCode = null;
         this.isInBattle = false;
         this.battleMemes = new ArrayList<>();
         this.battleParticipants = new ArrayList<>();
@@ -117,9 +129,15 @@ public class GameState {
     }
 
     public void nextPlayer() {
+        int oldIndex = currentPlayerIndex;
+        boolean wrapped = false;
         int checkedPlayers = 0;
         do {
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+            int next = (currentPlayerIndex + 1) % players.size();
+            if (next <= oldIndex) {
+                wrapped = true; // перешли через конец списка — круг замкнулся
+            }
+            currentPlayerIndex = next;
             Player candidate = players.get(currentPlayerIndex);
             if (!candidate.isBankrupt && candidate.skipNextTurn) {
                 candidate.skipNextTurn = false;
@@ -132,6 +150,17 @@ public class GameState {
             }
             checkedPlayers++;
         } while (checkedPlayers <= players.size());
+
+        // Сброс «переброса» в игре при обходе круга
+        if (wrapped) {
+            rerollUsedThisRound.clear();
+        }
+
+        awaitingReroll = false;
+        rerollPlayerId = -1;
+        rerollOrigin = -1;
+        moderatorChoicePending = false;
+        moderatorPlayerId = -1;
 
         turnCount++;
         diceValue = 0;
@@ -161,6 +190,13 @@ public class GameState {
             if (p.id == id) return p;
         }
         return null;
+    }
+
+    public void recordAchievement(int playerId, String achievementId) {
+        String event = playerId + "|" + achievementId;
+        if (!achievementEvents.contains(event)) {
+            achievementEvents.add(event);
+        }
     }
 
     public boolean isGameOver() {

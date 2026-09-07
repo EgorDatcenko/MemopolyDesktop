@@ -8,9 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -22,14 +20,14 @@ import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.utils.Array;
 /**
  * Экран настроек: содержит регуляторы громкости музыки/эффектов и переключатель полноэкранного режима.
  */
 public class SettingsScreen extends BaseScreen {
-    private static final float COMMON_BUTTON_HEIGHT = 110f;
-    private static final float SETTINGS_WINDOW_SCALE = 1f;
+    private static final float SETTINGS_WINDOW_WIDTH = 900f;   // окно больше не зависит от пиксельного размера текстуры
+    private static final float SETTINGS_WINDOW_HEIGHT = 620f;
+    private static final Color TEXT_DARK = Color.valueOf("000A3E");
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final Color TITLE_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
@@ -83,29 +81,31 @@ public class SettingsScreen extends BaseScreen {
         Table panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
         panel.pad(35f, 35f, 26f, 30f);
-        panel.top().left();
+        panel.top();
         panel.defaults().left().padBottom(16f);
 
         VisLabel titleLabel = new VisLabel(t("settings"));
-        titleLabel.setFontScale(1.8f);
-        titleLabel.setColor(Color.WHITE);
+        titleLabel.setFontScale(1.6f);
+        titleLabel.setColor(TEXT_DARK);
 
         VisLabel musicLabel = new VisLabel(t("music"));
         VisLabel sfxLabel = new VisLabel(t("effects"));
-        musicValueLabel.setColor(Color.WHITE);
-        sfxValueLabel.setColor(Color.WHITE);
-        statusLabel.setColor(new Color(0.94f, 0.91f, 0.76f, 1f));
+        musicLabel.setColor(TEXT_DARK);
+        sfxLabel.setColor(TEXT_DARK);
+        musicValueLabel.setColor(TEXT_DARK);
+        sfxValueLabel.setColor(TEXT_DARK);
+        statusLabel.setColor(new Color(TEXT_DARK.r, TEXT_DARK.g, TEXT_DARK.b, 0.7f));
 
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-        updateValueLabels();
+                updateValueLabels();
             }
         });
         sfxSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-        updateValueLabels();
+                updateValueLabels();
             }
         });
 
@@ -125,32 +125,33 @@ public class SettingsScreen extends BaseScreen {
             }
         });
 
+        // заголовок строго по центру, кнопка назад — в правом верхнем углу (зеркальные спейсеры)
         Table titleRow = new Table();
-        titleRow.add(titleLabel).left();
-        titleRow.add().expandX();
-        titleRow.add(backButton).width(90f).height(80f).padRight(25f).right();
+        titleRow.add().size(55f).padLeft(30f);
+        titleRow.add(titleLabel).expandX();
+        titleRow.add(backButton).size(55f, 55f).padRight(30f);
+        panel.add(titleRow).growX().padBottom(24f).row();
 
-        panel.add(titleRow).padLeft(300f).growX().row();
         Table musicRow = new Table();
         musicRow.add(musicLabel).width(180f).left().padRight(14f);
-        musicRow.add(musicSlider).width(320f).padRight(14f);
-        musicRow.add(musicValueLabel).width(70f).left();
+        musicRow.add(musicSlider).width(420f).padRight(14f);
+        musicRow.add(musicValueLabel).width(80f).left();
         panel.add(musicRow).row();
 
         Table sfxRow = new Table();
         sfxRow.add(sfxLabel).width(180f).left().padRight(14f);
-        sfxRow.add(sfxSlider).width(320f).padRight(14f);
-        sfxRow.add(sfxValueLabel).width(70f).left();
+        sfxRow.add(sfxSlider).width(420f).padRight(14f);
+        sfxRow.add(sfxValueLabel).width(80f).left();
         panel.add(sfxRow).row();
 
         panel.add(fullscreenCheckBox).left().row();
-        panel.add(statusLabel).width(520f).left().padTop(4f).row();
+        panel.add(statusLabel).width(620f).left().padTop(4f).row();
 
         Table buttonRow = new Table();
-        buttonRow.add(applyButton).width(220f).height(COMMON_BUTTON_HEIGHT).padRight(14f);
+        buttonRow.add(applyButton).width(190f).height(80f).padRight(14f);
         panel.add(buttonRow).left().padTop(8f);
 
-        root.add(panel).size(lobbyWindowTexture.getWidth() * SETTINGS_WINDOW_SCALE, lobbyWindowTexture.getHeight() * SETTINGS_WINDOW_SCALE).expand().center();
+        root.add(panel).size(SETTINGS_WINDOW_WIDTH, SETTINGS_WINDOW_HEIGHT).center();
         stage.addActor(root);
     }
 
@@ -197,7 +198,7 @@ public class SettingsScreen extends BaseScreen {
 
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
-        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
 
@@ -234,13 +235,22 @@ public class SettingsScreen extends BaseScreen {
         CheckBox.CheckBoxStyle style = new CheckBox.CheckBoxStyle(VisUI.getSkin().get(CheckBox.CheckBoxStyle.class));
         TextureRegionDrawable off = styleDrawable("screen_ui/checkboxOff.png");
         TextureRegionDrawable on = styleDrawable("screen_ui/checkboxOn.png");
+
+        float boxSize = 40f; // размер квадрата
+
         if (off != null) {
+            off.setMinWidth(boxSize);
+            off.setMinHeight(boxSize);
             style.checkboxOff = off;
         }
         if (on != null) {
+            on.setMinWidth(boxSize);
+            on.setMinHeight(boxSize);
             style.checkboxOn = on;
-            style.checkboxOnOver = on;
         }
+
+        style.font = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
+        style.fontColor = TEXT_DARK;
         return style;
     }
 

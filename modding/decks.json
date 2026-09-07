@@ -1,28 +1,6 @@
 {
 decks: [
 	{
-		name: ЯЧ
-		memes: [
-			{
-				id: 1965262187
-				imageUrl: modding/decks/__3722/meme_0.png
-				description: ""
-				deckName: ЯЧ
-			}
-		]
-	}
-	{
-		name: asd
-		memes: [
-			{
-				id: 356536043
-				imageUrl: modding/decks/asd_4696/meme_0.png
-				description: ""
-				deckName: asd
-			}
-		]
-	}
-	{
 		name: BASE
 		memes: [
 			{
@@ -918,6 +896,53 @@ decks: [
 				imageUrl: modding/decks/BASE_4179/meme_148.jpg
 				description: ""
 				deckName: BASE
+			}
+		]
+	}
+	{
+		name: Deeep
+		memes: [
+			{
+				id: 1044372322
+				imageUrl: modding/decks/Deeep_1954/meme_0.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 2071001677
+				imageUrl: modding/decks/Deeep_1954/meme_1.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 51784738
+				imageUrl: modding/decks/Deeep_1954/meme_2.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 1809841533
+				imageUrl: modding/decks/Deeep_1954/meme_3.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 15576251
+				imageUrl: modding/decks/Deeep_1954/meme_4.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 247074396
+				imageUrl: modding/decks/Deeep_1954/meme_5.png
+				description: ""
+				deckName: Deeep
+			}
+			{
+				id: 449824268
+				imageUrl: modding/decks/Deeep_1954/meme_6.png
+				description: ""
+				deckName: Deeep
 			}
 		]
 	}

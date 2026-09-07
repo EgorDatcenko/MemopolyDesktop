@@ -1,125 +1,107 @@
 package com.memopoly.utils;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
- * Генератор кодов комнат: кодирует IP-адрес сервера в буквенный код и декодирует его обратно с проверкой контрольной суммы.
+ * Генератор кодов комнат через Cloudflare Worker:
+ * - Хост: POST {ip, port} → получает короткий код (например "X7K9PQ")
+ * - Гость: GET /room/:code → получает {ip, port}
  */
 public class RoomCodeGenerator {
+    private static final String WORKER_URL = "https://memopoly.egordatcenko7.workers.dev";
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build();
 
-    private static final String[] FIXED_WORDS = {
-        "PEPE", "BIGBOB", "GLIST", "SKIBIDI", "CHUPEP", "SKEBOB"
-    };
-
-    public static String encodeIP(String ip) {
-        String[] parts = ip.split("\\.");
-        StringBuilder code = new StringBuilder();
-
-        for (int i = 0; i < Math.min(parts.length, 4); i++) {
-            try {
-                int number = Integer.parseInt(parts[i]);
-                String base36 = Integer.toString(number, 36).toUpperCase();
-                String word = FIXED_WORDS[i % FIXED_WORDS.length];
-
-                code.append(base36).append("_").append(word);
-
-                if (i < 3) code.append("-");
-            } catch (NumberFormatException e) {
-                code.append("0_RED-");
-            }
-        }
-
-        code.append("-").append(generateSimpleChecksum(ip));
-        return code.toString();
-    }
-
-    public static String decodeRoomCode(String roomCode) {
+    /**
+     * Создаёт комнату: отправляет IP+порт на Worker, получает короткий код.
+     * @param ip IP-адрес хоста
+     * @param port порт сервера
+     * @return короткий код комнаты (например "X7K9PQ") или null при ошибке
+     */
+    public static String createRoomCode(String ip, int port) {
         try {
-            String[] parts = roomCode.split("-");
+            String json = String.format("{\"ip\":\"%s\",\"port\":%d}", ip, port);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(WORKER_URL + "/room"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .timeout(Duration.ofSeconds(10))
+                .build();
 
-            if (parts.length < 4) {
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                AppLog.warn("RoomCode", "Worker вернул статус " + response.statusCode() + ": " + response.body());
                 return null;
             }
 
-            StringBuilder ip = new StringBuilder();
-
-            for (int i = 0; i < 4; i++) {
-                String part = parts[i];
-
-                String[] numberAndWord = part.split("_");
-
-                if (numberAndWord.length < 2) {
-                    return null;
-                }
-
-                try {
-                    String base36Str = numberAndWord[0];
-                    int number = Integer.parseInt(base36Str, 36);
-
-                    if (number < 0 || number > 255) {
-                        return null;
-                    }
-
-                    ip.append(number);
-                    if (i < 3) ip.append(".");
-                } catch (NumberFormatException e) {
-                    return null;
-                }
+            String body = response.body();
+            Matcher matcher = Pattern.compile("\"code\":\"([^\"]+)\"").matcher(body);
+            if (matcher.find()) {
+                String code = matcher.group(1);
+                AppLog.info("RoomCode", "Создан код комнаты: " + code + " для " + ip + ":" + port);
+                return code;
+            } else {
+                AppLog.warn("RoomCode", "Не удалось извлечь код из ответа: " + body);
+                return null;
             }
-
-            if (parts.length > 4) {
-                String providedChecksum = parts[4];
-                String calculatedChecksum = generateSimpleChecksum(ip.toString());
-
-                if (!providedChecksum.equals(calculatedChecksum)) {
-                    AppLog.warn("RoomCode", "Неверная контрольная сумма!");
-                    AppLog.warn("RoomCode", "IP: " + ip);
-                    AppLog.warn("RoomCode", "Ожидалось: " + calculatedChecksum + ", получено: " + providedChecksum);
-                    return null;
-                }
-            }
-
-            return ip.toString();
-
         } catch (Exception e) {
-            AppLog.warn("RoomCode", "Ошибка декодирования: " + e.getMessage());
+            AppLog.warn("RoomCode", "Ошибка создания кода: " + e.getMessage());
             return null;
         }
     }
 
-    private static String generateSimpleChecksum(String ip) {
-        int sum = 0;
-        String[] parts = ip.split("\\.");
+    /**
+     * Расшифровывает код комнаты: запрашивает IP+порт у Worker.
+     * @param code короткий код комнаты
+     * @return RoomInfo с IP и портом или null при ошибке/истечении срока
+     */
+    public static RoomInfo decodeRoomCode(String code) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(WORKER_URL + "/room/" + code))
+                .GET()
+                .timeout(Duration.ofSeconds(10))
+                .build();
 
-        for (int i = 0; i < parts.length; i++) {
-            try {
-                int number = Integer.parseInt(parts[i]);
-                sum += number * (i + 1);
-            } catch (NumberFormatException e) {
-                sum += 127 * (i + 1);
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                AppLog.warn("RoomCode", "Worker вернул статус " + response.statusCode() + " для кода " + code);
+                return null;
             }
+
+            String body = response.body();
+            Matcher ipMatcher = Pattern.compile("\"ip\":\"([^\"]+)\"").matcher(body);
+            Matcher portMatcher = Pattern.compile("\"port\":(\\d+)").matcher(body);
+
+            if (ipMatcher.find() && portMatcher.find()) {
+                String ip = ipMatcher.group(1);
+                int port = Integer.parseInt(portMatcher.group(1));
+                AppLog.info("RoomCode", "Расшифрован код " + code + " → " + ip + ":" + port);
+                return new RoomInfo(ip, port);
+            } else {
+                AppLog.warn("RoomCode", "Не удалось извлечь IP/port из ответа: " + body);
+                return null;
+            }
+        } catch (Exception e) {
+            AppLog.warn("RoomCode", "Ошибка расшифровки кода " + code + ": " + e.getMessage());
+            return null;
         }
-
-        return Integer.toString(sum % 10000);
     }
 
-    public static void main(String[] args) {
-        String ip = "251.168.1.101";
-        String code = encodeIP(ip);
-        String decoded = decodeRoomCode(code);
+    public static class RoomInfo {
+        public final String ip;
+        public final int port;
 
-        AppLog.info("RoomCode", "IP: " + ip);
-        AppLog.info("RoomCode", "Code: " + code);
-        AppLog.info("RoomCode", "Decoded: " + decoded);
-        AppLog.info("RoomCode", "Correct: " + ip.equals(decoded));
-
-        AppLog.info("RoomCode", "Дополнительные тесты:");
-        testIP("127.0.0.1");
-        testIP("10.0.0.1");
-        testIP("255.255.255.255");
-    }
-
-    private static void testIP(String ip) {
-        String code = encodeIP(ip);
-        String decoded = decodeRoomCode(code);
-        AppLog.info("RoomCode", ip + " -> " + code + " -> " + decoded + " [" + ip.equals(decoded) + "]");
+        public RoomInfo(String ip, int port) {
+            this.ip = ip;
+            this.port = port;
+        }
     }
 }

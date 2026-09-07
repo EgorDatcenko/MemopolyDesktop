@@ -2,6 +2,7 @@ package com.memopoly.network.handlers;
 
 import com.esotericsoftware.kryonet.Connection;
 import com.memopoly.game.model.BoardCell;
+import com.memopoly.game.model.BoardData;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
 import com.memopoly.network.guards.PhaseGuard;
@@ -58,7 +59,41 @@ public class BuyCellActionHandler implements GameActionHandler {
         current.ownedCells.add(currentCell.id);
         gameState.showNotification(current.name + " купил " + currentCell.name);
         gameState.lastActionLog = current.name + " купил " + currentCell.name;
+        gameState.recordAchievement(current.id, "FIRST_BUY");
+        if (current.ownedCells.size() >= 10) {
+            gameState.recordAchievement(current.id, "LANDLORD");
+        }
+        for (String group : com.memopoly.utils.MonopolyUtils.getOwnedGroups(current, board)) {
+            BoardCell.Group groupEnum = BoardCell.Group.valueOf(group);
+            if (com.memopoly.utils.MonopolyUtils.hasFullGroup(current, groupEnum, board)) {
+                gameState.recordAchievement(current.id, "MONOPOLIST");
+                break;
+            }
+        }
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         return true;
     }
+
+    private java.util.Set<String> getOwnedGroups(Player player) {
+        java.util.Set<String> groups = new java.util.HashSet<>();
+        for (int cellId : player.ownedCells) {
+            BoardCell cell = board.get(cellId);
+            if (cell.group != null) {
+                groups.add(cell.group.name());
+            }
+        }
+        return groups;
+    }
+
+    private boolean hasFullGroup(Player player, String groupName) {
+        BoardCell.Group group = BoardCell.Group.valueOf(groupName);
+        List<BoardCell> groupCells = BoardData.getCellsInGroup(board, group);
+        for (BoardCell cell : groupCells) {
+            if (!player.ownedCells.contains(cell.id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
