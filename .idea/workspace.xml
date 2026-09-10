@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c35c257a-0c16-4ff2-b048-518b368ced5f" name="Changes" comment="Textures">
+      <change beforePath="$PROJECT_DIR$/assets/game_overlay_window.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/game_overlay_window.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/notification_window.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/notification_window.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" afterPath="$PROJECT_DIR$/build/reports/problems/problems-report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Memopoly.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Memopoly.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/BoardRenderer.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/BoardRenderer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/game/model/GameState.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/game/model/GameState.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Memopoly.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Memopoly.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/BoardRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/BoardRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/ChatWidget.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/ChatWidget.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/GameScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/GameScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/LobbyScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/LobbyScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/MainMenuScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/MainMenuScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/game/model/GameState.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/game/model/GameState.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/GameServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/GameServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamAvatarCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamAvatarCache.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiFonts.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiFonts.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiShapes.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiShapes.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modding/decks.json" beforeDir="false" afterPath="$PROJECT_DIR$/modding/decks.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="DevelopGames" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;EgorDatcenko&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/EgorDatcenko/MemopolyDesktop.git&quot;,
+    &quot;accountId&quot;: &quot;827982f1-7563-4e44-91ed-91de7a869b8d&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="3J5zvGo3h2w29GujxU6COQl1RQE" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.DesktopLauncher.executor": "Run",
+    "Gradle.DevelopGames.executor": "Run",
+    "Gradle.DevelopGames:lwjgl3 [:lwjgl3:com.memopoly.lwjgl3.DesktopLauncher.main()].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "#24 on dev",
+    "kotlin-language-version-configured": "true",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c35c257a-0c16-4ff2-b048-518b368ced5f" name="Changes" comment="" />
+      <created>1788965958759</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1788965958759</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Textures" />
+    <option name="LAST_COMMIT_MESSAGE" value="Textures" />
+  </component>
+</project>
