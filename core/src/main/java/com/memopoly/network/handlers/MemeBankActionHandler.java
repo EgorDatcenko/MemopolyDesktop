@@ -8,6 +8,9 @@ import com.memopoly.network.packets.GameActionRequest;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
+/**
+ * Обработчик операций с банком мемов: обрабатывает взносы, снятие средств и обновление баланса игрока на клетке банка.
+ */
 public class MemeBankActionHandler implements GameActionHandler {
     private final GameState gameState;
     private final IntPredicate canUseMemeBank;

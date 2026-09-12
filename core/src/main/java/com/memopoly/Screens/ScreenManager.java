@@ -5,6 +5,9 @@ import com.memopoly.Memopoly;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+/**
+ * Менеджер экранов: реализует стековое управление и плавные переходы между игровыми экранами.
+ */
 public class ScreenManager {
 
     public final Memopoly game;

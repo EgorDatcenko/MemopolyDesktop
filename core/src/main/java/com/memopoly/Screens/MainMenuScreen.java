@@ -11,9 +11,11 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -22,23 +24,35 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
-import com.kotcrab.vis.ui.widget.file.FileChooser;
-import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.badlogic.gdx.utils.Array;
-import com.memopoly.utils.LanguageManager;
+import com.memopoly.steam.SteamManager;
+import com.memopoly.utils.*;
 import com.memopoly.Memopoly;
 import com.memopoly.modding.DeckRepository;
 import com.memopoly.game.model.MemeDeck;
-import com.memopoly.utils.ClipboardUtils;
-import com.memopoly.utils.RoomCodeGenerator;
-import com.memopoly.utils.TexturePathResolver;
 import com.memopoly.utils.LanguageManager.Language;
-import com.memopoly.utils.AppLog;
 
+import java.io.File;
+
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+/**
+ * Экран главного меню: предоставляет кнопки для создания игры, подключения по
+ * коду, настроек и выхода.
+ */
 public class MainMenuScreen extends BaseScreen {
-    private static final float BUTTON_HEIGHT_MENU = 72f;
-    private static final float BUTTON_HEIGHT_WINDOW_RU = 42f;
-    private static final float BUTTON_HEIGHT_WINDOW_EN = 72f;
+    private static final float DIALOG_BASE_WIDTH = 1000f;
+    private static final float MENU_DIALOG_HEIGHT_SCALE = 0.8f;
+    private static final float BUTTON_HEIGHT_MENU = 105f;
+    private static final float BUTTON_HEIGHT_WINDOW_RU = 144f;
+    private static final float BUTTON_HEIGHT_WINDOW_EN = 144f;
+    private static final float CREATE_DECK_INPUT_HEIGHT = 32f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_WIDTH = 232f;
+    private static final float CREATE_DECK_TEXTURE_BUTTON_HEIGHT = 52f;
+    private static final float CREATE_DECK_ACTION_BUTTON_WIDTH = 128f;
+    private static final float CREATE_DECK_ACTION_BUTTON_HEIGHT = 36f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CREATE_BUTTON_TEXTURE_PATH = "create_game_btn.png";
@@ -52,9 +66,12 @@ public class MainMenuScreen extends BaseScreen {
     private static final String COPY_CODE_BUTTON_TEXTURE_PATH = "copy_the_code_btn.png";
     private static final String CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH = "change_language_btn.png";
     private static final String LOBBY_WINDOW_TEXTURE_PATH = "lobby_window.png";
+    private static final String CARD_BOARD_TEXTURE_PATH = "card_board.png";
     private static final String INPUT_TEXTURE_PATH = "input.png";
-    private static final float MENU_DIALOG_SCALE = 0.5f;
+    private static final float MENU_DIALOG_SCALE = 0.7f;
     private static final String CREATE_DECK_BUTTON_TEXTURE_PATH = "create_deck_btn.png";
+    private static final String LOAD_IMAGES_BUTTON_TEXTURE_PATH = "load_images_btn.png";
+    private static final String SAVE_BUTTON_TEXTURE_PATH = "save_btn.png";
     private static final String BACK_BUTTON_TEXTURE_PATH = "back_btn.png";
     private static final String ENGLISH_BUTTON_TEXTURE_PATH = "english.png";
     private static final String RUSSIAN_BUTTON_TEXTURE_PATH = "russian.png";
@@ -74,13 +91,20 @@ public class MainMenuScreen extends BaseScreen {
     private final Texture lobbyWindowTexture;
     private final Texture inputTexture;
     private final Texture createDeckButtonTexture;
+    private final Texture loadImagesButtonTexture;
+    private final Texture saveButtonTexture;
     private final Texture closeDialogButtonTexture;
     private final Texture englishButtonTexture;
     private final Texture russianButtonTexture;
     private BitmapFont inputFieldFont;
+    private BitmapFont inputPlaceholderFont;
     private final Language language;
     private boolean roomCodeShown;
+    private final Texture cardBoardTexture;
     private final DeckRepository deckRepository = new DeckRepository();
+    private final Array<Dialog> openDialogs = new Array<>();
+
+    private boolean connectInProgress = false;
 
     public MainMenuScreen(Memopoly game) {
         super(game);
@@ -88,24 +112,43 @@ public class MainMenuScreen extends BaseScreen {
         language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         createButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CREATE_BUTTON_TEXTURE_PATH, language));
-        connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
-        settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
+        connectButtonTexture = loadTexture(
+                TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
+        settingsButtonTexture = loadTexture(
+                TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
-        Language oppositeLanguage = language == Language.RU ? Language.EN : Language.RU;
-        decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
-        createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
-        connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
-        cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
-        copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
+        decksButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
+        createDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
+        connectDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
+        cancelButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        copyCodeButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
-        createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
-        closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
-        englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
-        russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
+        createDeckButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
+        loadImagesButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveScreenTexture(LOAD_IMAGES_BUTTON_TEXTURE_PATH, language));
+        saveButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveScreenTexture(SAVE_BUTTON_TEXTURE_PATH, language));
+        closeDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        englishButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
+        russianButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
+        cardBoardTexture = loadTexture(CARD_BOARD_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
 
+        if (inputFieldFont == null) {
+            inputFieldFont = loadInputFont();
+        }
+        Gdx.input.setInputProcessor(stage);
         createUI();
     }
 
@@ -117,7 +160,11 @@ public class MainMenuScreen extends BaseScreen {
         createButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                showStartGameDialog();
+                try {
+                    game.startAsHost();
+                } catch (RuntimeException e) {
+                    showErrorDialog(t("create_room_failed"), e.getMessage());
+                }
             }
         });
 
@@ -145,23 +192,22 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         Actor decksButton = createDecksButton();
+        Actor languageButton = createLanguageButton();
 
         Table buttonStack = new Table();
-        buttonStack.defaults().left().padBottom(18f);
-        buttonStack.add(createButton).size(270f, BUTTON_HEIGHT_MENU).row();
-        buttonStack.add(joinButton).size(270f, BUTTON_HEIGHT_MENU).row();
-        buttonStack.add(decksButton).size(270f, BUTTON_HEIGHT_MENU).row();
-        buttonStack.add(settingsButton).size(270f, BUTTON_HEIGHT_MENU).row();
-        buttonStack.add(exitButton).size(270f, BUTTON_HEIGHT_MENU);
+        buttonStack.defaults().left().padBottom(2f);
+        buttonStack.add(createButton).size(240f, BUTTON_HEIGHT_MENU).row();
+        buttonStack.add(joinButton).size(240f, BUTTON_HEIGHT_MENU).padTop(15f).row();
+        buttonStack.add(decksButton).size(240f, BUTTON_HEIGHT_MENU).padTop(15f).row();
+        buttonStack.add(settingsButton).size(240f, BUTTON_HEIGHT_MENU).padTop(15f).row();
+        Table bottomRow = new Table();
+        bottomRow.add(languageButton).size(105f, 105f);
+        bottomRow.add().expandX();
+        bottomRow.add(exitButton).size(105f, 105f);
+        buttonStack.add(bottomRow).width(240f).padTop(15f).row();
 
-        root.add(buttonStack).expand().center().padTop(120f);
+        root.add(buttonStack).expandX().center().padTop(180f);
         stage.addActor(root);
-
-        Table languageAnchor = new Table();
-        languageAnchor.setFillParent(true);
-        Actor languageButton = createLanguageButton();
-        languageAnchor.add(languageButton).size(80f, 80f).expand().left().bottom().padLeft(20f).padBottom(20f);
-        stage.addActor(languageAnchor);
     }
 
     private Actor createDecksButton() {
@@ -177,6 +223,7 @@ public class MainMenuScreen extends BaseScreen {
         }
 
         VisTextButton button = new VisTextButton(t("decks"));
+        button.getLabel().setColor(Color.valueOf("000A3E"));
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -208,26 +255,46 @@ public class MainMenuScreen extends BaseScreen {
                 super.hide();
             }
         };
-        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
+        applyDialogTexture(dialog, lobbyWindowTexture, 940f, 640f); // явный размер — CREATE больше не обрезается
+
+        VisLabel title = new VisLabel(t("decks"));
+        title.setFontScale(1.5f);
+        title.setColor(Color.valueOf("000A3E"));
+        ImageButton closeButton = createImageButton(cancelButtonTexture);
+        closeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        Table titleRow = new Table();
+        titleRow.add().size(55f).padLeft(30f); // зеркало правой стороны — заголовок по центру
+        titleRow.add(title).expandX();
+        titleRow.add(closeButton).size(55f, 55f).padRight(30f);
+        dialog.getContentTable().top();
+        dialog.getContentTable().add(titleRow).growX().padTop(24f).padBottom(12f).row();
+
         Table decksTable = new Table();
         Array<MemeDeck> decks = deckRepository.loadDecks();
         if (decks.isEmpty()) {
-            decksTable.add(new VisLabel(t("no_decks"))).left().pad(8f);
+            VisLabel noDecks = new VisLabel(t("no_decks"));
+            noDecks.setColor(Color.valueOf("000A3E"));
+            decksTable.add(noDecks).center().pad(30f);
         } else {
+            int index = 0;
             for (MemeDeck deck : decks) {
-                Table row = new Table();
-                String previewPath = deck.getPreviewImagePath();
-                FileHandle previewFile = resolveDeckImage(previewPath);
-                if (previewFile != null && previewFile.exists()) {
-                    Texture previewTexture = new Texture(previewFile);
-                    previewTextures.add(previewTexture);
-                    row.add(new Image(previewTexture)).size(56f, 56f).padRight(10f);
+                decksTable.add(createDeckCard(deck, previewTextures, dialog)).width(200f).pad(12f);
+                if (++index % 4 == 0) {
+                    decksTable.row();
                 }
-                row.add(new VisLabel(deck.name == null ? t("unnamed") : deck.name)).left();
-                decksTable.add(row).left().padBottom(8f).row();
             }
         }
-        dialog.getContentTable().add(decksTable).left().pad(10f).row();
+        ScrollPane decksScroll = new ScrollPane(decksTable, VisUI.getSkin());
+        decksScroll.setFadeScrollBars(false);
+        decksScroll.setScrollingDisabled(true, false);
+        UiScrollStyle.apply(decksScroll, language);
+        dialog.getContentTable().add(decksScroll).width(860f).height(400f).center().row();
+
         ImageButton createDeck = createImageButton(createDeckButtonTexture);
         createDeck.addListener(new ChangeListener() {
             @Override
@@ -236,17 +303,53 @@ public class MainMenuScreen extends BaseScreen {
                 showCreateDeckDialog();
             }
         });
-        dialog.getButtonTable().add(createDeck).size(220f, 64f).pad(8f);
-        ImageButton closeButton = createImageButton(closeDialogButtonTexture);
-        closeButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                dialog.hide();
-            }
-        });
-        dialog.getButtonTable().add(closeButton).size(220f, 64f).pad(8f);
-        dialog.getButtonTable().padBottom(20f);
+        dialog.getContentTable().add(createDeck).size(220f, 90f).padTop(8f).padBottom(20f);
+
         showDialog(dialog);
+    }
+
+    private Table createDeckCard(MemeDeck deck, Array<Texture> previewTextures, Dialog dialog) {
+        Table card = new Table();
+
+        Table frame = new Table();
+        frame.pad(8f);
+        FileHandle previewFile = resolveDeckImage(deck.getPreviewImagePath());
+        if (previewFile != null && previewFile.exists()) {
+            Texture previewTexture = new Texture(previewFile);
+            previewTextures.add(previewTexture);
+            Image image = new Image(previewTexture);
+            image.setScaling(Scaling.fit);
+            frame.add(image).expand().fill();
+        }
+
+        // Превью + кнопка удаления в правом верхнем углу
+        Stack previewStack = new Stack();
+        previewStack.add(frame);
+
+        boolean isRegular = deck.name != null && deck.name.equalsIgnoreCase("REGULAR");
+        if (!isRegular) {
+            ImageButton deleteButton = createImageButton(cancelButtonTexture);
+            deleteButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    deckRepository.deleteDeck(deck.name);
+                    dialog.hide(); // задиспозит превью-текстуры через override hide()
+                    showDecksDialog(); // пересобрать список
+                }
+            });
+            Table deleteOverlay = new Table();
+            deleteOverlay.top().right().padRight(5f);
+            deleteOverlay.add(deleteButton).size(40f, 40f);
+            previewStack.add(deleteOverlay);
+        }
+        card.add(previewStack).width(200f).height(150f).row();
+
+        VisLabel nameLabel = new VisLabel(deck.name == null ? t("unnamed") : deck.name);
+        nameLabel.setWrap(true);
+        nameLabel.setAlignment(Align.center);
+        nameLabel.setColor(Color.valueOf("000A3E"));
+        card.add(nameLabel).width(200f).center().padTop(8f);
+        return card;
     }
 
     private FileHandle resolveDeckImage(String imagePath) {
@@ -262,171 +365,206 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showCreateDeckDialog() {
-        Dialog dialog = new Dialog("", VisUI.getSkin());
-        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
+        final Texture[] previewHolder = new Texture[1];
+        Dialog dialog = new Dialog("", VisUI.getSkin()) {
+            @Override
+            public void hide() {
+                if (previewHolder[0] != null) {
+                    previewHolder[0].dispose();
+                    previewHolder[0] = null;
+                }
+                super.hide();
+            }
+        };
+        applyDialogTexture(dialog, lobbyWindowTexture, 900f, 620f); // весь контент помещается
+
+        VisLabel title = new VisLabel(t("create_deck"));
+        title.setFontScale(1.5f);
+        title.setColor(Color.valueOf("000A3E"));
+        ImageButton closeButton = createImageButton(cancelButtonTexture);
+        closeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        Table titleRow = new Table();
+        titleRow.add().size(55f).padLeft(30f);
+        titleRow.add(title).expandX();
+        titleRow.add(closeButton).size(55f, 55f).padRight(30f);
+        dialog.getContentTable().top();
+        dialog.getContentTable().add(titleRow).growX().padTop(24f).padBottom(12f).row();
+
         VisTextField deckName = new VisTextField();
         deckName.setMessageText(t("deck_name"));
+        deckName.setMaxLength(7);
+        applyInputFieldStyle(deckName);
+
         Array<String> selectedFiles = new Array<>();
         VisLabel filesCount = new VisLabel(t("files_count") + ": 0");
-        VisTextButton uploadButton = new VisTextButton(t("upload_images"));
+        filesCount.setColor(Color.valueOf("000A3E"));
+
+        Table previewFrame = new Table();
+        previewFrame.setBackground(new TextureRegionDrawable(new TextureRegion(cardBoardTexture)));
+        previewFrame.pad(10f);
+        Runnable refreshPreview = () -> {
+            previewFrame.clearChildren();
+            if (previewHolder[0] != null) {
+                Image image = new Image(previewHolder[0]);
+                image.setScaling(Scaling.fit);
+                previewFrame.add(image).expand().fill();
+            } else {
+                VisLabel hint = new VisLabel(t("preview_hint"));
+                hint.setWrap(true);
+                hint.setAlignment(Align.center);
+                hint.setColor(Color.valueOf("000A3E"));
+                previewFrame.add(hint).width(200f).center().expand();
+            }
+        };
+        refreshPreview.run();
+
+        Table leftColumn = new Table();
+        Table nameRow = new Table();
+        VisLabel nameTitle = new VisLabel(t("name") + ":");
+        nameTitle.setColor(Color.valueOf("000A3E"));
+        nameRow.add(nameTitle).left().padRight(12f);
+        nameRow.add(deckName).width(240f).height(50f);
+        leftColumn.add(nameRow).left().padBottom(12f).row();
+        leftColumn.add(filesCount).left().row();
+
+        VisLabel formatHint = new VisLabel(t("format_hint"));
+        formatHint.setWrap(true);
+        formatHint.setFontScale(0.75f);
+        formatHint.setColor(Color.valueOf("000A3E"));
+        leftColumn.add(formatHint).width(280f).left().padTop(10f).row();
+
+        VisLabel errorLabel = new VisLabel("");
+        errorLabel.setColor(new Color(0.85f, 0.15f, 0.15f, 1f));
+        errorLabel.setFontScale(0.85f);
+        errorLabel.setAlignment(Align.center);
+
+        Table contentRow = new Table();
+        contentRow.add(leftColumn).expandX().left().top().padLeft(30f); // было 60f — слева больше не режет
+        contentRow.add(previewFrame).width(300f).height(225f).top().padRight(30f); // было 80f
+        dialog.getContentTable().add(contentRow).growX().padTop(6f).row();
+        dialog.getContentTable().add(errorLabel).center().padBottom(6f).row();
+
+        Actor uploadButton = createTexturedOrTextButton(loadImagesButtonTexture, t("upload_images"));
         uploadButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                FileChooser chooser = new FileChooser(FileChooser.Mode.OPEN);
-                chooser.setMultiSelectionEnabled(true);
-                chooser.setSelectionMode(FileChooser.SelectionMode.FILES);
-                chooser.setListener(new FileChooserListener() {
-                    @Override
-                    public void selected(Array<FileHandle> files) {
-                        selectedFiles.clear();
-
-                        for (FileHandle file : files) {
-                            selectedFiles.add(file.file().getAbsolutePath());
-                        }
-                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
-                    }
-                    @Override
-                    public void canceled() {}
-                });
-                stage.addActor(chooser.fadeIn());
+                openImageChooser(selectedFiles, filesCount, previewHolder, refreshPreview);
             }
         });
-        dialog.getContentTable().add(new VisLabel(t("name") + ":")).left().pad(8f).row();
-        dialog.getContentTable().add(deckName).width(280f).pad(8f).row();
-        dialog.getContentTable().add(uploadButton).width(280f).pad(8f).row();
-        dialog.getContentTable().add(filesCount).left().pad(8f).row();
-        VisTextButton saveButton = new VisTextButton(t("save"));
-        saveButton.addListener(new ChangeListener() {
+
+        ImageButton createButton = createImageButton(createDeckButtonTexture);
+        createButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 String name = deckName.getText().trim();
-                if (name.isEmpty() || selectedFiles.isEmpty()) {
+                if (name.isEmpty()) {
+                    errorLabel.setText(t("enter_deck_name"));
                     return;
                 }
+                if (selectedFiles.isEmpty()) {
+                    errorLabel.setText(t("no_images_selected"));
+                    return;
+                }
+                errorLabel.setText("");
                 deckRepository.createDeck(name, selectedFiles);
                 dialog.hide();
                 showDecksDialog();
             }
         });
-        dialog.getButtonTable().add(saveButton).width(150f).pad(8f);
-        dialog.button(t("cancel"), true);
-        dialog.getButtonTable().padBottom(20f);
+
+        Table bottomRow = new Table();
+        bottomRow.add(uploadButton).size(200f, 80f).padRight(30f);
+        bottomRow.add(createButton).size(200f, 80f);
+        dialog.getContentTable().add(bottomRow).center().padBottom(20f).row();
+
         showDialog(dialog);
     }
 
-    private void showStartGameDialog() {
-        VisTextField nameField = new VisTextField();
-        nameField.setMessageText(t("host_name"));
-        applyInputFieldStyle(nameField);
-
-        Dialog dialog = new Dialog("", VisUI.getSkin()) {
-            @Override
-            protected void result(Object object) {
-                if (!Boolean.TRUE.equals(object)) {
-                    return;
-                }
-
-                String playerName = nameField.getText().trim();
-                if (playerName.isEmpty()) {
-                    return;
-                }
-
+    private void openImageChooser(Array<String> selectedFiles, VisLabel filesCount, Texture[] previewHolder,
+            Runnable refreshPreview) {
+        try {
+            SwingUtilities.invokeLater(() -> {
                 try {
-                    game.startAsHost(playerName);
-                } catch (RuntimeException e) {
-                    showErrorDialog(t("create_room_failed"), e.getMessage());
-                }
-            }
-        };
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setMultiSelectionEnabled(true);
+                    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                    chooser.setDialogTitle(t("upload_images"));
+                    chooser.setFileFilter(new FileNameExtensionFilter(
+                            "Images (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
+                            "png", "jpg", "jpeg", "gif", "bmp", "webp"));
 
-        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        VisLabel title = new VisLabel(t("create_game"));
-        title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
-        title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(90f).padRight(250f).row();
-        dialog.getContentTable().add(new VisLabel(t("enter_room_name"))).left().padBottom(10f).padLeft(115f).row();
-        dialog.row();
-        dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f);
+                    if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
+                        return;
+                    }
 
-        dialog.getButtonTable().clearChildren();
-        dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
-        ImageButton createActionButton = createImageButton(createDialogButtonTexture);
-        createActionButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                String playerName = nameField.getText().trim();
-                if (playerName.isEmpty()) {
-                    return;
+                    File[] files = chooser.getSelectedFiles();
+                    Gdx.app.postRunnable(() -> {
+                        selectedFiles.clear();
+                        for (File file : files) {
+                            selectedFiles.add(file.getAbsolutePath());
+                        }
+                        filesCount.setText(t("files_count") + ": " + selectedFiles.size);
+
+                        if (previewHolder[0] != null) {
+                            previewHolder[0].dispose();
+                            previewHolder[0] = null;
+                        }
+                        if (!selectedFiles.isEmpty()) {
+                            FileHandle first = resolveDeckImage(selectedFiles.get(0));
+                            if (first != null && first.exists()) {
+                                previewHolder[0] = new Texture(first);
+                            }
+                        }
+                        refreshPreview.run();
+                    });
+                } catch (RuntimeException exception) {
+                    Gdx.app.postRunnable(() -> showErrorDialog(t("upload_images_failed"), exception.getMessage()));
                 }
-                try {
-                    game.startAsHost(playerName);
-                    dialog.hide();
-                } catch (RuntimeException e) {
-                    showErrorDialog(t("create_room_failed"), e.getMessage());
-                }
-            }
-        });
-        ImageButton cancelActionButton = createImageButton(cancelButtonTexture);
-        cancelActionButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                dialog.hide();
-            }
-        });
-        dialog.getButtonTable().add(createActionButton).size(176f, getButtonHeightWindow());
-        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow());
-        showDialog(dialog);
+            });
+        } catch (RuntimeException exception) {
+            showErrorDialog(t("upload_images_failed"), exception.getMessage());
+        }
     }
 
     private void showConnectDialog() {
-        VisTextField nameField = new VisTextField();
-        nameField.setMessageText(t("player_name"));
-        applyInputFieldStyle(nameField);
-
+        connectInProgress = false;
         VisTextField codeField = new VisTextField();
         codeField.setMessageText(t("room_code"));
         applyInputFieldStyle(codeField);
 
         VisLabel statusLabel = new VisLabel("");
+        statusLabel.setColor(Color.valueOf("000A3E"));
 
-        Dialog dialog = new Dialog("", VisUI.getSkin()) {
-            @Override
-            protected void result(Object object) {
-                if (!Boolean.TRUE.equals(object)) {
-                    return;
-                }
-
-                String playerName = nameField.getText().trim();
-                String roomCode = codeField.getText().trim();
-
-                if (playerName.isEmpty()) {
-                    statusLabel.setText(t("enter_player_name"));
-                    return;
-                }
-
-                String ip = RoomCodeGenerator.decodeRoomCode(roomCode);
-                if (ip == null || ip.isEmpty()) {
-                    statusLabel.setText(t("invalid_room_code"));
-                    return;
-                }
-
-                statusLabel.setText(t("connecting") + "...");
-                AppLog.info("Menu", "Расшифрованный IP: " + ip + ", имя=" + playerName);
-
-                game.connectAsGuest(ip, 54555, playerName);
-            }
-        };
+        Dialog dialog = new Dialog("", VisUI.getSkin());
 
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
+
         VisLabel title = new VisLabel(t("connect"));
-        title.setColor(new Color(1.00f, 0.83f, 0.25f, 1f));
-        title.setFontScale(1.25f);
-        dialog.getContentTable().add(title).left().padBottom(70f).padLeft(70f).row();
-        dialog.getContentTable().add(statusLabel).left().padBottom(24f).padRight(150f).row();
-        dialog.row();
-        dialog.getContentTable().add(nameField).width(322).height(58).padBottom(10f).padLeft(80f);
-        dialog.row();
-        dialog.getContentTable().add(codeField).width(322).height(58).padBottom(10f).padRight(80f);
+        title.setColor(Color.valueOf("000A3E"));
+        title.setFontScale(1.5f);
+
+        ImageButton closeActionButton = createImageButton(cancelButtonTexture);
+        closeActionButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+
+        Table titleRow = new Table();
+        titleRow.add().expandX();
+        titleRow.add(title);
+        titleRow.add().expandX();
+        titleRow.add(closeActionButton).size(55f, 55f).padRight(35f);
+        dialog.getContentTable().add(titleRow).growX().padLeft(110f).padBottom(60f).row();
+
+        dialog.getContentTable().add(statusLabel).center().padBottom(20f).row();
+        dialog.getContentTable().add(codeField).width(322).height(58).padBottom(30f).row();
 
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().padTop(4f).padBottom(40f).padLeft(8f).padRight(8f);
@@ -434,86 +572,78 @@ public class MainMenuScreen extends BaseScreen {
         connectActionButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                String playerName = nameField.getText().trim();
+                if (connectInProgress) {
+                    return; // уже подключаемся — повторные клики игнорируем
+                }
                 String roomCode = codeField.getText().trim();
-
-                if (playerName.isEmpty()) {
-                    statusLabel.setText(t("enter_player_name"));
+                if (roomCode.isEmpty()) {
+                    statusLabel.setText(t("enter_room_code"));
                     return;
                 }
-
-                String ip = RoomCodeGenerator.decodeRoomCode(roomCode);
-                if (ip == null || ip.isEmpty()) {
+                RoomCodeGenerator.RoomInfo roomInfo = RoomCodeGenerator.decodeRoomCode(roomCode);
+                if (roomInfo == null) {
                     statusLabel.setText(t("invalid_room_code"));
                     return;
                 }
-
+                connectInProgress = true;
+                connectActionButton.setDisabled(true);
                 statusLabel.setText(t("connecting") + "...");
-                game.connectAsGuest(ip, 54555, playerName);
+                try {
+                    game.connectAsGuest(roomInfo.ip, roomInfo.port);
+                } catch (RuntimeException e) {
+                    connectInProgress = false;
+                    connectActionButton.setDisabled(false);
+                    showErrorDialog(t("unknown_error"), e.getMessage());
+                }
                 dialog.hide();
             }
         });
-        ImageButton cancelActionButton = createImageButton(cancelButtonTexture);
-        cancelActionButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                dialog.hide();
-            }
-        });
-        dialog.getButtonTable().add(connectActionButton).size(196f, getButtonHeightWindow());
-        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow());
+        dialog.getButtonTable().add(connectActionButton).size(180f, 80f);
 
         showDialog(dialog);
     }
 
     private void showErrorDialog(String title, String message) {
-        Dialog dialog = new Dialog(title, VisUI.getSkin());
-        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        dialog.text(message == null || message.isBlank() ? t("unknown_error") : message);
-        dialog.button("OK", true);
-        showDialog(dialog);
-    }
-
-    private void showInfoDialog(String title, String message) {
-        Dialog dialog = new Dialog(title, VisUI.getSkin());
-        applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        dialog.text(message);
-        dialog.button("OK", true);
-        showDialog(dialog);
-    }
-
-    private void showRoomCodeDialog(String roomCode) {
         Dialog dialog = new Dialog("", VisUI.getSkin());
-
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        VisLabel titleLabel = new VisLabel(t("your_room_code") + ":");
-        VisTextField codeField = new VisTextField(roomCode);
-        codeField.setDisabled(true);
-        codeField.selectAll();
 
-        ImageButton copyButton = createImageButton(copyCodeButtonTexture);
-        copyButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                ClipboardUtils.copyToClipboard(roomCode);
-                showCopiedNotification();
-            }
-        });
+        // Title inside content table (avoids overlapping the window frame)
+        VisLabel titleLabel = new VisLabel(title == null || title.isBlank() ? t("unknown_error") : title);
+        titleLabel.setColor(Color.valueOf("000A3E"));
+        titleLabel.setFontScale(1.1f);
+        titleLabel.setWrap(true);
+        titleLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(titleLabel).width(500f).center().padTop(24f).padBottom(12f).row();
 
-        dialog.getContentTable().add(titleLabel).pad(10);
-        dialog.row();
-        dialog.getContentTable().add(codeField).width(220).pad(10);
-        dialog.row();
-        dialog.getContentTable().add(copyButton).size(220f, getButtonHeightWindow()).pad(10);
-        dialog.getButtonTable().clearChildren();
-        ImageButton cancelActionButton = createImageButton(cancelButtonTexture);
-        cancelActionButton.addListener(new ChangeListener() {
+        // Message body
+        VisLabel msgLabel = new VisLabel(message == null || message.isBlank() ? t("unknown_error") : message);
+        msgLabel.setColor(Color.valueOf("000A3E"));
+        msgLabel.setFontScale(1.1f);
+        msgLabel.setWrap(true);
+        msgLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(msgLabel).width(500f).center().pad(10f, 20f, 10f, 20f).row();
+
+        // OK button — texture ok_btn.png with fallback to pill
+        Actor okButton;
+        Texture okTex = loadTextureIfExists("ok_btn.png");
+        if (okTex != null) {
+            okButton = createImageButton(okTex);
+        } else {
+            VisTextButton pill = new VisTextButton("OK");
+            pill.getLabel().setColor(Color.valueOf("000A3E"));
+            okButton = pill;
+        }
+        okButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 dialog.hide();
+                openDialogs.removeValue(dialog, true);
             }
         });
-        dialog.getButtonTable().add(cancelActionButton).size(176f, getButtonHeightWindow()).pad(10f);
+        dialog.getButtonTable().clearChildren();
+        dialog.getButtonTable().add(okButton).size(140f, 56f).center().padTop(16f).padBottom(20f);
+
+        // Reduced width (~560 via MENU_DIALOG_SCALE * adjusted content)
         showDialog(dialog);
     }
 
@@ -521,13 +651,16 @@ public class MainMenuScreen extends BaseScreen {
         Dialog notification = new Dialog("", VisUI.getSkin()) {
             @Override
             protected void result(Object object) {
-                // Просто закрываем уведомление
             }
         };
 
         applyDialogTexture(notification, lobbyWindowTexture, MENU_DIALOG_SCALE);
-        notification.getContentTable().add(new VisLabel(t("code_copied"))).pad(20);
-        notification.button("OK", true);
+        VisLabel copiedLabel = new VisLabel(t("code_copied"));
+        copiedLabel.setColor(Color.valueOf("000A3E"));
+        notification.getContentTable().add(copiedLabel).pad(20);
+        VisTextButton okButton = new VisTextButton("OK");
+        okButton.getLabel().setColor(Color.valueOf("000A3E"));
+        notification.getButtonTable().add(okButton).padBottom(20f);
         showDialog(notification);
 
         Timer.schedule(new Timer.Task() {
@@ -551,6 +684,7 @@ public class MainMenuScreen extends BaseScreen {
         }
 
         VisTextButton button = new VisTextButton(t("language"));
+        button.getLabel().setColor(Color.valueOf("000A3E"));
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -584,32 +718,49 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        dialog.getContentTable().add(t("select_game_language")).pad(10).row();
-        dialog.getButtonTable().add(english).size(160f, 84f).pad(8f);
-        dialog.getButtonTable().add(russian).size(160f, 84f).pad(8f);
-        dialog.getButtonTable().padBottom(20f);
+        VisLabel selectLangLabel = new VisLabel(t("select_game_language"));
+        selectLangLabel.setColor(Color.valueOf("000A3E"));
+        dialog.getContentTable().add(selectLangLabel).expandX().top().padTop(42f).padBottom(20f).row();
+        Table languageButtons = new Table();
+        languageButtons.add(english).size(160f, 70f).pad(8f);
+        languageButtons.add(russian).size(160f, 70f).pad(8f);
+        dialog.getContentTable().add(languageButtons).expand().center().padBottom(20f).row();
         showDialog(dialog);
     }
 
-    private void applyDialogTexture(Dialog dialog, Texture texture) {
-        applyDialogTexture(dialog, texture, 1f);
+    private void applyDialogTexture(Dialog dialog, Texture texture, float width, float height) {
+        dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
+        dialog.setUserObject(new Vector2(width, height));
     }
 
     private void applyDialogTexture(Dialog dialog, Texture texture, float scale) {
         dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
-        dialog.setUserObject(new Vector2(texture.getWidth() * scale, texture.getHeight() * scale));
+        float base = DIALOG_BASE_WIDTH / texture.getWidth(); // нормализация под базовую ширину
+        float w = DIALOG_BASE_WIDTH * scale;
+        float h = texture.getHeight() * base * scale * MENU_DIALOG_HEIGHT_SCALE;
+        dialog.setUserObject(new Vector2(w, h));
     }
 
     private void showDialog(Dialog dialog) {
         dialog.show(stage);
+        openDialogs.add(dialog);
+        if (!openDialogs.contains(dialog, true)) {
+            openDialogs.add(dialog);
+        }
+        centerDialog(dialog);
+    }
+
+    private void centerDialog(Dialog dialog) {
         Object userObject = dialog.getUserObject();
         if (userObject instanceof Vector2 size) {
             dialog.setSize(size.x, size.y);
-            dialog.setPosition(
-                (stage.getWidth() - size.x) * 0.5f,
-                (stage.getHeight() - size.y) * 0.5f
-            );
+        } else {
+            Layout layout = dialog;
+            dialog.setSize(layout.getPrefWidth(), layout.getPrefHeight());
         }
+        dialog.setPosition(
+                (stage.getWidth() - dialog.getWidth()) * 0.5f,
+                (stage.getHeight() - dialog.getHeight()) * 0.5f);
     }
 
     private void applyInputFieldStyle(VisTextField field) {
@@ -622,43 +773,52 @@ public class MainMenuScreen extends BaseScreen {
         style.backgroundOver = inputBg;
         style.focusedBackground = inputBg;
         style.disabledBackground = inputBg;
-
         style.focusBorder = null;
 
+        // Прозрачное выделение текста (оставляем как было)
         Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
         style.selection = transparent;
-        style.cursor = transparent;
+
         if (inputFieldFont != null) {
             style.font = inputFieldFont;
             style.messageFont = inputFieldFont;
         } else {
-            style.messageFont = style.font;
+            style.messageFont = inputFieldFont;
         }
-        style.messageFontColor = new Color(23f, 23f, 12f, 2f);
-        style.fontColor = Color.WHITE;
+
+        Color inputColor = Color.valueOf("000A3E");
+        style.fontColor = new Color(inputColor);
+
+        style.messageFontColor = new Color(inputColor.r, inputColor.g, inputColor.b, 0.55f);
+
+        Drawable cursorDrawable = VisUI.getSkin().newDrawable("white", new Color(inputColor));
+        cursorDrawable.setMinWidth(2f);
+        cursorDrawable.setMinHeight(28f);
+        style.cursor = cursorDrawable;
+
         inputBg.setLeftWidth(28f);
+        inputBg.setRightWidth(28f);
         field.setStyle(style);
         field.setTextFieldFilter((textField, c) -> c != '\n' && c != '\r');
         field.setFocusTraversal(false);
     }
 
     private BitmapFont loadInputFont() {
-        FileHandle file = Gdx.files.internal("fonts_ru/PressStart2P-Regular.ttf");
+        FileHandle file = Gdx.files.internal("fonts_en/Rubik-Bold.ttf");
         if (!file.exists()) {
             return null;
         }
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(file);
         try {
             FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 20;
-            parameter.minFilter = Texture.TextureFilter.Nearest;
-            parameter.magFilter = Texture.TextureFilter.Nearest;
+            parameter.size = 174;
+            parameter.magFilter = Texture.TextureFilter.Linear;
+            parameter.minFilter = Texture.TextureFilter.Linear;
             parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS
-                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-                + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+                    + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя№\u2026…";
             BitmapFont font = generator.generateFont(parameter);
-            font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-            font.setUseIntegerPositions(true);
+            font.getData().setScale(0.2f);
+            font.setUseIntegerPositions(false);
             return font;
         } finally {
             generator.dispose();
@@ -679,24 +839,31 @@ public class MainMenuScreen extends BaseScreen {
     private String t(String key) {
         boolean ru = language == Language.RU;
         return switch (key) {
-            case "decks" -> ru ? "Колоды" : "Decks";
+            case "decks" -> ru ? "Колоды" : "DECKS";
             case "no_decks" -> ru ? "Пока нет колод" : "No decks yet";
             case "unnamed" -> ru ? "Без названия" : "Untitled";
             case "create_deck" -> ru ? "Создание колоды" : "Create deck";
+            case "format_hint" -> ru
+                    ? "Совет: загружай картинки в формате 4:3 (например 1024×768) — мемы заполнят карточку без пустых полей."
+                    : "Tip: upload 4:3 images (e.g. 1024×768) so memes fill the card without empty bars.";
             case "deck_name" -> ru ? "Название колоды" : "Deck name";
             case "files_count" -> ru ? "Файлов" : "Files";
+            case "preview_hint" -> ru ? "Превью первого изображения" : "PREVIEW FIRST IMAGE";
             case "upload_images" -> ru ? "Загрузить изображения" : "Upload images";
+            case "upload_images_failed" -> ru ? "Не удалось открыть выбор изображений" : "Failed to open image chooser";
             case "name" -> ru ? "Название" : "Name";
             case "save" -> ru ? "Сохранить" : "Save";
             case "cancel" -> ru ? "Отмена" : "Cancel";
             case "host_name" -> ru ? "Имя хоста" : "Host name";
-            case "create_game" -> ru ? "Создание игры" : "Create game";
+            case "create_game" -> ru ? "Создание игры" : "CREATE GAME";
             case "create_room_failed" -> ru ? "Не удалось создать комнату" : "Failed to create room";
             case "enter_room_name" -> ru ? "Введите имя для комнаты" : "Enter room name";
+            case "no_images_selected" -> ru ? "Сначала загрузи изображения" : "Upload images first";
+            case "enter_deck_name" -> ru ? "Введите название коллоды" : "Enter deck name";
             case "player_name" -> ru ? "Имя игрока" : "Player name";
             case "room_code" -> ru ? "Код комнаты" : "Room code";
             case "connecting" -> ru ? "Подключение" : "Connecting";
-            case "connect" -> ru ? "Подключение" : "Connect";
+            case "connect" -> ru ? "Подключение" : "CONNECT";
             case "enter_player_name" -> ru ? "Введите имя игрока" : "Enter player name";
             case "invalid_room_code" -> ru ? "Неверный код комнаты" : "Invalid room code";
             case "unknown_error" -> ru ? "Произошла неизвестная ошибка." : "Unknown error occurred.";
@@ -705,44 +872,71 @@ public class MainMenuScreen extends BaseScreen {
             case "code_copied" -> ru ? "Код скопирован!" : "Code copied!";
             case "language" -> "Language";
             case "select_language" -> ru ? "Выбор языка" : "Select language";
-            case "select_game_language" -> ru ? "Выберите язык игры" : "Select game language";
+            case "select_game_language" -> ru ? "Выберите язык игры" : "SELECT GAME LANGUAGE";
+            case "enter_room_code" -> ru ? "Введите код комнаты" : "Enter room code";
+            case "ok" -> "OK";
             default -> key;
         };
+    }
+
+    private void recenterOpenDialogs() {
+        for (int i = openDialogs.size - 1; i >= 0; i--) {
+            Dialog d = openDialogs.get(i);
+            if (d.getStage() != stage) {
+                openDialogs.removeIndex(i);
+            } else {
+                d.setPosition(
+                        (stage.getWidth() - d.getWidth()) * 0.5f,
+                        (stage.getHeight() - d.getHeight()) * 0.5f);
+            }
+        }
     }
 
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        recenterOpenDialogs();
     }
 
     @Override
     public void render(float delta) {
         if (!roomCodeShown && game.isHost() && game.getRoomCode() != null && !"UNKNOWN".equals(game.getRoomCode())) {
             roomCodeShown = true;
-            showRoomCodeDialog(game.getRoomCode());
         }
-
         Gdx.gl.glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getBatch().setColor(Color.WHITE); // сброс остаточного цвета после прошлого кадра
         stage.getBatch().begin();
-        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(),
+                stage.getViewport().getWorldHeight());
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
+        stage.getBatch().setColor(Color.WHITE); // следующий кадр начинаем с чистого цвета
     }
 
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
-        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
+    }
+
+    private Actor createTexturedOrTextButton(Texture texture, String fallbackText) {
+        if (texture != null) {
+            return createImageButton(texture);
+        }
+        VisTextButton fallback = new VisTextButton(fallbackText);
+        fallback.getLabel().setColor(Color.valueOf("000A3E"));
+        return fallback;
     }
 
     private ImageButton createImageButton(Texture texture) {
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         style.imageUp = drawable;
-        style.imageOver = drawable.tint(new Color(1f, 1f, 1f, 0.96f));
-        style.imageDown = drawable.tint(new Color(0.86f, 0.86f, 0.86f, 1f));
+        style.imageOver = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        style.imageDown = drawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
+        style.imageDisabled = drawable.tint(new Color(0.45f, 0.45f, 0.45f, 1f));
         Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
         style.up = transparent;
         style.over = transparent;
@@ -766,12 +960,22 @@ public class MainMenuScreen extends BaseScreen {
         copyCodeButtonTexture.dispose();
         lobbyWindowTexture.dispose();
         inputTexture.dispose();
+        cardBoardTexture.dispose();
         createDeckButtonTexture.dispose();
+        if (loadImagesButtonTexture != null) {
+            loadImagesButtonTexture.dispose();
+        }
+        if (saveButtonTexture != null) {
+            saveButtonTexture.dispose();
+        }
         closeDialogButtonTexture.dispose();
         englishButtonTexture.dispose();
         russianButtonTexture.dispose();
         if (inputFieldFont != null) {
             inputFieldFont.dispose();
+        }
+        if (inputPlaceholderFont != null) {
+            inputPlaceholderFont.dispose();
         }
         if (changeLanguageButtonTexture != null) {
             changeLanguageButtonTexture.dispose();

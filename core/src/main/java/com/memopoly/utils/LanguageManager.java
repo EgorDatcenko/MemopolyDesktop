@@ -2,6 +2,9 @@ package com.memopoly.utils;
 
 import com.badlogic.gdx.Preferences;
 
+/**
+ * Менеджер локализации: отвечает за смену языков (RU/EN) и загрузку соответствующих строк UI.
+ */
 public class LanguageManager {
     public enum Language {
         EN, RU;

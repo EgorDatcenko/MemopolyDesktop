@@ -1,5 +1,8 @@
 package com.memopoly.game.model;
 
+/**
+ * Модель карты-мема: содержит ID мема, URL картинки, текстовое описание, название колоды и ID текущего владельца.
+ */
 public class Meme {
     public int id;
     public String imageUrl;

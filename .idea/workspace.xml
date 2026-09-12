@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c35c257a-0c16-4ff2-b048-518b368ced5f" name="Changes" comment="Textures">
+      <change afterPath="$PROJECT_DIR$/steam_api64.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/assets.txt" beforeDir="false" afterPath="$PROJECT_DIR$/assets/assets.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/game_overlay_window.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/game_overlay_window.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/notification_window.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/notification_window.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/steam_api.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/steam_api64.dll" beforeDir="false" afterPath="$PROJECT_DIR$/assets/steam_api64.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/steam_appid.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" afterPath="$PROJECT_DIR$/build/reports/problems/problems-report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/core/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Memopoly.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Memopoly.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/BoardRenderer.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/BoardRenderer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/ChatWidget$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/ChatWidget$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/ChatWidget.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/ChatWidget.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$14.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$14.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$15.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$15.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$16.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$16.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$17.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$17.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$18.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$18.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$19.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$19.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$20.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$20.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$21.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$21.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$22.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$22.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$23.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$23.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$24.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$24.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$25.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$25.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$26.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$26.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$27.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$27.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$28.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$28.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$29.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$29.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$30.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$30.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$31.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$31.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$32.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$32.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$33.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$33.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$34.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$34.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$35.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$35.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$36.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$36.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$37.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$37.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$38.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$38.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$39.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$39.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$40.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$40.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$41.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$41.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$42.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$42.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$43.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$43.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$44.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$44.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$45.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$45.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$46.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$46.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$47.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$47.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$48.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$48.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$49.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$49.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$50.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$50.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$51.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$51.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$52.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$52.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$53.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$53.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$54.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$54.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/GameScreen.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/LobbyScreen.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/LobbyScreen.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$14.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$14.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$15.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$15.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$16.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$16.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$17.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$17.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$18.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$18.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$19.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$19.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$20.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$20.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$21.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$21.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$22.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$22.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$23.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$23.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/Screens/MainMenuScreen.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/BattleManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/BattleManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/network/GameServer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/FriendsCallback.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/FriendsCallback.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/SteamAvatarCache.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/SteamAvatarCache.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/SteamManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/steam/SteamManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/utils/UiFonts.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/utils/UiFonts.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/utils/UiShapes.class" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/classes/java/main/com/memopoly/utils/UiShapes.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/libs/core-1.0.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/libs/core-1.0.0.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$1.class.uniqueId6" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$10.class.uniqueId24" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$11.class.uniqueId9" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$12.class.uniqueId51" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$13.class.uniqueId31" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$14.class.uniqueId15" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$15.class.uniqueId0" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$15.class.uniqueId0" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$16.class.uniqueId39" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$17.class.uniqueId22" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$18.class.uniqueId4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$19.class.uniqueId8" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$2.class.uniqueId34" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$20.class.uniqueId50" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$21.class.uniqueId10" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$22.class.uniqueId25" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$23.class.uniqueId35" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$24.class.uniqueId43" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$25.class.uniqueId28" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$25.class.uniqueId28" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$26.class.uniqueId40" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$27.class.uniqueId48" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$28.class.uniqueId5" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$29.class.uniqueId19" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$3.class.uniqueId17" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$30.class.uniqueId26" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$31.class.uniqueId11" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$32.class.uniqueId53" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$33.class.uniqueId36" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$34.class.uniqueId20" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$35.class.uniqueId54" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$36.class.uniqueId37" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$37.class.uniqueId23" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$38.class.uniqueId3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$39.class.uniqueId44" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$4.class.uniqueId12" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$40.class.uniqueId49" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$41.class.uniqueId13" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$42.class.uniqueId18" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$43.class.uniqueId30" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$44.class.uniqueId45" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$45.class.uniqueId29" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$45.class.uniqueId29" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$46.class.uniqueId38" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$47.class.uniqueId52" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$48.class.uniqueId1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$49.class.uniqueId16" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$5.class.uniqueId46" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$50.class.uniqueId27" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$51.class.uniqueId14" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$52.class.uniqueId47" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$53.class.uniqueId32" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$54.class.uniqueId21" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$6.class.uniqueId33" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$7.class.uniqueId7" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$8.class.uniqueId55" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen$9.class.uniqueId41" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/GameScreen.class.uniqueId2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/compileTransaction/stash-dir/Memopoly.class.uniqueId42" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/core/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Memopoly.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Memopoly.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/BoardRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/BoardRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/ChatWidget.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/ChatWidget.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/GameScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/GameScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/LobbyScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/LobbyScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/MainMenuScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/Screens/MainMenuScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/BattleManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/BattleManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/GameServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/network/GameServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/FriendsCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/FriendsCallback.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/steam/SteamManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiFonts.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiFonts.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiShapes.java" beforeDir="false" afterPath="$PROJECT_DIR$/core/src/main/java/com/memopoly/utils/UiShapes.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/auction_or_memebank_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/background.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/blue(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/blue.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/blue_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/button_dice.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/buy_and_auction_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/card_board.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/change_language_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/chat_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/com/memopoly/lwjgl3/DesktopLauncher.class" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/com/memopoly/lwjgl3/DesktopLauncher.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/enter_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_EN/Jersey25-Regular.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_EN/OFL.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_EN/PressStart2P-Regular.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_EN/README.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_EN/Rubik-Bold.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_ru/OFL.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_ru/PressStart2P-Regular.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_ru/README.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_ru/Rubik-Bold.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/fonts_ru/static/Rubik-Bold.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/game_overlay_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/+2_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/auction_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/build_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/buy_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/create_bet_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/deal_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/decline_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/deposit_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/end_of_turn_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/exit_to_menu_en.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/map.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/map_for_memebattle.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/mortgage_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/participate_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/sell_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/stay_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/steal_50_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/unmortgage_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_en/withdraw_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/auction_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/buy_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/cancel_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/create_bet_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/decline_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/deposit_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/end_of_turn_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/exit_to_menu_ru.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/map.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/mortgage_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/participate_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/pass_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/unmortgage_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/gamescreen_ui_ru/withdraw_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/green(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/green.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/green_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/green_house.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/input.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/input_memebattle.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/libgdx.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/libgdx128.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/libgdx16.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/libgdx32.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/libgdx64.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/load.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/lobby_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/map.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_en/connect_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_en/create_game_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_en/decks_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_en/exit_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_en/settings_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_ru/connect_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_ru/create_game_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_ru/decks_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_ru/exit_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/menu_ru/settings_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/money.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/mortgage_cell_horizontal.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/mortgage_cell_vertical.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/notification_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/orange(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/orange.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/orange_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/purple(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/purple.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/purple_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/red(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/red.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/red_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/red_house.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui/background.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui/checkboxOff.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui/checkboxOn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui/knob.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/apply_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/back_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/cancel_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/choose_deck_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/connect_btn_for_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/copy_the_code_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/create_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/create_deck_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/english.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/load_images_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/no_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/off_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/on_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/russian.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/save_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/start_the_game_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_en/yes_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/apply_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/back_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/cancel_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/choose_deck.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/connect_btn_for_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/copy_the_code_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/create_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/create_deck_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/english.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/russian.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/screen_ui_ru/start_the_game_btn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/scroll.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/shield.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/start_battle.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/ten_down.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/ten_up.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/the_left_sidebar_window.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_doge.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_memolog.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_moderator.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_monopolist.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_scammer.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/token_smm.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/yellow(1x1).png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/yellow.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/classes/java/main/yellow_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/resources/main/assets.txt" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build/resources/main/assets.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/resources/main/steam_api.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/resources/main/steam_api64.dll" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build/resources/main/steam_api64.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/resources/main/steam_appid.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/tmp/compileJava/compileTransaction/stash-dir/DesktopLauncher.class.uniqueId0" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build/tmp/compileJava/compileTransaction/stash-dir/DesktopLauncher.class.uniqueId0" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lwjgl3/src/main/java/com/memopoly/lwjgl3/DesktopLauncher.java" beforeDir="false" afterPath="$PROJECT_DIR$/lwjgl3/src/main/java/com/memopoly/lwjgl3/DesktopLauncher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modding/decks.json" beforeDir="false" afterPath="$PROJECT_DIR$/modding/decks.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/steam_api.dll" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="DevelopGames" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="DevelopGames" type="f1a62948:ProjectNode" />
+                <item name="lwjgl3" type="2d1252cf:ModuleNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;EgorDatcenko&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/EgorDatcenko/MemopolyDesktop.git&quot;,
+    &quot;accountId&quot;: &quot;827982f1-7563-4e44-91ed-91de7a869b8d&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="3J5zvGo3h2w29GujxU6COQl1RQE" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.DesktopLauncher.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.DevelopGames.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.DevelopGames:lwjgl3 [:lwjgl3:com.memopoly.lwjgl3.DesktopLauncher.main()].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;#24 on dev&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c35c257a-0c16-4ff2-b048-518b368ced5f" name="Changes" comment="" />
+      <created>1788965958759</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1788965958759</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Textures" />
+    <option name="LAST_COMMIT_MESSAGE" value="Textures" />
+  </component>
+</project>

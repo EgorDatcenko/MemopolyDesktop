@@ -1,45 +1,52 @@
 package com.memopoly.game.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 
+/**
+ * Главная модель состояния матча: содержит список игроков, фазу игры, состояние аукционов и мем-баттлов, лог событий и баланс банка мемов.
+ */
 public class GameState {
     public HashMap<Integer, Integer> cellOwners;
     public HashMap<Integer, Boolean> cellMortgaged;
-    // Фазы игры
+    public boolean testMode = false;
+    /** Number of branches built on each situation cell (0..4). */
+    public HashMap<Integer, Integer> cellHouses;
     public enum GamePhase {
-        WAITING,       // Ожидание игроков
-        PLAYING,       // Основная игра
-        ROLLING_DICE,  // Бросок кубиков
-        PLAYER_ACTION, // Выбор действия (купить/отказаться)
-        MEME_BATTLE,   // Мем-баттл
-        AUCTION,       // Аукцион
-        GAME_OVER,      // Конец игры
-        MEME_BANK_ACTION
+        WAITING,
+        PLAYING,
+        ROLLING_DICE,
+        PLAYER_ACTION,
+        AUCTION,
+        GAME_OVER,
+        MEME_BANK_ACTION,
+        MEME_BATTLE
     }
     public enum BattleType {
-        MEME_BATTLE_CELL,
-        SITUATION_CELL
+        MEME_BATTLE_CELL
     }
 
     public enum BattlePhase {
+        BATTLE_SETUP,
         INVITE,
         COLLECTING_MEMES,
         VOTING,
         COUNTING,
         RESULTS
     }
-    // Основные поля для KryoNet
     public ArrayList<Player> players;
+    public String roomCode;
+    public ArrayList<String> achievementEvents = new ArrayList<>();
     public int currentPlayerIndex;
     public GamePhase currentPhase;
     public int diceValue;
     public boolean hasRolledThisTurn;
     public String lastActionLog;
+    public String notificationText;
+    public long notificationTimestamp;
     public int turnCount;
+    public String selectedDeckName;
+    public ArrayList<Meme> memeDeckDrawPile;
 
-    // Мем-баттл состояние
     public boolean isInBattle;
     public int battleStakes;
     public String battleTopic;
@@ -48,6 +55,7 @@ public class GameState {
     public int battleOwnerId;
 
     public BattleType battleType;
+    public int battleSetupCellIndex;  // cell that triggered the battle setup
     public ArrayList<Integer> battleParticipants;
     public ArrayList<Integer> battleInvited;
     public HashMap<Integer, Boolean> battleAccepted;
@@ -55,28 +63,51 @@ public class GameState {
     public BattlePhase battlePhase;
     public int battleBank;
     public ArrayList<Integer> battleVoters;
-    // Аукцион состояние
     public boolean isInAuction;
     public int auctionCellId;
-    public HashMap<Integer, Integer> auctionBids; // playerId -> bid
+    public HashMap<Integer, Integer> auctionBids;
     public int currentAuctionTime;
     public int auctionStarterPlayerId;
     public int auctionCurrentPlayerId;
 
     public int memeBankPlayerId = -1;
 
-    // Стандартные конструкторы
+    public boolean rolesEnabled = false;
+    public HashMap<Integer, String> playerRoles = new HashMap<>();
+    public HashMap<Integer, Boolean> roleUsedThisRound = new HashMap<>();
+    public Set<Integer> rerollUsedThisRound = new HashSet<>();
+    public boolean awaitingReroll = false;
+    public int rerollPlayerId = -1;
+    public int rerollOrigin = -1;
+    public boolean moderatorChoicePending = false;
+    public int moderatorPlayerId = -1;
+
+    // Trade fields
+    public int tradeId = 0;                    // 0 = нет активной сделки
+    public int tradeProposerId = -1;           // ID инициатора сделки
+    public int tradeTargetId = -1;             // ID цели сделки
+    public ArrayList<Integer> tradeProposerCells = new ArrayList<>();  // Клетки инициатора
+    public ArrayList<Integer> tradeTargetCells = new ArrayList<>();    // Клетки цели
+    public int tradeProposerMoney = 0;         // Монеты инициатора
+    public int tradeTargetMoney = 0;           // Монеты цели
+
     public GameState() {
         this.cellOwners = new HashMap<>();
         this.cellMortgaged = new HashMap<>();
+        this.cellHouses = new HashMap<>();
         this.players = new ArrayList<>();
+        this.achievementEvents = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.currentPhase = GamePhase.WAITING;
         this.diceValue = 0;
         this.hasRolledThisTurn = false;
         this.lastActionLog = "Игра началась";
+        this.notificationText = "";
+        this.notificationTimestamp = 0L;
         this.turnCount = 0;
-
+        this.selectedDeckName = null;
+        this.memeDeckDrawPile = new ArrayList<>();
+        this.roomCode = null;
         this.isInBattle = false;
         this.battleMemes = new ArrayList<>();
         this.battleParticipants = new ArrayList<>();
@@ -92,16 +123,44 @@ public class GameState {
         this.auctionCurrentPlayerId = -1;
     }
 
-    // Игровые методы
     public Player getCurrentPlayer() {
         if (players.isEmpty()) return null;
         return players.get(currentPlayerIndex);
     }
 
     public void nextPlayer() {
+        int oldIndex = currentPlayerIndex;
+        boolean wrapped = false;
+        int checkedPlayers = 0;
         do {
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        } while (players.get(currentPlayerIndex).isBankrupt);
+            int next = (currentPlayerIndex + 1) % players.size();
+            if (next <= oldIndex) {
+                wrapped = true; // перешли через конец списка — круг замкнулся
+            }
+            currentPlayerIndex = next;
+            Player candidate = players.get(currentPlayerIndex);
+            if (!candidate.isBankrupt && candidate.skipNextTurn) {
+                candidate.skipNextTurn = false;
+                lastActionLog = candidate.name + " пропускает ход";
+                checkedPlayers++;
+                continue;
+            }
+            if (!candidate.isBankrupt) {
+                break;
+            }
+            checkedPlayers++;
+        } while (checkedPlayers <= players.size());
+
+        // Сброс «переброса» в игре при обходе круга
+        if (wrapped) {
+            rerollUsedThisRound.clear();
+        }
+
+        awaitingReroll = false;
+        rerollPlayerId = -1;
+        rerollOrigin = -1;
+        moderatorChoicePending = false;
+        moderatorPlayerId = -1;
 
         turnCount++;
         diceValue = 0;
@@ -116,6 +175,11 @@ public class GameState {
         lastActionLog = "Игрок " + player.name + " присоединился";
     }
 
+    public void showNotification(String text) {
+        notificationText = text == null ? "" : text;
+        notificationTimestamp = System.currentTimeMillis();
+    }
+
     public void removePlayer(int playerId) {
         players.removeIf(p -> p.id == playerId);
         lastActionLog = "Игрок покинул игру";
@@ -126,6 +190,13 @@ public class GameState {
             if (p.id == id) return p;
         }
         return null;
+    }
+
+    public void recordAchievement(int playerId, String achievementId) {
+        String event = playerId + "|" + achievementId;
+        if (!achievementEvents.contains(event)) {
+            achievementEvents.add(event);
+        }
     }
 
     public boolean isGameOver() {
@@ -148,7 +219,6 @@ public class GameState {
         return richest;
     }
 
-    // Методы для мем-баттла
     public void startMemeBattle(int stakes, String topic, int ownerId) {
         isInBattle = true;
         battleStakes = stakes;
@@ -189,12 +259,11 @@ public class GameState {
         battleVoters.clear();
     }
 
-    // Методы для аукциона
     public void startAuction(int cellId) {
         isInAuction = true;
         auctionCellId = cellId;
         auctionBids.clear();
-        currentAuctionTime = 30; // 30 секунд
+        currentAuctionTime = 30;
         auctionCurrentPlayerId = -1;
         currentPhase = GamePhase.AUCTION;
         lastActionLog = "Начинается аукцион!";

@@ -4,6 +4,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Служба таймера аукциона: управляет временем ожидания ставок на сервере и автоматически закрывает торги по истечении времени.
+ */
 public class AuctionTimerService {
     private final ScheduledExecutorService executor;
     private ScheduledFuture<?> task;

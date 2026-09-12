@@ -13,6 +13,9 @@ import java.util.function.IntPredicate;
 import java.util.function.ObjIntConsumer;
 import java.util.function.ToIntFunction;
 
+/**
+ * Обработчик отказа от покупки клетки: переводит игру в режим аукциона, если игрок отказался покупать клетку, на которую наступил.
+ */
 public class PassBuyActionHandler implements GameActionHandler {
     private final GameState gameState;
     private final List<BoardCell> board;
