@@ -12,7 +12,6 @@ public class FriendsCallback implements SteamFriendsCallback {
     public void onPersonaStateChange(SteamID steamID, SteamFriends.PersonaChange personaChange) {
     }
 
-    @Override
     public void onGameOverlayActivated(boolean active) {
     }
 
@@ -38,7 +37,6 @@ public class FriendsCallback implements SteamFriendsCallback {
     public void onGameServerChangeRequested(String server, String password) {
     }
 
-    @Override
     public void onSetPersonaNameResponse(boolean success, boolean localSuccess, SteamResult result) {
     }
 }

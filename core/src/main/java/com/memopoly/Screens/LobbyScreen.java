@@ -424,11 +424,8 @@ public class LobbyScreen extends BaseScreen {
 
             VisLabel name = new VisLabel(p.name);
             name.setColor(TEXT_DARK);
-            VisLabel money = new VisLabel("$" + p.money);
-            money.setColor(MONEY_COLOR);
 
-            row.add(name).expandX().left();
-            row.add(money).right();
+            row.add(name).expandX().left().row();
             playersTable.add(row).growX().padBottom(8f).row();
         }
     }

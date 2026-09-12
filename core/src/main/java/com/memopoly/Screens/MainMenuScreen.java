@@ -39,7 +39,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
- * Экран главного меню: предоставляет кнопки для создания игры, подключения по коду, настроек и выхода.
+ * Экран главного меню: предоставляет кнопки для создания игры, подключения по
+ * коду, настроек и выхода.
  */
 public class MainMenuScreen extends BaseScreen {
     private static final float DIALOG_BASE_WIDTH = 1000f;
@@ -104,29 +105,43 @@ public class MainMenuScreen extends BaseScreen {
     private final Array<Dialog> openDialogs = new Array<>();
 
     private boolean connectInProgress = false;
+
     public MainMenuScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
         language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         createButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CREATE_BUTTON_TEXTURE_PATH, language));
-        connectButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
-        settingsButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
+        connectButtonTexture = loadTexture(
+                TexturePathResolver.resolveMenuTexture(CONNECT_BUTTON_TEXTURE_PATH, language));
+        settingsButtonTexture = loadTexture(
+                TexturePathResolver.resolveMenuTexture(SETTINGS_BUTTON_TEXTURE_PATH, language));
         exitButtonTexture = loadTexture(TexturePathResolver.resolveMenuTexture(EXIT_BUTTON_TEXTURE_PATH, language));
-        decksButtonTexture = loadTextureIfExists(TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
-        createDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
-        connectDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
-        cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
-        copyCodeButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
+        decksButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveMenuTexture(DECKS_BUTTON_TEXTURE_PATH, language));
+        createDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CREATE_DIALOG_BUTTON_TEXTURE_PATH, language));
+        connectDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CONNECT_DIALOG_BUTTON_TEXTURE_PATH, language));
+        cancelButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        copyCodeButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(COPY_CODE_BUTTON_TEXTURE_PATH, language));
         changeLanguageButtonTexture = loadTextureIfExists(CHANGE_LANGUAGE_BUTTON_TEXTURE_PATH);
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         inputTexture = loadTexture(INPUT_TEXTURE_PATH);
-        createDeckButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
-        loadImagesButtonTexture = loadTextureIfExists(TexturePathResolver.resolveScreenTexture(LOAD_IMAGES_BUTTON_TEXTURE_PATH, language));
-        saveButtonTexture = loadTextureIfExists(TexturePathResolver.resolveScreenTexture(SAVE_BUTTON_TEXTURE_PATH, language));
-        closeDialogButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
-        englishButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
-        russianButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
+        createDeckButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CREATE_DECK_BUTTON_TEXTURE_PATH, language));
+        loadImagesButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveScreenTexture(LOAD_IMAGES_BUTTON_TEXTURE_PATH, language));
+        saveButtonTexture = loadTextureIfExists(
+                TexturePathResolver.resolveScreenTexture(SAVE_BUTTON_TEXTURE_PATH, language));
+        closeDialogButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(BACK_BUTTON_TEXTURE_PATH, language));
+        englishButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(ENGLISH_BUTTON_TEXTURE_PATH, language));
+        russianButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(RUSSIAN_BUTTON_TEXTURE_PATH, language));
         cardBoardTexture = loadTexture(CARD_BOARD_TEXTURE_PATH);
         Gdx.input.setInputProcessor(stage);
 
@@ -318,8 +333,8 @@ public class MainMenuScreen extends BaseScreen {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
                     deckRepository.deleteDeck(deck.name);
-                    dialog.hide();      // задиспозит превью-текстуры через override hide()
-                    showDecksDialog();  // пересобрать список
+                    dialog.hide(); // задиспозит превью-текстуры через override hide()
+                    showDecksDialog(); // пересобрать список
                 }
             });
             Table deleteOverlay = new Table();
@@ -429,7 +444,7 @@ public class MainMenuScreen extends BaseScreen {
         errorLabel.setAlignment(Align.center);
 
         Table contentRow = new Table();
-        contentRow.add(leftColumn).expandX().left().top().padLeft(30f);   // было 60f — слева больше не режет
+        contentRow.add(leftColumn).expandX().left().top().padLeft(30f); // было 60f — слева больше не режет
         contentRow.add(previewFrame).width(300f).height(225f).top().padRight(30f); // было 80f
         dialog.getContentTable().add(contentRow).growX().padTop(6f).row();
         dialog.getContentTable().add(errorLabel).center().padBottom(6f).row();
@@ -470,7 +485,8 @@ public class MainMenuScreen extends BaseScreen {
         showDialog(dialog);
     }
 
-    private void openImageChooser(Array<String> selectedFiles, VisLabel filesCount, Texture[] previewHolder, Runnable refreshPreview) {
+    private void openImageChooser(Array<String> selectedFiles, VisLabel filesCount, Texture[] previewHolder,
+            Runnable refreshPreview) {
         try {
             SwingUtilities.invokeLater(() -> {
                 try {
@@ -479,9 +495,8 @@ public class MainMenuScreen extends BaseScreen {
                     chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
                     chooser.setDialogTitle(t("upload_images"));
                     chooser.setFileFilter(new FileNameExtensionFilter(
-                        "Images (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
-                        "png", "jpg", "jpeg", "gif", "bmp", "webp"
-                    ));
+                            "Images (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
+                            "png", "jpg", "jpeg", "gif", "bmp", "webp"));
 
                     if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
                         return;
@@ -589,19 +604,46 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     private void showErrorDialog(String title, String message) {
-        Dialog dialog = new Dialog(title, VisUI.getSkin()) {
-            @Override
-            protected void result(Object object) {
-            }
-        };
+        Dialog dialog = new Dialog("", VisUI.getSkin());
         applyDialogTexture(dialog, lobbyWindowTexture, MENU_DIALOG_SCALE);
+
+        // Title inside content table (avoids overlapping the window frame)
+        VisLabel titleLabel = new VisLabel(title == null || title.isBlank() ? t("unknown_error") : title);
+        titleLabel.setColor(Color.valueOf("000A3E"));
+        titleLabel.setFontScale(1.1f);
+        titleLabel.setWrap(true);
+        titleLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(titleLabel).width(500f).center().padTop(24f).padBottom(12f).row();
+
+        // Message body
         VisLabel msgLabel = new VisLabel(message == null || message.isBlank() ? t("unknown_error") : message);
         msgLabel.setColor(Color.valueOf("000A3E"));
+        msgLabel.setFontScale(1.1f);
         msgLabel.setWrap(true);
-        dialog.getContentTable().add(msgLabel).width(620f).pad(20f).row();
-        VisTextButton okButton = new VisTextButton("OK");
-        okButton.getLabel().setColor(Color.valueOf("000A3E"));
-        dialog.getButtonTable().add(okButton).padBottom(20f);
+        msgLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(msgLabel).width(500f).center().pad(10f, 20f, 10f, 20f).row();
+
+        // OK button — texture ok_btn.png with fallback to pill
+        Actor okButton;
+        Texture okTex = loadTextureIfExists("ok_btn.png");
+        if (okTex != null) {
+            okButton = createImageButton(okTex);
+        } else {
+            VisTextButton pill = new VisTextButton("OK");
+            pill.getLabel().setColor(Color.valueOf("000A3E"));
+            okButton = pill;
+        }
+        okButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+                openDialogs.removeValue(dialog, true);
+            }
+        });
+        dialog.getButtonTable().clearChildren();
+        dialog.getButtonTable().add(okButton).size(140f, 56f).center().padTop(16f).padBottom(20f);
+
+        // Reduced width (~560 via MENU_DIALOG_SCALE * adjusted content)
         showDialog(dialog);
     }
 
@@ -690,9 +732,10 @@ public class MainMenuScreen extends BaseScreen {
         dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
         dialog.setUserObject(new Vector2(width, height));
     }
+
     private void applyDialogTexture(Dialog dialog, Texture texture, float scale) {
         dialog.setBackground(new TextureRegionDrawable(new TextureRegion(texture)));
-        float base = DIALOG_BASE_WIDTH / texture.getWidth();       // нормализация под базовую ширину
+        float base = DIALOG_BASE_WIDTH / texture.getWidth(); // нормализация под базовую ширину
         float w = DIALOG_BASE_WIDTH * scale;
         float h = texture.getHeight() * base * scale * MENU_DIALOG_HEIGHT_SCALE;
         dialog.setUserObject(new Vector2(w, h));
@@ -716,9 +759,8 @@ public class MainMenuScreen extends BaseScreen {
             dialog.setSize(layout.getPrefWidth(), layout.getPrefHeight());
         }
         dialog.setPosition(
-            (stage.getWidth() - dialog.getWidth()) * 0.5f,
-            (stage.getHeight() - dialog.getHeight()) * 0.5f
-        );
+                (stage.getWidth() - dialog.getWidth()) * 0.5f,
+                (stage.getHeight() - dialog.getHeight()) * 0.5f);
     }
 
     private void applyInputFieldStyle(VisTextField field) {
@@ -773,7 +815,7 @@ public class MainMenuScreen extends BaseScreen {
             parameter.magFilter = Texture.TextureFilter.Linear;
             parameter.minFilter = Texture.TextureFilter.Linear;
             parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS
-                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+                    + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя№\u2026…";
             BitmapFont font = generator.generateFont(parameter);
             font.getData().setScale(0.2f);
             font.setUseIntegerPositions(false);
@@ -802,8 +844,8 @@ public class MainMenuScreen extends BaseScreen {
             case "unnamed" -> ru ? "Без названия" : "Untitled";
             case "create_deck" -> ru ? "Создание колоды" : "Create deck";
             case "format_hint" -> ru
-                ? "Совет: загружай картинки в формате 4:3 (например 1024×768) — мемы заполнят карточку без пустых полей."
-                : "Tip: upload 4:3 images (e.g. 1024×768) so memes fill the card without empty bars.";
+                    ? "Совет: загружай картинки в формате 4:3 (например 1024×768) — мемы заполнят карточку без пустых полей."
+                    : "Tip: upload 4:3 images (e.g. 1024×768) so memes fill the card without empty bars.";
             case "deck_name" -> ru ? "Название колоды" : "Deck name";
             case "files_count" -> ru ? "Файлов" : "Files";
             case "preview_hint" -> ru ? "Превью первого изображения" : "PREVIEW FIRST IMAGE";
@@ -844,9 +886,8 @@ public class MainMenuScreen extends BaseScreen {
                 openDialogs.removeIndex(i);
             } else {
                 d.setPosition(
-                    (stage.getWidth() - d.getWidth()) * 0.5f,
-                    (stage.getHeight() - d.getHeight()) * 0.5f
-                );
+                        (stage.getWidth() - d.getWidth()) * 0.5f,
+                        (stage.getHeight() - d.getHeight()) * 0.5f);
             }
         }
     }
@@ -866,7 +907,8 @@ public class MainMenuScreen extends BaseScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.getBatch().setColor(Color.WHITE); // сброс остаточного цвета после прошлого кадра
         stage.getBatch().begin();
-        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(),
+                stage.getViewport().getWorldHeight());
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
@@ -878,7 +920,6 @@ public class MainMenuScreen extends BaseScreen {
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
-
 
     private Actor createTexturedOrTextButton(Texture texture, String fallbackText) {
         if (texture != null) {
@@ -892,9 +933,9 @@ public class MainMenuScreen extends BaseScreen {
     private ImageButton createImageButton(Texture texture) {
         TextureRegionDrawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
-        style.imageUp      = drawable;
-        style.imageOver    = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
-        style.imageDown    = drawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
+        style.imageUp = drawable;
+        style.imageOver = drawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        style.imageDown = drawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
         style.imageDisabled = drawable.tint(new Color(0.45f, 0.45f, 0.45f, 1f));
         Drawable transparent = VisUI.getSkin().newDrawable("white", new Color(1f, 1f, 1f, 0f));
         style.up = transparent;

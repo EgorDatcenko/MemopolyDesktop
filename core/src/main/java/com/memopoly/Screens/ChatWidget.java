@@ -3,9 +3,11 @@ package com.memopoly.Screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -18,19 +20,21 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 import com.memopoly.Memopoly;
 import com.memopoly.network.packets.ChatMessage;
 import com.memopoly.utils.LanguageManager.Language;
+import com.memopoly.utils.UiFonts;
 import com.memopoly.utils.UiScrollStyle;
 
 import java.util.List;
 
 /**
- * UI-виджет чата: отображает историю сообщений и поле ввода текста в лобби и во время игры.
+ * UI-виджет чата: отображает историю сообщений и поле ввода текста в лобби и во
+ * время игры.
  */
 public class ChatWidget extends Table {
     private static final Color PANEL_BACKGROUND = new Color(0.06f, 0.05f, 0.10f, 0.82f);
     private static final Color LOG_BACKGROUND = new Color(0.13f, 0.12f, 0.20f, 0.88f);
     private static final Color TEXT_COLOR = Color.valueOf("000A3E");
-    private static final Color SYSTEM_COLOR = new Color(1.00f, 0.83f, 0.25f, 1f);
-    private static final float MESSAGES_TOP_PADDING = 14f;
+    private static final Color SYSTEM_COLOR = Color.BLACK;
+    private static final float MESSAGES_TOP_PADDING = 25f;
     private static final float MESSAGE_FONT_SCALE = 0.72f;
     private static final float INPUT_ROW_LEFT_PADDING = 8f;
     private static final float INPUT_ROW_TOP_PADDING = 0f;
@@ -48,6 +52,7 @@ public class ChatWidget extends Table {
     private final VisTextField inputField;
     private final float contentWidth;
     private int renderedMessages = -1;
+    private BitmapFont inputFont;
 
     public ChatWidget(Memopoly game) {
         this(game, INPUT_FIELD_WIDTH + ENTER_BUTTON_WIDTH + INPUT_ROW_LEFT_PADDING + 14f);
@@ -59,7 +64,8 @@ public class ChatWidget extends Table {
         chatWindowTexture = loadTextureIfExists("chat_window.png");
         inputTexture = loadTextureIfExists("input.png");
         enterButtonTexture = loadTextureIfExists("enter_btn.png");
-        setBackground(chatWindowTexture != null ? new TextureRegionDrawable(new TextureRegion(chatWindowTexture)) : drawable(PANEL_BACKGROUND));
+        setBackground(chatWindowTexture != null ? new TextureRegionDrawable(new TextureRegion(chatWindowTexture))
+                : drawable(PANEL_BACKGROUND));
         pad(8f);
         top().left();
 
@@ -92,19 +98,19 @@ public class ChatWidget extends Table {
         float fieldWidth = Math.max(120f, this.contentWidth - sendButtonWidth - INPUT_ROW_LEFT_PADDING - 14f);
 
         add(inputField)
-            .width(fieldWidth)
-            .height(INPUT_CONTROL_HEIGHT)
-            .padTop(INPUT_ROW_TOP_PADDING)
-            .padBottom(INPUT_ROW_BOTTOM_PADDING)
-            .padLeft(INPUT_ROW_LEFT_PADDING)
-            .padRight(6f)
-            .left();
+                .width(fieldWidth)
+                .height(INPUT_CONTROL_HEIGHT)
+                .padTop(INPUT_ROW_TOP_PADDING)
+                .padBottom(INPUT_ROW_BOTTOM_PADDING)
+                .padLeft(INPUT_ROW_LEFT_PADDING)
+                .padRight(6f)
+                .left();
         add(sendButton)
-            .width(sendButtonWidth)
-            .height(INPUT_CONTROL_HEIGHT)
-            .padTop(INPUT_ROW_TOP_PADDING)
-            .padBottom(INPUT_ROW_BOTTOM_PADDING)
-            .left();
+                .width(sendButtonWidth)
+                .height(INPUT_CONTROL_HEIGHT)
+                .padTop(INPUT_ROW_TOP_PADDING)
+                .padBottom(INPUT_ROW_BOTTOM_PADDING)
+                .left();
     }
 
     public void refresh() {
@@ -142,7 +148,8 @@ public class ChatWidget extends Table {
         if (message.isSystem) {
             return text;
         }
-        String name = message.playerName == null || message.playerName.isBlank() ? t("chat_default_name") : message.playerName;
+        String name = message.playerName == null || message.playerName.isBlank() ? t("chat_default_name")
+                : message.playerName;
         return name + ": " + text;
     }
 
@@ -172,8 +179,8 @@ public class ChatWidget extends Table {
         TextureRegionDrawable buttonDrawable = new TextureRegionDrawable(new TextureRegion(enterButtonTexture));
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
         style.imageUp = buttonDrawable;
-        style.imageOver = buttonDrawable.tint(new Color(1f, 1f, 1f, 0.96f));
-        style.imageDown = buttonDrawable.tint(new Color(0.86f, 0.86f, 0.86f, 1f));
+        style.imageOver = buttonDrawable.tint(new Color(0.82f, 0.82f, 0.82f, 1f));
+        style.imageDown = buttonDrawable.tint(new Color(0.70f, 0.70f, 0.70f, 1f));
         style.up = drawable(new Color(1f, 1f, 1f, 0f));
         style.over = style.up;
         style.down = style.up;
@@ -192,7 +199,35 @@ public class ChatWidget extends Table {
         style.backgroundOver = background;
         style.focusedBackground = background;
         style.disabledBackground = background;
+        style.focusBorder = null;
+        if (inputFont == null) {
+            inputFont = createInputFont();
+        }
+        if (inputFont != null) {
+            style.font = inputFont;
+        } else {
+            style.font = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
+        }
+        style.fontColor = TEXT_COLOR;
+        style.messageFont = style.font;
+        style.messageFontColor = new Color(0f, 0.04f, 0.24f, 0.55f);
+        background.setLeftWidth(24f);
+        background.setRightWidth(24f);
         field.setStyle(style);
+    }
+
+    private BitmapFont createInputFont() {
+        try {
+            BitmapFont base = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
+            int baseSize = Math.max(8, Math.round(base.getCapHeight()));
+            int target = Math.max(8, Math.round(baseSize * 0.7f));
+            String path = game.getLanguageManager().getLanguage() == Language.RU
+                    ? "fonts_ru/Rubik-Bold.ttf"
+                    : "fonts_en/Rubik-Bold.ttf";
+            return UiFonts.create(path, target);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Texture loadTextureIfExists(String path) {
@@ -205,6 +240,9 @@ public class ChatWidget extends Table {
     }
 
     public void dispose() {
+        if (inputFont != null) {
+            inputFont.dispose();
+        }
         if (chatWindowTexture != null) {
             chatWindowTexture.dispose();
         }

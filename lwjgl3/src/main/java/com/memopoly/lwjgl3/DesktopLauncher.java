@@ -8,7 +8,9 @@ import com.memopoly.steam.SteamManager;
 /** Launches the desktop (LWJGL3) application. */
 public class    DesktopLauncher {
     public static void main(String[] args) {
-        if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+        System.out.println("CWD: " + new java.io.File(".").getAbsolutePath());
+        if (StartupHelper.startNewJvmIfRequired()) return;
+        System.out.println("CWD after restart: " + new java.io.File(".").getAbsolutePath());
         SteamManager.init();
         createApplication();
     }

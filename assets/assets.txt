@@ -98,6 +98,8 @@ green(1x1).png
 green.png
 green_avatar.png
 green_house.png
+hund_down.png
+hund_up.png
 input.png
 input_memebattle.png
 libgdx.png
@@ -118,6 +120,7 @@ money.png
 mortgage_cell_horizontal.png
 mortgage_cell_vertical.png
 notification_window.png
+ok_btn.png
 orange(1x1).png
 orange.png
 orange_avatar.png
@@ -165,9 +168,8 @@ screen_ui_ru/start_the_game_btn.png
 scroll.png
 shield.png
 start_battle.png
-steam_api.dll
 steam_api64.dll
-steam_appid.txt
+steam_appid
 ten_down.png
 ten_up.png
 the_left_sidebar_window.png

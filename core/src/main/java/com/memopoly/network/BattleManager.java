@@ -18,7 +18,8 @@ import static com.memopoly.game.model.GameState.BattlePhase.*;
 import static com.memopoly.game.model.GameState.BattleType.MEME_BATTLE_CELL;
 
 /**
- * Менеджер мем-баттла: управляет полным циклом фаз баттла (приглашения, сбор мемов, голосование, подсчёт результатов и выдача банка).
+ * Менеджер мем-баттла: управляет полным циклом фаз баттла (приглашения, сбор
+ * мемов, голосование, подсчёт результатов и выдача банка).
  */
 public class BattleManager {
 
@@ -34,7 +35,8 @@ public class BattleManager {
     private int battleCellIndex;
     private ArrayList<Integer> battleInvited;
 
-    public BattleManager(GameState gameState, List<BoardCell> board, Runnable onBroadcast, ScheduledExecutorService timerExecutor, Object stateLock) {
+    public BattleManager(GameState gameState, List<BoardCell> board, Runnable onBroadcast,
+            ScheduledExecutorService timerExecutor, Object stateLock) {
         this.gameState = gameState;
         this.boardCells = board;
         this.onBroadcast = onBroadcast;
@@ -42,6 +44,7 @@ public class BattleManager {
         this.stateLock = stateLock;
         this.battleInvited = new ArrayList<>();
     }
+
     /**
      * Called when a player lands on a MEME_BATTLE cell.
      * Enters BATTLE_SETUP so the organizer can pick topic and stakes.
@@ -67,9 +70,12 @@ public class BattleManager {
         battleOwnerId = organizerId;
         battleBank = 0;
 
-        if (gameState.battleParticipants == null) gameState.battleParticipants = new ArrayList<>();
-        if (gameState.battleInvited == null) gameState.battleInvited = new ArrayList<>();
-        if (gameState.battleVoters == null) gameState.battleVoters = new ArrayList<>();
+        if (gameState.battleParticipants == null)
+            gameState.battleParticipants = new ArrayList<>();
+        if (gameState.battleInvited == null)
+            gameState.battleInvited = new ArrayList<>();
+        if (gameState.battleVoters == null)
+            gameState.battleVoters = new ArrayList<>();
         gameState.battleParticipants.clear();
         gameState.battleInvited.clear();
         gameState.battleVoters.clear();
@@ -86,11 +92,13 @@ public class BattleManager {
     }
 
     /**
-     * Called when the organizer sends START_MEME_BATTLE with a chosen topic and stakes.
+     * Called when the organizer sends START_MEME_BATTLE with a chosen topic and
+     * stakes.
      * Deducts the owner's stakes and moves to INVITE phase.
      */
     public void confirmSetup(int organizerId, String topic, int stakes) {
-        if (gameState.battlePhase != BATTLE_SETUP || gameState.battleOwnerId != organizerId) return;
+        if (gameState.battlePhase != BATTLE_SETUP || gameState.battleOwnerId != organizerId)
+            return;
 
         gameState.battleTopic = topic;
         gameState.battleStakes = stakes;
@@ -134,7 +142,8 @@ public class BattleManager {
 
         gameState.battleMemes.clear();
         gameState.votes.clear();
-        if (gameState.battleVoters == null) gameState.battleVoters = new ArrayList<>();
+        if (gameState.battleVoters == null)
+            gameState.battleVoters = new ArrayList<>();
         gameState.battleVoters.clear();
 
         onBroadcast.run();
@@ -143,7 +152,8 @@ public class BattleManager {
     }
 
     public void handleBattleResponse(BattleResponsePacket packet) {
-        if (!battleInvited.contains(packet.playerId)) return;
+        if (!battleInvited.contains(packet.playerId))
+            return;
 
         if (packet.accepted) {
             gameState.battleParticipants.add(packet.playerId);
@@ -181,9 +191,14 @@ public class BattleManager {
         onBroadcast.run();
         startPhaseTimer(this::checkCollectingPhaseCompletion);
     }
+
     public void checkCollectingPhaseCompletion() {
         if (gameState.battleMemes.size() >= gameState.battleParticipants.size() || gameState.battleTimerSeconds <= 0) {
             cancelCurrentTimer();
+
+            if (gameState.battleTimerSeconds <= 0) {
+                autoSubmitMissingMemes();
+            }
 
             if (gameState.battleParticipants.size() == 2 && gameState.battleMemes.size() == 2) {
                 injectBotMeme();
@@ -192,6 +207,28 @@ public class BattleManager {
             startVoting();
         } else {
             onBroadcast.run();
+        }
+    }
+
+    private void autoSubmitMissingMemes() {
+        if (gameState.battleParticipants == null)
+            return;
+        for (int participantId : new ArrayList<>(gameState.battleParticipants)) {
+            boolean submitted = false;
+            for (Meme m : gameState.battleMemes) {
+                if (m.ownerId == participantId) {
+                    submitted = true;
+                    break;
+                }
+            }
+            if (!submitted) {
+                Player p = gameState.getPlayerById(participantId);
+                if (p != null && p.handMemes != null && !p.handMemes.isEmpty()) {
+                    Meme chosen = p.handMemes.get(0);
+                    chosen.ownerId = p.id;
+                    gameState.battleMemes.add(chosen);
+                }
+            }
         }
     }
 
@@ -247,7 +284,8 @@ public class BattleManager {
     }
 
     public void cancelSetup(int organizerId) {
-        if (gameState.battlePhase != BATTLE_SETUP || gameState.battleOwnerId != organizerId) return;
+        if (gameState.battlePhase != BATTLE_SETUP || gameState.battleOwnerId != organizerId)
+            return;
         skipBattle("Мем-баттл отменён организатором");
     }
 
@@ -344,7 +382,8 @@ public class BattleManager {
 
         int max = 0;
         for (int votes : gameState.votes.values()) {
-            if (votes > max) max = votes;
+            if (votes > max)
+                max = votes;
         }
 
         ArrayList<Integer> winners = new ArrayList<>();
@@ -378,7 +417,8 @@ public class BattleManager {
 
         // who submitted a meme (as compensation/bonus), including the winner!
         for (Meme meme : gameState.battleMemes) {
-            if (meme.ownerId == -999) continue;
+            if (meme.ownerId == -999)
+                continue;
             Player player = gameState.getPlayerById(meme.ownerId);
             if (player != null) {
                 int votesForMeme = gameState.votes.getOrDefault(meme.id, 0);
@@ -404,6 +444,7 @@ public class BattleManager {
         onBroadcast.run();
         scheduleEndBattle();
     }
+
     public void handleDraw(List<Integer> tiedMemeIds) {
         ArrayList<Integer> tiedOwnerIds = new ArrayList<>();
         for (Meme meme : gameState.battleMemes) {

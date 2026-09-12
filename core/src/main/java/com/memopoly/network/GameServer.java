@@ -33,7 +33,8 @@ import static com.memopoly.network.packets.GameActionRequest.ActionType.SUBMIT_M
 import static com.memopoly.network.packets.GameActionRequest.ActionType.VOTE_MEME;
 
 /**
- * Авторитетный игровой сервер на KryoNet: принимает подключения, проверяет валидность действий, обновляет GameState и рассылает его игрокам.
+ * Авторитетный игровой сервер на KryoNet: принимает подключения, проверяет
+ * валидность действий, обновляет GameState и рассылает его игрокам.
  */
 public class GameServer {
     private static final int TCP_PORT = 54555;
@@ -81,41 +82,37 @@ public class GameServer {
         gameState = new GameState();
         auctionTimerService = new AuctionTimerService(timerExecutor);
         gameStatePublisher = new GameStatePublisher(gameState, this::sendAllTcpSafely, this::sendTcpSafely);
-        battleManager = new BattleManager(gameState, board, gameStatePublisher::broadcastState, timerExecutor, stateLock);
+        battleManager = new BattleManager(gameState, board, gameStatePublisher::broadcastState, timerExecutor,
+                stateLock);
         buyCellActionHandler = new BuyCellActionHandler(
-            gameState,
-            board,
-            this::isCurrentPlayer,
-            player -> player.maxAffordable = getMaxAffordable(player),
-            this::rejectBuyFlow
-        );
+                gameState,
+                board,
+                this::isCurrentPlayer,
+                player -> player.maxAffordable = getMaxAffordable(player),
+                this::rejectBuyFlow);
         passBuyActionHandler = new PassBuyActionHandler(
-            gameState,
-            board,
-            this::isCurrentPlayer,
-            player -> player.maxAffordable = getMaxAffordable(player),
-            this::findNextAuctionBidderId,
-            this::startAuctionTimer,
-            this::rejectBuyFlow
-        );
+                gameState,
+                board,
+                this::isCurrentPlayer,
+                player -> player.maxAffordable = getMaxAffordable(player),
+                this::findNextAuctionBidderId,
+                this::startAuctionTimer,
+                this::rejectBuyFlow);
         mortgageCellActionHandler = new MortgageCellActionHandler(
-            gameState,
-            this::isCurrentPlayer,
-            player -> player.maxAffordable = getMaxAffordable(player),
-            this::handleMortgage
-        );
+                gameState,
+                this::isCurrentPlayer,
+                player -> player.maxAffordable = getMaxAffordable(player),
+                this::handleMortgage);
         buyBackCellActionHandler = new BuyBackCellActionHandler(
-            gameState,
-            this::isCurrentPlayer,
-            player -> player.maxAffordable = getMaxAffordable(player),
-            this::handleBuyBack
-        );
+                gameState,
+                this::isCurrentPlayer,
+                player -> player.maxAffordable = getMaxAffordable(player),
+                this::handleBuyBack);
         memeBankActionHandler = new MemeBankActionHandler(
-            gameState,
-            this::canUseMemeBank,
-            gameState::getCurrentPlayer,
-            this::finishMemeBankAction
-        );
+                gameState,
+                this::canUseMemeBank,
+                gameState::getCurrentPlayer,
+                this::finishMemeBankAction);
 
         registerPackets();
         setupServer();
@@ -167,13 +164,15 @@ public class GameServer {
         server.addListener(new Listener() {
             @Override
             public void connected(Connection connection) {
-                AppLog.info("Server", "Новый игрок подключился: id=" + connection.getID() + ", remote=" + connection.getRemoteAddressTCP());
+                AppLog.info("Server", "Новый игрок подключился: id=" + connection.getID() + ", remote="
+                        + connection.getRemoteAddressTCP());
             }
 
             @Override
             public void disconnected(Connection connection) {
                 synchronized (stateLock) {
-                    AppLog.info("Server", "Игрок отключился: id=" + connection.getID() + ", remote=" + connection.getRemoteAddressTCP());
+                    AppLog.info("Server", "Игрок отключился: id=" + connection.getID() + ", remote="
+                            + connection.getRemoteAddressTCP());
                     removePlayer(connection.getID());
                     broadcastGameStateUnsafe();
                 }
@@ -186,7 +185,8 @@ public class GameServer {
                         handlePacket(connection, object);
                     }
                 } catch (Exception e) {
-                    AppLog.warn("Server", "Ошибка обработки пакета: type=" + object.getClass().getSimpleName() + ", connectionId=" + connection.getID() + ", reason=" + e.getMessage());
+                    AppLog.warn("Server", "Ошибка обработки пакета: type=" + object.getClass().getSimpleName()
+                            + ", connectionId=" + connection.getID() + ", reason=" + e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -199,7 +199,8 @@ public class GameServer {
             return;
         }
 
-        AppLog.info("Server", "Получен пакет: " + packet.getClass().getSimpleName() + ", connectionId=" + connection.getID());
+        AppLog.info("Server",
+                "Получен пакет: " + packet.getClass().getSimpleName() + ", connectionId=" + connection.getID());
 
         if (packet instanceof JoinRoomRequest) {
             handleJoinRequest(connection, (JoinRoomRequest) packet);
@@ -224,7 +225,6 @@ public class GameServer {
         }
     }
 
-
     private void handleChatMessage(Connection connection, ChatMessage message) {
         if (message == null || message.message == null || message.message.trim().isEmpty()) {
             return;
@@ -246,9 +246,11 @@ public class GameServer {
     private void handleTradeOffer(Connection connection, TradeOfferPacket packet) {
         synchronized (stateLock) {
             Player proposer = gameState.getPlayerById(connection.getID());
-            if (proposer == null) return;
+            if (proposer == null)
+                return;
 
-            // Валидация: инициатор — текущий игрок, фаза PLAYING, не в баттле/аукционе, нет активной сделки
+            // Валидация: инициатор — текущий игрок, фаза PLAYING, не в баттле/аукционе, нет
+            // активной сделки
             if (!isCurrentPlayer(connection.getID())) {
                 AppLog.warn("Server", "Trade offer rejected: not current player");
                 return;
@@ -317,8 +319,10 @@ public class GameServer {
                 return;
             }
 
-            // Сделка должна содержать >= 1 клетку (проверено выше для myCells, но их клетки могут быть пустыми)
-            if ((packet.myCells == null || packet.myCells.isEmpty()) && (packet.theirCells == null || packet.theirCells.isEmpty())) {
+            // Сделка должна содержать >= 1 клетку (проверено выше для myCells, но их клетки
+            // могут быть пустыми)
+            if ((packet.myCells == null || packet.myCells.isEmpty())
+                    && (packet.theirCells == null || packet.theirCells.isEmpty())) {
                 AppLog.warn("Server", "Trade offer rejected: no cells at all");
                 return;
             }
@@ -328,7 +332,8 @@ public class GameServer {
             gameState.tradeProposerId = proposer.id;
             gameState.tradeTargetId = target.id;
             gameState.tradeProposerCells = new ArrayList<>(packet.myCells);
-            gameState.tradeTargetCells = packet.theirCells != null ? new ArrayList<>(packet.theirCells) : new ArrayList<>();
+            gameState.tradeTargetCells = packet.theirCells != null ? new ArrayList<>(packet.theirCells)
+                    : new ArrayList<>();
             gameState.tradeProposerMoney = packet.myMoney;
             gameState.tradeTargetMoney = packet.theirMoney;
 
@@ -340,7 +345,8 @@ public class GameServer {
     private void handleTradeResponse(Connection connection, TradeResponsePacket packet) {
         synchronized (stateLock) {
             Player target = gameState.getPlayerById(connection.getID());
-            if (target == null) return;
+            if (target == null)
+                return;
 
             // Только цель может ответить и только при активной сделке
             if (gameState.tradeId == 0 || gameState.tradeTargetId != target.id) {
@@ -475,7 +481,8 @@ public class GameServer {
     private void handleTradeCancel(Connection connection) {
         synchronized (stateLock) {
             Player proposer = gameState.getPlayerById(connection.getID());
-            if (proposer == null) return;
+            if (proposer == null)
+                return;
 
             // Только инициатор может отменить
             if (gameState.tradeId == 0 || gameState.tradeProposerId != proposer.id) {
@@ -566,8 +573,8 @@ public class GameServer {
         dealSelectedDeckMemes();
         gameState.currentPhase = GameState.GamePhase.PLAYING;
         gameState.lastActionLog = gameState.selectedDeckName == null || gameState.selectedDeckName.isBlank()
-            ? "Игра началась"
-            : "Игра началась | Колода: " + gameState.selectedDeckName;
+                ? "Игра началась"
+                : "Игра началась | Колода: " + gameState.selectedDeckName;
         gameState.turnCount = 1;
         gameState.currentPlayerIndex = 0;
         gameState.diceValue = 0;
@@ -662,7 +669,8 @@ public class GameServer {
             case REST:
                 if (cell.id == 20) {
                     current.shields = Math.min(2, current.shields + 1);
-                    gameState.lastActionLog = current.name + " получил 1 щит на парковке (всего: " + current.shields + ")";
+                    gameState.lastActionLog = current.name + " получил 1 щит на парковке (всего: " + current.shields
+                            + ")";
                 }
                 break;
             case JAIL:
@@ -673,7 +681,8 @@ public class GameServer {
                     } else {
                         gameState.moderatorChoicePending = true;
                         gameState.moderatorPlayerId = current.id;
-                        gameState.lastActionLog = current.name + " (Модератор) выбирает: пропустить Ban или сесть + получить щит";
+                        gameState.lastActionLog = current.name
+                                + " (Модератор) выбирает: пропустить Ban или сесть + получить щит";
                         break;
                     }
                 }
@@ -708,7 +717,8 @@ public class GameServer {
                         int fee = calculateRent(cell);
                         current.pay(fee);
                         Player owner = gameState.getPlayerById(gameState.cellOwners.get(cellIndex));
-                        if (owner != null) owner.receive(fee);
+                        if (owner != null)
+                            owner.receive(fee);
                         checkBankruptcy(current, true);
                     }
                 }
@@ -729,12 +739,14 @@ public class GameServer {
 
     /**
      * Handles dice roll while player is in jail.
-     * - If doubles are rolled: player gets out of jail immediately and moves the dice total
+     * - If doubles are rolled: player gets out of jail immediately and moves the
+     * dice total
      * - If not doubles: increment jailTurns counter
      * - After 3 failed attempts: player must pay fine or stays in jail
      */
     private void handleJailDiceRoll(Player current, int dice1, int dice2, int total) {
-        if (current == null) return;
+        if (current == null)
+            return;
 
         boolean isDoubles = (dice1 == dice2);
 
@@ -746,7 +758,8 @@ public class GameServer {
             // Move player after getting out of jail
             int oldPosition = current.position;
             current.position = (oldPosition + total) % board.size();
-            gameState.lastActionLog = current.name + " вышел из тюрьмы, бросив двойню! Движется на " + total + " клеток";
+            gameState.lastActionLog = current.name + " вышел из тюрьмы, бросив двойню! Движется на " + total
+                    + " клеток";
             gameState.recordAchievement(current.id, "JAILBREAK");
 
             // Check if passed Start
@@ -773,7 +786,8 @@ public class GameServer {
         } else {
             // No doubles
             current.jailTurns++;
-            gameState.lastActionLog = current.name + " бросил " + total + " в тюрьме (попытка " + current.jailTurns + "/3)";
+            gameState.lastActionLog = current.name + " бросил " + total + " в тюрьме (попытка " + current.jailTurns
+                    + "/3)";
 
             if (current.jailTurns >= MAX_JAIL_ATTEMPTS) {
                 // After 3 failed attempts, must pay fine or stay in jail
@@ -787,7 +801,8 @@ public class GameServer {
                     // Can't afford fine - must stay in jail until doubles or pay later
                     current.inJail = true;
                     gameState.lastActionLog = current.name + " не может позволить себе штраф и остаётся в тюрьме";
-                    notifyPlayers(current.name + " не хватает " + (JAIL_FINE - current.money) + " для выхода из тюрьмы");
+                    notifyPlayers(
+                            current.name + " не хватает " + (JAIL_FINE - current.money) + " для выхода из тюрьмы");
                 }
             } else {
                 // Still have attempts remaining
@@ -798,18 +813,22 @@ public class GameServer {
 
     public void handleGameAction(Connection connection, GameActionRequest request) {
 
-        if (request == null || request.actionType == null) { return; }
+        if (request == null || request.actionType == null) {
+            return;
+        }
 
         Player actingPlayer = gameState.getPlayerById(connection.getID());
-        if (actingPlayer == null) { return; }
+        if (actingPlayer == null) {
+            return;
+        }
 
         /* ---- DEV‑блок ---- */
         if (request.actionType.name().startsWith("DEV_")) {
             if (!gameState.testMode) {
                 rejectAction(connection, actingPlayer,
-                    request.actionType,
-                    "TEST_MODE_OFF",
-                    "Dev‑commands only allowed when testMode is ON");
+                        request.actionType,
+                        "TEST_MODE_OFF",
+                        "Dev‑commands only allowed when testMode is ON");
                 return;
             }
 
@@ -817,9 +836,9 @@ public class GameServer {
             if (request.actionType == GameActionRequest.ActionType.DEV_SET_TEST_MODE) {
                 if (connection.getID() != hostConnectionId) {
                     rejectAction(connection, actingPlayer,
-                        request.actionType,
-                        "NOT_HOST",
-                        "Only host can toggle testMode");
+                            request.actionType,
+                            "NOT_HOST",
+                            "Only host can toggle testMode");
                     return;
                 }
                 gameState.testMode = request.amount != 0;
@@ -833,17 +852,17 @@ public class GameServer {
                     case DEV_NEXT_GROUP_CELL -> {
                         if (!isCurrentPlayer(connection.getID())) {
                             rejectAction(connection, actingPlayer,
-                                request.actionType,
-                                "NOT_YOUR_TURN",
-                                "Only current player can teleport");
+                                    request.actionType,
+                                    "NOT_YOUR_TURN",
+                                    "Only current player can teleport");
                             break;
                         }
                         int next = devRoute.nextUnownedCell(gameState, connection.getID());
                         if (next == -1) {
                             rejectAction(connection, actingPlayer,
-                                request.actionType,
-                                "GROUP_DONE",
-                                "All cells in target group already owned");
+                                    request.actionType,
+                                    "GROUP_DONE",
+                                    "All cells in target group already owned");
                             break;
                         }
                         gameState.players.get(connection.getID()).position = next;
@@ -854,9 +873,9 @@ public class GameServer {
                     case DEV_SET_MONEY -> {
                         if (request.amount <= 0) {
                             rejectAction(connection, actingPlayer,
-                                request.actionType,
-                                "INVALID_AMOUNT",
-                                "Amount must be positive");
+                                    request.actionType,
+                                    "INVALID_AMOUNT",
+                                    "Amount must be positive");
                             break;
                         }
                         gameState.players.get(connection.getID()).money += request.amount;
@@ -867,9 +886,9 @@ public class GameServer {
                         }
                     }
                     default -> rejectAction(connection, actingPlayer,
-                        request.actionType,
-                        "UNKNOWN_DEV",
-                        "Unknown dev command");
+                            request.actionType,
+                            "UNKNOWN_DEV",
+                            "Unknown dev command");
                 }
                 broadcastGameStateUnsafe();
             }
@@ -878,8 +897,8 @@ public class GameServer {
         switch (request.actionType) {
             case START_MEME_BATTLE: {
                 if (gameState.isInBattle
-                    && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
-                    && isCurrentPlayer(connection.getID())) {
+                        && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
+                        && isCurrentPlayer(connection.getID())) {
                     String topic = (request.data != null && !request.data.isBlank()) ? request.data.trim() : "";
                     int stakes = Math.min(200, Math.max(10, request.amount));
                     battleManager.confirmSetup(actingPlayer.id, topic, stakes);
@@ -888,8 +907,8 @@ public class GameServer {
             }
             case CANCEL_MEME_BATTLE: {
                 if (gameState.isInBattle
-                    && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
-                    && gameState.battleOwnerId == actingPlayer.id) {
+                        && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP
+                        && gameState.battleOwnerId == actingPlayer.id) {
                     battleManager.cancelSetup(actingPlayer.id);
                 }
                 break;
@@ -902,7 +921,8 @@ public class GameServer {
             case PASS_BUY:
                 if (passBuyActionHandler.handle(connection, actingPlayer, request)) {
                     if (gameState.auctionCurrentPlayerId != -1) {
-                        gameState.lastActionLog = "Начинается аукцион! Первый ход: " + getPlayerName(gameState.auctionCurrentPlayerId);
+                        gameState.lastActionLog = "Начинается аукцион! Первый ход: "
+                                + getPlayerName(gameState.auctionCurrentPlayerId);
                     }
                     break;
                 }
@@ -930,11 +950,13 @@ public class GameServer {
                 break;
             case PLACE_AUCTION_BID:
                 if (!AuctionGuard.isAuctionActive(gameState)) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE, "сейчас нет активного аукциона");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE,
+                            "сейчас нет активного аукциона");
                     return;
                 }
                 if (!AuctionGuard.isCurrentAuctionBidder(gameState, actingPlayer.id)) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN, "сейчас ход другого участника аукциона");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN,
+                            "сейчас ход другого участника аукциона");
                     return;
                 }
                 actingPlayer.maxAffordable = getMaxAffordable(actingPlayer);
@@ -942,11 +964,13 @@ public class GameServer {
                 break;
             case CANCEL_AUCTION:
                 if (!AuctionGuard.isAuctionActive(gameState)) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE, "сейчас нет активного аукциона");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_NOT_ACTIVE,
+                            "сейчас нет активного аукциона");
                     return;
                 }
                 if (!AuctionGuard.isCurrentAuctionBidder(gameState, actingPlayer.id)) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN, "сейчас ход другого участника аукциона");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_AUCTION_OTHER_PLAYER_TURN,
+                            "сейчас ход другого участника аукциона");
                     return;
                 }
                 gameState.lastActionLog = actingPlayer.name + " остановил аукцион";
@@ -955,15 +979,18 @@ public class GameServer {
                 break;
             case PAY_JAIL_FINE:
                 if (!isCurrentPlayer(connection.getID())) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN, "можно платить штраф только в свой ход");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN,
+                            "можно платить штраф только в свой ход");
                     return;
                 }
                 if (!actingPlayer.inJail) {
-                    rejectAction(connection, actingPlayer, request.actionType, "INVALID_JAIL_STATE", "игрок не находится в тюрьме");
+                    rejectAction(connection, actingPlayer, request.actionType, "INVALID_JAIL_STATE",
+                            "игрок не находится в тюрьме");
                     return;
                 }
                 if (actingPlayer.money < JAIL_FINE) {
-                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS", "недостаточно монет для штрафа " + JAIL_FINE);
+                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS",
+                            "недостаточно монет для штрафа " + JAIL_FINE);
                     return;
                 }
                 actingPlayer.pay(JAIL_FINE);
@@ -975,7 +1002,8 @@ public class GameServer {
                 break;
             case END_TURN:
                 if (!isCurrentPlayer(connection.getID())) {
-                    rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN, "завершить ход может только текущий игрок");
+                    rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN,
+                            "завершить ход может только текущий игрок");
                     return;
                 }
                 if (gameState.moderatorChoicePending && gameState.moderatorPlayerId == actingPlayer.id) {
@@ -996,13 +1024,15 @@ public class GameServer {
                     gameState.nextPlayer();
                     Player newCurrent = gameState.getCurrentPlayer();
                     if (newCurrent != null && newCurrent.id != oldId) {
-                        AppLog.info("Server", "END_TURN: ход передан " + newCurrent.name + " (id=" + newCurrent.id + ")");
+                        AppLog.info("Server",
+                                "END_TURN: ход передан " + newCurrent.name + " (id=" + newCurrent.id + ")");
                     }
                 }
                 break;
 
             case SUBMIT_MEME: {
-                System.out.println("\n[SERVER_LOG] Получен пакет SUBMIT_MEME от игрока ID: " + (actingPlayer != null ? actingPlayer.id : "null"));
+                System.out.println("\n[SERVER_LOG] Получен пакет SUBMIT_MEME от игрока ID: "
+                        + (actingPlayer != null ? actingPlayer.id : "null"));
 
                 if (gameState == null) {
                     System.out.println("[SERVER_LOG] Ошибка: gameState равен null!");
@@ -1014,7 +1044,8 @@ public class GameServer {
                 System.out.println("  -> gameState.currentPhase: " + gameState.currentPhase);
 
                 if (gameState.battleParticipants != null && actingPlayer != null) {
-                    System.out.println("  -> Игрок в списке участников баттла: " + gameState.battleParticipants.contains(actingPlayer.id));
+                    System.out.println("  -> Игрок в списке участников баттла: "
+                            + gameState.battleParticipants.contains(actingPlayer.id));
                 } else {
                     System.out.println("  -> Ошибка: battleParticipants или actingPlayer равен null!");
                 }
@@ -1031,7 +1062,8 @@ public class GameServer {
                     }
 
                     if (newMeme == null) {
-                        System.out.println("[SERVER_LOG] КРИТИЧЕСКАЯ ОШИБКА: Мем с запрошенным ID " + request.targetId + " НЕ НАЙДЕН в руке игрока!");
+                        System.out.println("[SERVER_LOG] КРИТИЧЕСКАЯ ОШИБКА: Мем с запрошенным ID " + request.targetId
+                                + " НЕ НАЙДЕН в руке игрока!");
                         break;
                     }
 
@@ -1044,7 +1076,8 @@ public class GameServer {
                     }
 
                     if (previouslySubmitted != null) {
-                        System.out.println("[SERVER_LOG] Игрок меняет выбор. Возвращаем мем ID " + previouslySubmitted.id + " в руку.");
+                        System.out.println("[SERVER_LOG] Игрок меняет выбор. Возвращаем мем ID "
+                                + previouslySubmitted.id + " в руку.");
                         gameState.battleMemes.remove(previouslySubmitted);
                         actingPlayer.handMemes.add(previouslySubmitted);
                     } else {
@@ -1054,12 +1087,13 @@ public class GameServer {
 
                     actingPlayer.handMemes.remove(newMeme);
                     gameState.battleMemes.add(newMeme);
-                    System.out.println("[SERVER_LOG] Успешно! Мем добавлен на стол. Всего мемов на столе: " + gameState.battleMemes.size());
+                    System.out.println("[SERVER_LOG] Успешно! Мем добавлен на стол. Всего мемов на столе: "
+                            + gameState.battleMemes.size());
 
                     gameState.lastActionLog = actingPlayer.name + " выбрал мем для баттла";
 
                     if (gameState.battleOwnerId == actingPlayer.id
-                        && request.data != null && !request.data.isBlank()) {
+                            && request.data != null && !request.data.isBlank()) {
                         gameState.battleTopic = request.data.trim();
                     }
 
@@ -1072,9 +1106,9 @@ public class GameServer {
             }
             case VOTE_MEME:
                 if (gameState.battlePhase == GameState.BattlePhase.VOTING
-                    && gameState.containsMeme(request.targetId)
-                    && !gameState.battleVoters.contains(actingPlayer.id)
-                    && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) {
+                        && gameState.containsMeme(request.targetId)
+                        && !gameState.battleVoters.contains(actingPlayer.id)
+                        && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) {
                     int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
                     gameState.votes.put(request.targetId, currentVotes + 1);
                     gameState.battleVoters.add(actingPlayer.id);
@@ -1084,20 +1118,42 @@ public class GameServer {
                 }
                 break;
             case STEAL_COINS: {
-                if (roleOf(actingPlayer.id) != Role.SCAMMER) break;
-                if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase != GameState.GamePhase.PLAYING) break;
-                if (gameState.roleUsedThisRound.getOrDefault(actingPlayer.id, false)) break;
+                if (roleOf(actingPlayer.id) != Role.SCAMMER)
+                    break;
+                if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase != GameState.GamePhase.PLAYING)
+                    break;
+                if (gameState.roleUsedThisRound.getOrDefault(actingPlayer.id, false))
+                    break;
 
-                Player target = gameState.getPlayerById(request.targetId);
-                if (target == null || target.id == actingPlayer.id || target.isBankrupt || target.money <= actingPlayer.money) {
-                    rejectAction(connection, actingPlayer, request.actionType, "INVALID_TARGET", "Нельзя украсть у этой цели (цель должна быть богаче тебя)");
+                Player target = null;
+                if (request.targetId > 0) {
+                    Player candidate = gameState.getPlayerById(request.targetId);
+                    if (candidate != null && candidate.id != actingPlayer.id && !candidate.isBankrupt
+                            && candidate.money > actingPlayer.money) {
+                        target = candidate;
+                    }
+                }
+                if (target == null) {
+                    for (Player p : gameState.players) {
+                        if (p.id != actingPlayer.id && !p.isBankrupt && p.money > actingPlayer.money) {
+                            if (target == null || p.money > target.money) {
+                                target = p;
+                            }
+                        }
+                    }
+                }
+
+                if (target == null) {
+                    rejectAction(connection, actingPlayer, request.actionType, "NO_SUITABLE_TARGET",
+                            "Нет подходящей цели для кражи (цель должна быть богаче вас)");
                     break;
                 }
 
                 if (target.shields > 0) {
                     target.shields -= 1;
                     gameState.roleUsedThisRound.put(actingPlayer.id, true);
-                    gameState.lastActionLog = actingPlayer.name + " попытался украсть 50 монет у " + target.name + ", но щит поглотил кражу!";
+                    gameState.lastActionLog = actingPlayer.name + " попытался украсть 50 монет у " + target.name
+                            + ", но щит поглотил кражу!";
                 } else {
                     int amount = Math.min(50, target.money);
                     target.money -= amount;
@@ -1108,11 +1164,15 @@ public class GameServer {
                 break;
             }
             case PLUS_TWO: {
-                if (!gameState.awaitingReroll || gameState.rerollPlayerId != actingPlayer.id) break;
-                if (roleOf(actingPlayer.id) != Role.DOGE) break;
-                if (gameState.roleUsedThisRound.getOrDefault(actingPlayer.id, false)) break;
+                if (!gameState.awaitingReroll || gameState.rerollPlayerId != actingPlayer.id)
+                    break;
+                if (roleOf(actingPlayer.id) != Role.DOGE)
+                    break;
+                if (gameState.roleUsedThisRound.getOrDefault(actingPlayer.id, false))
+                    break;
                 if (actingPlayer.money < 10) {
-                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS", "Недостаточно монет (нужно 10)");
+                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS",
+                            "Недостаточно монет (нужно 10)");
                     break;
                 }
 
@@ -1153,21 +1213,24 @@ public class GameServer {
                 break;
             }
             case CONFIRM_LANDING: {
-                if (!gameState.awaitingReroll || gameState.rerollPlayerId != actingPlayer.id) break;
+                if (!gameState.awaitingReroll || gameState.rerollPlayerId != actingPlayer.id)
+                    break;
                 handleCellLanding(actingPlayer, board.get(actingPlayer.position));
                 gameState.awaitingReroll = false;
                 gameState.rerollPlayerId = -1;
                 break;
             }
             case MODERATOR_SKIP_JAIL: {
-                if (!gameState.moderatorChoicePending || gameState.moderatorPlayerId != actingPlayer.id) break;
+                if (!gameState.moderatorChoicePending || gameState.moderatorPlayerId != actingPlayer.id)
+                    break;
                 gameState.moderatorChoicePending = false;
                 gameState.moderatorPlayerId = -1;
                 gameState.lastActionLog = actingPlayer.name + " решил пропустить Ban (Модератор)";
                 break;
             }
             case MODERATOR_TAKE_JAIL: {
-                if (!gameState.moderatorChoicePending || gameState.moderatorPlayerId != actingPlayer.id) break;
+                if (!gameState.moderatorChoicePending || gameState.moderatorPlayerId != actingPlayer.id)
+                    break;
                 actingPlayer.inJail = true;
                 actingPlayer.jailTurns = 0;
                 actingPlayer.position = BAN_CELL_ID;
@@ -1183,8 +1246,10 @@ public class GameServer {
 
         broadcastGameStateUnsafe();
     }
+
     private void startBattleTimer() {
-        if (battleTimerFuture != null) return;
+        if (battleTimerFuture != null)
+            return;
         lastBattlePhase = gameState.battlePhase;
         gameState.battleTimerSeconds = 30;
         battleTimerFuture = timerExecutor.scheduleAtFixedRate(() -> {
@@ -1232,30 +1297,46 @@ public class GameServer {
             return;
         }
 
-        int cardsNeeded = gameState.players.size() * 5;
-        ArrayList<Meme> dealPile = new ArrayList<>();
-        for (int i = 0; i < cardsNeeded; i++) {
-            Meme template = deckMemes.get(i % deckMemes.size());
-            dealPile.add(copyMemeForOwner(template, -1));
+        ArrayList<Meme> pool = new ArrayList<>();
+        for (Meme meme : deckMemes) {
+            pool.add(copyMemeForOwner(meme, -1));
         }
-        Collections.shuffle(dealPile);
+        Collections.shuffle(pool);
 
-        int index = 0;
         for (Player player : gameState.players) {
             int handSize = roleOf(player.id) == Role.MEMOLOG ? 6 : 5;
             for (int card = 0; card < handSize; card++) {
-                Meme meme = dealPile.get(index++ % dealPile.size());
-                meme.ownerId = player.id;
-                player.handMemes.add(meme);
+                if (pool.isEmpty()) {
+                    for (Meme meme : deckMemes) {
+                        pool.add(copyMemeForOwner(meme, -1));
+                    }
+                    Collections.shuffle(pool);
+                }
+                Meme chosen = null;
+                for (int i = 0; i < pool.size(); i++) {
+                    Meme candidate = pool.get(i);
+                    boolean duplicate = false;
+                    for (Meme hm : player.handMemes) {
+                        if (hm.imageUrl != null && hm.imageUrl.equals(candidate.imageUrl)) {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (!duplicate) {
+                        chosen = pool.remove(i);
+                        break;
+                    }
+                }
+                if (chosen == null) {
+                    chosen = pool.remove(0);
+                }
+                chosen.ownerId = player.id;
+                player.handMemes.add(chosen);
             }
         }
 
-        ArrayList<Meme> drawPile = new ArrayList<>();
-        for (Meme meme : deckMemes) {
-            drawPile.add(copyMemeForOwner(meme, -1));
-        }
-        Collections.shuffle(drawPile);
-        gameState.memeDeckDrawPile.addAll(drawPile);
+        gameState.memeDeckDrawPile.clear();
+        gameState.memeDeckDrawPile.addAll(pool);
     }
 
     private ArrayList<Meme> loadSelectedDeckMemes(String deckName) {
@@ -1301,9 +1382,26 @@ public class GameServer {
         if (gameState.memeDeckDrawPile.isEmpty()) {
             return;
         }
-        Meme meme = gameState.memeDeckDrawPile.remove(0);
-        meme.ownerId = player.id;
-        player.handMemes.add(meme);
+        Meme chosen = null;
+        for (int i = 0; i < gameState.memeDeckDrawPile.size(); i++) {
+            Meme candidate = gameState.memeDeckDrawPile.get(i);
+            boolean duplicate = false;
+            for (Meme handMeme : player.handMemes) {
+                if (handMeme.imageUrl != null && handMeme.imageUrl.equals(candidate.imageUrl)) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (!duplicate) {
+                chosen = gameState.memeDeckDrawPile.remove(i);
+                break;
+            }
+        }
+        if (chosen == null) {
+            chosen = gameState.memeDeckDrawPile.remove(0);
+        }
+        chosen.ownerId = player.id;
+        player.handMemes.add(chosen);
     }
 
     private boolean hasSubmittedBattleMeme(int playerId) {
@@ -1315,13 +1413,15 @@ public class GameServer {
         return false;
     }
 
-    private void rejectAction(Connection connection, Player player, GameActionRequest.ActionType actionType, String reasonCode, String reason) {
+    private void rejectAction(Connection connection, Player player, GameActionRequest.ActionType actionType,
+            String reasonCode, String reason) {
         if (player == null || reason == null || reason.isBlank()) {
             return;
         }
         gameState.lastActionLog = player.name + ": " + reason;
         broadcastGameStateUnsafe();
-        gameStatePublisher.sendActionRejected(connection, actionType != null ? actionType.name() : "UNKNOWN", reasonCode, reason);
+        gameStatePublisher.sendActionRejected(connection, actionType != null ? actionType.name() : "UNKNOWN",
+                reasonCode, reason);
     }
 
     private void rejectBuyFlow(Player player, int reasonType) {
@@ -1393,7 +1493,8 @@ public class GameServer {
         gameState.auctionBids.put(current.id, amount);
         gameState.currentAuctionTime = 30;
         gameState.auctionCurrentPlayerId = findNextAuctionBidderId(current.id);
-        gameState.lastActionLog = current.name + " поставил " + amount + " на аукционе. Ход: " + getPlayerName(gameState.auctionCurrentPlayerId);
+        gameState.lastActionLog = current.name + " поставил " + amount + " на аукционе. Ход: "
+                + getPlayerName(gameState.auctionCurrentPlayerId);
     }
 
     private void startAuctionTimer() {
@@ -1536,15 +1637,19 @@ public class GameServer {
         BoardCell cell = board.get(cellId);
         List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
         int houses = gameState.cellHouses.getOrDefault(cellId, 0);
-        int minimumHouses = groupCells.stream().mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).min().orElse(0);
+        int minimumHouses = groupCells.stream()
+                .mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).min().orElse(0);
         int buildPrice = housePriceFor(cell, player);
 
         if (houses >= MAX_HOUSES_PER_CELL) {
-            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "HOUSE_LIMIT", "на клетке уже максимум филиалов");
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "HOUSE_LIMIT",
+                    "на клетке уже максимум филиалов");
         } else if (houses != minimumHouses) {
-            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "UNEVEN_BUILDING", "филиалы нужно строить равномерно по группе");
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "UNEVEN_BUILDING",
+                    "филиалы нужно строить равномерно по группе");
         } else if (player.money < buildPrice) {
-            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "INSUFFICIENT_FUNDS", "недостаточно монет для филиала");
+            rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "INSUFFICIENT_FUNDS",
+                    "недостаточно монет для филиала");
         } else {
             player.pay(buildPrice);
             gameState.cellHouses.put(cellId, houses + 1);
@@ -1563,12 +1668,15 @@ public class GameServer {
         BoardCell cell = board.get(cellId);
         List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
         int houses = gameState.cellHouses.getOrDefault(cellId, 0);
-        int maximumHouses = groupCells.stream().mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).max().orElse(0);
+        int maximumHouses = groupCells.stream()
+                .mapToInt(groupCell -> gameState.cellHouses.getOrDefault(groupCell.id, 0)).max().orElse(0);
 
         if (houses <= 0) {
-            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "NO_HOUSES", "на клетке нет филиалов для продажи");
+            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "NO_HOUSES",
+                    "на клетке нет филиалов для продажи");
         } else if (houses != maximumHouses) {
-            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "UNEVEN_SELLING", "филиалы нужно продавать равномерно по группе");
+            rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "UNEVEN_SELLING",
+                    "филиалы нужно продавать равномерно по группе");
         } else {
             gameState.cellHouses.put(cellId, houses - 1);
             player.receive(housePriceFor(cell, player) / 2);
@@ -1582,7 +1690,8 @@ public class GameServer {
             return false;
         }
         if (gameState.currentPhase != GameState.GamePhase.PLAYING) {
-            rejectAction(connection, player, null, REJECT_INVALID_PHASE, "управление филиалами доступно только во время хода");
+            rejectAction(connection, player, null, REJECT_INVALID_PHASE,
+                    "управление филиалами доступно только во время хода");
             return false;
         }
         if (cellId < 0 || cellId >= board.size()) {
@@ -1601,15 +1710,15 @@ public class GameServer {
             return false;
         }
         List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
-        return groupCells.size() >= 2 && groupCells.stream().allMatch(groupCell ->
-            gameState.cellOwners.getOrDefault(groupCell.id, -1) == ownerId
-                && !gameState.cellMortgaged.getOrDefault(groupCell.id, false)
-        );
+        return groupCells.size() >= 2 && groupCells.stream()
+                .allMatch(groupCell -> gameState.cellOwners.getOrDefault(groupCell.id, -1) == ownerId
+                        && !gameState.cellMortgaged.getOrDefault(groupCell.id, false));
     }
 
     private int getHouseBuildPrice(BoardCell cell) {
         return Math.max(1, cell.price / 2);
     }
+
     private boolean isCurrentPlayer(int connectionId) {
         return TurnGuard.isCurrentPlayer(gameState, connectionId);
     }
@@ -1663,7 +1772,8 @@ public class GameServer {
         try {
             connection.sendTCP(packet);
         } catch (Exception e) {
-            AppLog.warn("Server", "sendTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", connectionId=" + connection.getID() + ", reason=" + e.getMessage());
+            AppLog.warn("Server", "sendTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", connectionId="
+                    + connection.getID() + ", reason=" + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1672,7 +1782,8 @@ public class GameServer {
         try {
             server.sendToAllTCP(packet);
         } catch (Exception e) {
-            AppLog.warn("Server", "sendToAllTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", reason=" + e.getMessage());
+            AppLog.warn("Server",
+                    "sendToAllTCP ERROR: packet=" + packet.getClass().getSimpleName() + ", reason=" + e.getMessage());
             e.printStackTrace();
         }
     }

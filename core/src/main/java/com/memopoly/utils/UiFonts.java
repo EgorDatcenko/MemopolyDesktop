@@ -13,7 +13,7 @@ public final class UiFonts {
         p.magFilter = Texture.TextureFilter.Linear;
         p.minFilter = Texture.TextureFilter.Linear;
         p.characters = FreeTypeFontGenerator.DEFAULT_CHARS
-            + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+                + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя№\u2026…";
         BitmapFont font = g.generateFont(p);
         font.getData().setScale(1f / 3f);
         font.setUseIntegerPositions(false);

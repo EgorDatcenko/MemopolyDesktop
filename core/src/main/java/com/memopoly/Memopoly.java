@@ -458,7 +458,7 @@ public class Memopoly extends Game implements NetworkListener {
             param.magFilter = Texture.TextureFilter.Linear;
             param.characters = FreeTypeFontGenerator.DEFAULT_CHARS
                     + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-                    + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№";
+                    + "абвгдеёжзийклмнопрстуфхцчшщъыьэюя№\u2026…";
             BitmapFont font = generator.generateFont(param);
             return font;
         } catch (Throwable throwable) {

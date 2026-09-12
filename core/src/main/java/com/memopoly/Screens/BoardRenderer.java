@@ -359,10 +359,18 @@ public class BoardRenderer {
         int pos = fromCell;
         path.add(pos);
         int safety = 0;
-        while (pos != toCell && safety < 40) {
-            pos = (pos + 1) % 40;
-            path.add(pos);
-            safety++;
+        if (fromCell == 30 && toCell == 10) {
+            while (pos != toCell && safety < 40) {
+                pos = (pos + 39) % 40;
+                path.add(pos);
+                safety++;
+            }
+        } else {
+            while (pos != toCell && safety < 40) {
+                pos = (pos + 1) % 40;
+                path.add(pos);
+                safety++;
+            }
         }
         if (path.size() <= 1)
             return;
@@ -465,8 +473,7 @@ public class BoardRenderer {
         SpriteBatch batch = game.getBatch();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        Texture map = (battleMode && battleBoardTexture != null) ? battleBoardTexture : boardTexture;
-        batch.draw(map, boardBounds.x, boardBounds.y, boardBounds.width, boardBounds.height);
+        batch.draw(boardTexture, boardBounds.x, boardBounds.y, boardBounds.width, boardBounds.height);
         renderOwnedCells(batch, boardCells, gameState);
         renderMortgagedCells(batch, boardCells, gameState);
         renderHouses(batch, gameState);
@@ -478,6 +485,10 @@ public class BoardRenderer {
         computeTokenViews(gameState);
         batch.begin();
         renderPlayerTokens(batch);
+        if (battleMode && battleBoardTexture != null) {
+            batch.setColor(Color.WHITE);
+            batch.draw(battleBoardTexture, boardBounds.x, boardBounds.y, boardBounds.width, boardBounds.height);
+        }
         batch.end();
         if (arrowTexture == null) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -609,7 +620,7 @@ public class BoardRenderer {
             }
 
             // 3) Стрелка активного (текстура): покачивание ±4px
-            if (view.active && arrowTexture != null) {
+            if (view.active && arrowTexture != null && !battleMode) {
                 float bob = (float) Math.sin(renderTime * 4f) * 4f;
                 float aw = 26f;
                 float ah = 26f;
@@ -620,6 +631,8 @@ public class BoardRenderer {
     }
 
     private void renderTurnArrowTriangle() {
+        if (battleMode)
+            return;
         shapeRenderer.setColor(ARROW_COLOR);
         for (TokenView view : tokenViews) {
             if (!view.active)
