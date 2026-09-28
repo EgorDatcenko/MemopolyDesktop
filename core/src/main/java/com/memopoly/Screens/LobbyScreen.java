@@ -7,9 +7,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
@@ -22,27 +27,36 @@ import com.memopoly.Memopoly;
 import com.memopoly.steam.SteamLobbyManager;
 import com.memopoly.utils.LanguageManager.Language;
 import com.memopoly.utils.TexturePathResolver;
+import com.memopoly.ui.AnimatedImage;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
+import com.kotcrab.vis.ui.widget.VisTextField;
 import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.MemeDeck;
 import com.memopoly.game.model.Player;
 import com.memopoly.modding.DeckRepository;
+import com.memopoly.network.twitch.TwitchChatService;
+import com.memopoly.utils.UiShapes;
 import com.memopoly.network.packets.StartGameRequest;
 import com.memopoly.utils.ClipboardUtils;
 import com.memopoly.utils.UiScrollStyle;
+import com.memopoly.utils.UiShapes;
 
 /**
- * Экран комнаты ожидания: показывает список подключённых игроков, позволяет выбирать колоду и запускать матч.
+ * Экран комнаты ожидания: показывает список подключённых игроков, позволяет
+ * выбирать колоду и запускать матч.
  */
 public class LobbyScreen extends BaseScreen {
     private static final float COMMON_BUTTON_HEIGHT = 64f;
     private static final float LOBBY_WINDOW_ASPECT = 930f / 550f;
     private static final float LOBBY_WINDOW_WIDTH = 1050f;
-    private static final float LOBBY_WINDOW_HEIGHT = 700f;
+    private static final float LOBBY_WINDOW_HEIGHT = 760f;
     private static final float EXIT_DIALOG_SCALE = 0.6f;
     private static final float EXIT_DIALOG_TEXT_WIDTH = 440f;
     private static final float EXIT_DIALOG_BUTTON_BOTTOM_PADDING = 30f;
     private static final Color BACKGROUND_COLOR = new Color(0.10f, 0.10f, 0.17f, 1f);
-    private static final Color TEXT_DARK = Color.valueOf("000A3E");   // #000A3E
+    private static final Color TEXT_DARK = Color.valueOf("000A3E"); // #000A3E
     private static final Color MONEY_COLOR = new Color(0.85f, 0.62f, 0.09f, 1f);
     private static final String BACKGROUND_TEXTURE_PATH = "background.png";
     private static final String CHOOSE_DECK_BTN_TEXTURE_PATH = "choose_deck_btn.png";
@@ -74,7 +88,9 @@ public class LobbyScreen extends BaseScreen {
     private VisLabel statusLabel;
     private Table playersTable;
     private ImageButton startButton;
-    //private ChatWidget chatWidget;
+    private ImageButton inviteButton;
+    private Texture lobbyMessageTexture;
+    // private ChatWidget chatWidget;
     private VisLabel selectedDeckLabel;
     private String selectedDeckName;
     private int lastPlayersCount = -1;
@@ -82,27 +98,45 @@ public class LobbyScreen extends BaseScreen {
     private final Language language;
     private final DeckRepository deckRepository = new DeckRepository();
     private boolean rolesEnabled = false;
+    private boolean twitchEnabled = false;
+    private Table panel;
+    private Table twitchInputContainer;
+    private com.badlogic.gdx.scenes.scene2d.ui.Cell<?> twitchInputCell;
     private final Array<Dialog> openDialogs = new Array<>();
+    private final Texture twitchTexture;
+    private final Texture inputTexture;
+    private VisTextField twitchField;
+    private Image twitchStatusIcon;
+    private Stack twitchInputStack;
+    private VisLabel playersCountLabel;
+    private float twitchDebounceTimer = -1f;
+    private String lastCheckedTwitchChannel = "";
+
     public LobbyScreen(Memopoly game) {
         super(game);
         stage = new Stage(new ScreenViewport());
         language = game.getLanguageManager().getLanguage();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         chooseDeckBtnTexture = loadTextureWithFallback(
-            TexturePathResolver.resolveScreenTexture(CHOOSE_DECK_BTN_TEXTURE_PATH, language),
-            TexturePathResolver.resolveScreenTexture(CHOOSE_DECK_FALLBACK_TEXTURE_PATH, language));
+                TexturePathResolver.resolveScreenTexture(CHOOSE_DECK_BTN_TEXTURE_PATH, language),
+                TexturePathResolver.resolveScreenTexture(CHOOSE_DECK_FALLBACK_TEXTURE_PATH, language));
         startButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(START_BUTTON_TEXTURE_PATH, language));
         copyButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(COPY_BUTTON_TEXTURE_PATH, language));
         noButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(NO_BUTTON_TEXTURE_PATH, language));
-        cancelButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
+        cancelButtonTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture(CANCEL_BUTTON_TEXTURE_PATH, language));
         yesButtonTexture = loadTexture(TexturePathResolver.resolveScreenTexture(YES_BUTTON_TEXTURE_PATH, language));
-        inviteFriendsTexture = loadTexture(TexturePathResolver.resolveScreenTexture("invite_friends_btn.png", language));
+        inviteFriendsTexture = loadTexture(
+                TexturePathResolver.resolveScreenTexture("invite_friends_btn.png", language));
         rolesOnTexture = loadTexture(TexturePathResolver.resolveScreenTexture("on_btn.png", language));
         rolesOffTexture = loadTexture(TexturePathResolver.resolveScreenTexture("off_btn.png", language));
         selectTexture = loadTexture(TexturePathResolver.resolveScreenTexture("select.png", language));
         lobbyWindowTexture = loadTexture(LOBBY_WINDOW_TEXTURE_PATH);
         deckWindowTexture = loadTexture(DECK_WINDOW_TEXTURE_PATH);
         gameOverlayWindowTexture = loadTexture(GAME_OVERLAY_WINDOW_TEXTURE_PATH);
+        lobbyMessageTexture = loadTextureIfExists("lobby_message.png");
+        twitchTexture = loadTextureIfExists("twitch.png");
+        inputTexture = loadTextureIfExists("input.png");
         Gdx.input.setInputProcessor(stage);
         createUI();
     }
@@ -112,7 +146,7 @@ public class LobbyScreen extends BaseScreen {
         root.setFillParent(true);
         root.pad(28);
 
-        Table panel = new Table();
+        panel = new Table();
         panel.setBackground(window(lobbyWindowTexture));
         panel.pad(30f, 40f, 30f, 40f);
 
@@ -142,38 +176,176 @@ public class LobbyScreen extends BaseScreen {
         roomCode.setColor(TEXT_DARK);
         panel.add(roomCode).center().padBottom(20f).row();
 
+        twitchEnabled = game.getSettingsPreferences().getBoolean("twitch_enabled", false);
+
+        Table settingsRow = new Table();
+        settingsRow.center();
+
         if (game.isHost()) {
-            Table rolesRow = new Table();
-            VisLabel rolesTitle = new VisLabel(t("roles") + ":");
+            // Левая колонка: Роли
+            Table rolesCol = new Table();
+            VisLabel rolesTitle = new VisLabel(t("lobby_roles"));
             rolesTitle.setFontScale(0.9f);
             rolesTitle.setColor(TEXT_DARK);
             ImageButton rolesButton = createImageButton(rolesOffTexture != null ? rolesOffTexture : noButtonTexture);
             rolesButton.addListener(new ChangeListener() {
-                @Override public void changed(ChangeEvent event, Actor actor) {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
                     rolesEnabled = !rolesEnabled;
                     setButtonTexture(rolesButton, rolesEnabled
-                        ? (rolesOnTexture != null ? rolesOnTexture : yesButtonTexture)
-                        : (rolesOffTexture != null ? rolesOffTexture : noButtonTexture));
+                            ? (rolesOnTexture != null ? rolesOnTexture : yesButtonTexture)
+                            : (rolesOffTexture != null ? rolesOffTexture : noButtonTexture));
                 }
             });
-            rolesRow.add(rolesTitle).padRight(10f);
-            rolesRow.add(rolesButton).size(120f, 55f);
-            panel.add(rolesRow).center().padBottom(20f).row();
+            rolesCol.add(rolesTitle).padRight(10f);
+            rolesCol.add(rolesButton).size(120f, 55f);
+            settingsRow.add(rolesCol).padRight(40f);
         }
+
+        // Колонка: Twitch
+        Table twitchCol = new Table();
+        VisLabel twitchTitle = new VisLabel(t("lobby_twitch"));
+        twitchTitle.setFontScale(0.9f);
+        twitchTitle.setColor(TEXT_DARK);
+        ImageButton twitchToggleButton = createImageButton(twitchEnabled
+                ? (rolesOnTexture != null ? rolesOnTexture : yesButtonTexture)
+                : (rolesOffTexture != null ? rolesOffTexture : noButtonTexture));
+        twitchToggleButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                twitchEnabled = !twitchEnabled;
+                Preferences prefs = game.getSettingsPreferences();
+                prefs.putBoolean("twitch_enabled", twitchEnabled);
+                prefs.flush();
+                setButtonTexture(twitchToggleButton, twitchEnabled
+                        ? (rolesOnTexture != null ? rolesOnTexture : yesButtonTexture)
+                        : (rolesOffTexture != null ? rolesOffTexture : noButtonTexture));
+                updateTwitchInputVisibility();
+            }
+        });
+
+        Image twitchInfoIcon = new Image(UiShapes.glyphInfoIcon());
+        twitchInfoIcon.setScaling(Scaling.fit);
+
+        Table twitchTooltipContent = new Table();
+        twitchTooltipContent.setBackground(window(gameOverlayWindowTexture));
+        twitchTooltipContent.pad(12f, 16f, 12f, 16f);
+
+        VisLabel tipLabel = new VisLabel(t("lobby_twitch_tooltip"));
+        tipLabel.setColor(Color.valueOf("000A3E"));
+        tipLabel.setFontScale(0.75f);
+        tipLabel.setAlignment(Align.center);
+        tipLabel.setWrap(true);
+        twitchTooltipContent.add(tipLabel).width(440f).center();
+
+        com.kotcrab.vis.ui.widget.Tooltip twitchTooltip = new com.kotcrab.vis.ui.widget.Tooltip.Builder(twitchTooltipContent)
+                .target(twitchInfoIcon).build();
+        twitchTooltip.setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
+        twitchInfoIcon.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                twitchTooltip.toFront();
+            }
+        });
+
+        twitchCol.add(twitchTitle).padRight(10f);
+        twitchCol.add(twitchToggleButton).size(120f, 55f).padRight(8f);
+        twitchCol.add(twitchInfoIcon).size(22f, 22f);
+
+        settingsRow.add(twitchCol);
+        panel.add(settingsRow).center().padBottom(16f).row();
+
+        twitchInputContainer = new Table();
+        twitchInputContainer.center();
+
+        Table twitchRow = new Table();
+        twitchRow.center();
+
+        twitchInputStack = new Stack();
+
+        NinePatch inputPatch = new NinePatch(inputTexture != null ? inputTexture : selectTexture, 16, 16, 16, 16);
+        NinePatchDrawable inputBg = new NinePatchDrawable(inputPatch);
+        inputBg.setMinWidth(0f);
+        inputBg.setMinHeight(0f);
+        inputBg.setLeftWidth(48f);
+        inputBg.setRightWidth(16f);
+
+        twitchField = new VisTextField();
+        VisTextField.VisTextFieldStyle fieldStyle = new VisTextField.VisTextFieldStyle(twitchField.getStyle());
+        fieldStyle.background = inputBg;
+        fieldStyle.backgroundOver = inputBg;
+        fieldStyle.focusedBackground = inputBg;
+        fieldStyle.disabledBackground = inputBg;
+        fieldStyle.focusBorder = null;
+        fieldStyle.font = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
+        fieldStyle.fontColor = TEXT_DARK;
+        fieldStyle.messageFont = fieldStyle.font;
+        fieldStyle.messageFontColor = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+        twitchField.setStyle(fieldStyle);
+        twitchField.setMessageText(t("twitch_nickname_placeholder"));
+
+        twitchInputStack.add(twitchField);
+
+        if (twitchTexture != null) {
+            Table iconTable = new Table();
+            iconTable.left();
+            iconTable.setTouchable(Touchable.disabled);
+            Image twitchIcon = new Image(twitchTexture);
+            twitchIcon.setScaling(Scaling.fit);
+            iconTable.add(twitchIcon).size(28f, 28f).padLeft(12f);
+            twitchInputStack.add(iconTable);
+        }
+
+        twitchStatusIcon = new Image(UiShapes.statusError(24));
+        twitchStatusIcon.setScaling(Scaling.fit);
+
+        playersCountLabel = new VisLabel("1/6");
+        playersCountLabel.setColor(TEXT_DARK);
+        playersCountLabel.setFontScale(0.85f);
+
+        twitchRow.add(twitchInputStack).size(320f, 52f);
+        twitchRow.add(twitchStatusIcon).size(24f, 24f).padLeft(8f);
+        twitchRow.add(playersCountLabel).padLeft(16f);
+        twitchInputContainer.add(twitchRow).center();
+
+        twitchInputCell = panel.add(twitchInputContainer).center();
+        twitchInputCell.row();
+
+        game.getTwitchChatService().setStatusListener(status -> {
+            Gdx.app.postRunnable(() -> updateTwitchStatusIcon(status));
+        });
+
+        twitchField.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                twitchDebounceTimer = 0.8f;
+            }
+        });
+
+        twitchField.addListener(new FocusListener() {
+            @Override
+            public void keyboardFocusChanged(FocusEvent event, Actor actor, boolean focused) {
+                if (!focused) {
+                    triggerTwitchConnect();
+                }
+            }
+        });
+
+        updateTwitchInputVisibility();
 
         playersTable = new Table();
         playersTable.top().left();
         ScrollPane playersScroll = new ScrollPane(playersTable, VisUI.getSkin());
-        playersScroll.setFadeScrollBars(true);            // полоса прокрутки видна только во время скролла
+        playersScroll.setFadeScrollBars(true);
         playersScroll.setScrollingDisabled(true, false);
-        playersScroll.setOverscroll(false, false);        // без «резинового» смещения контента
-        UiScrollStyle.apply(playersScroll, language);     // копия стиля: background=null + кастомные трек/ползунок
+        playersScroll.setOverscroll(false, false);
+        UiScrollStyle.apply(playersScroll, language);
 
         Table playersBox = new Table();
         playersBox.setBackground(window(gameOverlayWindowTexture));
-        playersBox.pad(20f);                              // подбери под толщину рамки текстуры
+        playersBox.pad(20f);
         playersBox.add(playersScroll).grow();
-        panel.add(playersBox).width(640f).height(270f).center().padBottom(24f).row();
+        panel.add(playersBox).width(640f).height(240f).center().padBottom(12f).row();
 
         startButton = createImageButton(startButtonTexture);
         startButton.setVisible(game.isHost());
@@ -202,9 +374,11 @@ public class LobbyScreen extends BaseScreen {
         bottomRow.left();
         bottomRow.add(startButton).size(190f, 80f).padRight(16f);
         if (game.isHost()) {
-            ImageButton inviteButton = createImageButton(inviteFriendsTexture != null ? inviteFriendsTexture : startButtonTexture);
+            inviteButton = createImageButton(
+                    inviteFriendsTexture != null ? inviteFriendsTexture : startButtonTexture);
             inviteButton.addListener(new ChangeListener() {
-                @Override public void changed(ChangeEvent event, Actor actor) {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
                     SteamLobbyManager.inviteFriends();
                 }
             });
@@ -221,14 +395,19 @@ public class LobbyScreen extends BaseScreen {
         }
         panel.add(bottomRow).growX().row();
 
-        root.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
+        Stack centerStack = new Stack();
+        Table windowHolder = new Table();
+        windowHolder.add(panel).size(LOBBY_WINDOW_WIDTH, LOBBY_WINDOW_HEIGHT).center();
+        centerStack.add(windowHolder);
+
+        root.add(centerStack).center();
         stage.addActor(root);
 
-        //Table chatRoot = new Table();
-        //chatRoot.setFillParent(true);
-        //chatWidget = new ChatWidget(game);
-        //chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
-        //stage.addActor(chatRoot);
+        // Table chatRoot = new Table();
+        // chatRoot.setFillParent(true);
+        // chatWidget = new ChatWidget(game);
+        // chatRoot.add(chatWidget).width(380f).height(210f).expand().left().bottom().padLeft(24f).padBottom(24f);
+        // stage.addActor(chatRoot);
     }
 
     private void setButtonTexture(ImageButton button, Texture texture) {
@@ -296,7 +475,8 @@ public class LobbyScreen extends BaseScreen {
         titleRow.add(title).expandX();
         titleRow.add(closeButton).size(55f, 55f).padRight(30f);
 
-        // прижимаем контент к верху — заголовок и крестик поднимаются к верхней кромке окна
+        // прижимаем контент к верху — заголовок и крестик поднимаются к верхней кромке
+        // окна
         dialog.getContentTable().top();
         dialog.getContentTable().add(titleRow).growX().padTop(24f).padBottom(16f).row();
 
@@ -321,26 +501,31 @@ public class LobbyScreen extends BaseScreen {
 
         dialog.show(stage);
         openDialogs.add(dialog);
-        float dialogWidth = 700f;   // было 940f — окно уже
+        float dialogWidth = 700f; // было 940f — окно уже
         float dialogHeight = 520f;
         dialog.setSize(dialogWidth, dialogHeight);
         dialog.setPosition(
-            (stage.getWidth() - dialogWidth) * 0.5f,
-            (stage.getHeight() - dialogHeight) * 0.5f
-        );
+                (stage.getWidth() - dialogWidth) * 0.5f,
+                (stage.getHeight() - dialogHeight) * 0.5f);
     }
 
     private void addDeckChoiceRow(Table deckRows, Dialog dialog, String deckName) {
         String displayName = deckName == null ? t("default_deck") : deckName;
+        MemeDeck deck = deckName != null ? deckRepository.getDeckByName(deckName) : null;
+        Animation<TextureRegion> coverAnim = deck != null ? deck.getCoverAnimation() : null;
+
         VisTextButton deckButton;
         if (selectTexture != null) {
             VisTextButton.VisTextButtonStyle style = new VisTextButton.VisTextButtonStyle(
-                VisUI.getSkin().get("default", VisTextButton.VisTextButtonStyle.class));
+                    VisUI.getSkin().get("default", VisTextButton.VisTextButtonStyle.class));
             style.font = VisUI.getSkin().get("default", Label.LabelStyle.class).font;
             style.fontColor = TEXT_DARK;
-            TextureRegionDrawable selectDrawable = new TextureRegionDrawable(new TextureRegion(selectTexture));
+            NinePatch selectPatch = new NinePatch(selectTexture, 46, 46, 20, 20);
+            NinePatchDrawable selectDrawable = new NinePatchDrawable(selectPatch);
+            selectDrawable.setMinWidth(0f);
+            selectDrawable.setMinHeight(0f);
             style.up = selectDrawable;
-            style.over = selectDrawable.tint(new Color(0.90f, 0.90f, 0.95f, 1f)); // ховер — та же рамка, чуть темнее
+            style.over = selectDrawable.tint(new Color(0.90f, 0.90f, 0.95f, 1f));
             style.down = selectDrawable.tint(new Color(0.82f, 0.82f, 0.90f, 1f));
             style.checked = selectDrawable;
             deckButton = new VisTextButton(displayName, style);
@@ -348,15 +533,25 @@ public class LobbyScreen extends BaseScreen {
             deckButton = new VisTextButton(displayName);
             deckButton.getLabel().setFontScale(1.3f);
         }
+        deckButton.pad(10f, 16f, 10f, 16f);
         deckButton.setFocusBorderEnabled(false);
         deckButton.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent event, Actor actor) {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
                 selectedDeckName = deckName;
-                if (selectedDeckLabel != null) selectedDeckLabel.setText(deckDisplayName());
+                if (selectedDeckLabel != null)
+                    selectedDeckLabel.setText(deckDisplayName());
                 dialog.hide();
             }
         });
-        deckRows.add(deckButton).width(350f).height(64f).row();
+
+        Table rowTable = new Table();
+        if (coverAnim != null) {
+            AnimatedImage preview = new AnimatedImage(coverAnim);
+            rowTable.add(preview).size(48f, 48f).padRight(10f);
+        }
+        rowTable.add(deckButton).width(350f).height(54f);
+        deckRows.add(rowTable).padBottom(10f).row();
     }
 
     private void showExitDialog() {
@@ -376,11 +571,11 @@ public class LobbyScreen extends BaseScreen {
         confirmLabel.setAlignment(Align.center);
         confirmLabel.setColor(TEXT_DARK);
         dialog.getContentTable().add(confirmLabel)
-            .width(EXIT_DIALOG_TEXT_WIDTH)
-            .padTop(82f)
-            .padLeft(28f)
-            .padRight(28f)
-            .row();
+                .width(EXIT_DIALOG_TEXT_WIDTH)
+                .padTop(82f)
+                .padLeft(28f)
+                .padRight(28f)
+                .row();
         dialog.getButtonTable().clearChildren();
         dialog.getButtonTable().defaults().pad(10f).padBottom(EXIT_DIALOG_BUTTON_BOTTOM_PADDING);
         ImageButton backButton = createImageButton(yesButtonTexture);
@@ -406,14 +601,44 @@ public class LobbyScreen extends BaseScreen {
         float dialogHeight = 300f;
         dialog.setSize(dialogWidth, dialogHeight);
         dialog.setPosition(
-            (stage.getWidth() - dialogWidth) * 0.5f,
-            (stage.getHeight() - dialogHeight) * 0.5f
-        );
+                (stage.getWidth() - dialogWidth) * 0.5f,
+                (stage.getHeight() - dialogHeight) * 0.5f);
+    }
+
+    private void updateStartButtonState() {
+        if (startButton == null)
+            return;
+        boolean isHost = game.isHost();
+        GameState state = game.getLatestGameState();
+        int count = (state == null || state.players == null) ? 0 : state.players.size();
+
+        if (!isHost || count < 3 || count > 6) {
+            startButton.setDisabled(true);
+            startButton.setTouchable(Touchable.disabled);
+            setButtonTexture(startButton, startButtonTexture);
+            startButton.setColor(0.5f, 0.5f, 0.5f, 1f);
+        } else {
+            startButton.setDisabled(false);
+            startButton.setTouchable(Touchable.enabled);
+            setButtonTexture(startButton, startButtonTexture);
+            startButton.setColor(1f, 1f, 1f, 1f);
+        }
+        if (inviteButton != null) {
+            boolean full = count >= 6;
+            inviteButton.setDisabled(full);
+            inviteButton.setTouchable(full ? Touchable.disabled : Touchable.enabled);
+            inviteButton.setColor(full ? new Color(0.5f, 0.5f, 0.5f, 1f) : Color.WHITE);
+        }
     }
 
     private void rebuildPlayers(GameState state) {
         playersTable.clearChildren();
+        int count = (state == null || state.players == null) ? 0 : state.players.size();
+        if (playersCountLabel != null) {
+            playersCountLabel.setText(count + "/6");
+        }
         if (state == null || state.players == null) {
+            updateStartButtonState();
             return;
         }
 
@@ -428,6 +653,19 @@ public class LobbyScreen extends BaseScreen {
             row.add(name).expandX().left().row();
             playersTable.add(row).growX().padBottom(8f).row();
         }
+
+        if (count < 3) {
+            Table minRow = new Table();
+            minRow.pad(8f, 12f, 8f, 12f);
+            VisLabel minLabel = new VisLabel(language == Language.RU ? "МИНИМУМ: 3 ИГРОКА" : "MINIMUM: 3 PLAYERS");
+            minLabel.setColor(Color.valueOf("E74C3C"));
+            minLabel.setFontScale(0.85f);
+            minLabel.setAlignment(Align.center);
+            minRow.add(minLabel).expandX().center();
+            playersTable.add(minRow).growX().padBottom(8f).row();
+        }
+
+        updateStartButtonState();
     }
 
     @Override
@@ -436,7 +674,8 @@ public class LobbyScreen extends BaseScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.getBatch().setColor(Color.WHITE);
         stage.getBatch().begin();
-        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        stage.getBatch().draw(backgroundTexture, 0f, 0f, stage.getViewport().getWorldWidth(),
+                stage.getViewport().getWorldHeight());
         stage.getBatch().end();
         GameState state = game.getLatestGameState();
         int count = (state == null || state.players == null) ? 0 : state.players.size();
@@ -451,14 +690,19 @@ public class LobbyScreen extends BaseScreen {
                 return; // экран уже переключён, дальше рисовать нельзя
             }
         } else {
-            statusLabel.setText(t("players_in_room") + ": " + count);
+            statusLabel.setText(t("players_in_room") + ": " + count + " / 6");
         }
-        if (game.isHost()) {
-            startButton.setDisabled(count < 2);
+        updateStartButtonState();
+        if (twitchDebounceTimer > 0f) {
+            twitchDebounceTimer -= delta;
+            if (twitchDebounceTimer <= 0f) {
+                twitchDebounceTimer = -1f;
+                triggerTwitchConnect();
+            }
         }
-        //if (chatWidget != null) {
-        //    chatWidget.refresh();
-        //}
+        // if (chatWidget != null) {
+        // chatWidget.refresh();
+        // }
         stage.act(delta);
         stage.draw();
         stage.getBatch().setColor(Color.WHITE);
@@ -471,9 +715,8 @@ public class LobbyScreen extends BaseScreen {
                 openDialogs.removeIndex(i); // диалог закрыт
             } else {
                 d.setPosition(
-                    (stage.getWidth() - d.getWidth()) * 0.5f,
-                    (stage.getHeight() - d.getHeight()) * 0.5f
-                );
+                        (stage.getWidth() - d.getWidth()) * 0.5f,
+                        (stage.getHeight() - d.getHeight()) * 0.5f);
             }
         }
     }
@@ -520,6 +763,32 @@ public class LobbyScreen extends BaseScreen {
         return button;
     }
 
+    private void showAlertDialog(String text) {
+        Dialog dialog = new Dialog("", VisUI.getSkin());
+        dialog.setBackground(window(deckWindowTexture));
+        VisLabel label = new VisLabel(text);
+        label.setFontScale(0.95f);
+        label.setWrap(true);
+        label.setAlignment(Align.center);
+        label.setColor(TEXT_DARK);
+        dialog.getContentTable().add(label).width(440f).padTop(50f).padLeft(20f).padRight(20f).row();
+        dialog.getButtonTable().clearChildren();
+        dialog.getButtonTable().defaults().pad(10f).padBottom(20f);
+        ImageButton okButton = createImageButton(yesButtonTexture);
+        okButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        dialog.getButtonTable().add(okButton).size(150f, COMMON_BUTTON_HEIGHT);
+        dialog.show(stage);
+        openDialogs.add(dialog);
+        float w = 500f, h = 260f;
+        dialog.setSize(w, h);
+        dialog.setPosition((stage.getWidth() - w) * 0.5f, (stage.getHeight() - h) * 0.5f);
+    }
+
     private String t(String key) {
         boolean ru = language == Language.RU;
         return switch (key) {
@@ -529,7 +798,8 @@ public class LobbyScreen extends BaseScreen {
             case "waiting_players" -> ru ? "Ожидаем игроков..." : "Waiting for players...";
             case "players" -> ru ? "Игроки" : "Players";
             case "leave_room" -> ru ? "Выйти из комнаты?" : "Leave room?";
-            case "leave_room_confirm" -> ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
+            case "leave_room_confirm" ->
+                ru ? "Вы точно хотите выйти из комнаты?" : "Are you sure you want to leave the room?";
             case "players_in_room" -> ru ? "Игроков в комнате" : "Players in room";
             case "choose_deck" -> ru ? "Выбрать колоду" : "Choose deck";
             case "selected_deck" -> ru ? "Колода" : "DECK";
@@ -537,10 +807,86 @@ public class LobbyScreen extends BaseScreen {
             case "cancel" -> ru ? "Отмена" : "Cancel";
             case "invite_friends" -> ru ? "Пригласить друзей" : "Invite friends";
             case "roles" -> ru ? "Роли" : "Roles";
+            case "lobby_roles" -> ru ? "Роли:" : "Roles:";
+            case "lobby_twitch" -> "Twitch:";
+            case "lobby_twitch_tooltip" -> ru
+                    ? "Включает голосование зрителей чата Twitch за мемы в Мем-Баттле"
+                    : "Enables Twitch chat voting for memes in Meme Battle";
             case "on" -> ru ? "ВКЛ" : "ON";
             case "off" -> ru ? "ВЫКЛ" : "OFF";
+            case "twitch_nickname_placeholder" -> ru ? "никнейм" : "channel name";
             default -> key;
         };
+    }
+
+    private void triggerTwitchConnect() {
+        if (!twitchEnabled || twitchField == null) return;
+        String text = twitchField.getText().trim();
+        if (text.equals(lastCheckedTwitchChannel)) {
+            return;
+        }
+        lastCheckedTwitchChannel = text;
+        Preferences prefs = game.getSettingsPreferences();
+        prefs.putString("twitch_channel", text);
+        prefs.flush();
+
+        if (text.isEmpty()) {
+            game.getTwitchChatService().disconnect();
+            updateTwitchStatusIcon(TwitchChatService.ConnectionStatus.DISCONNECTED);
+        } else {
+            game.getTwitchChatService().connectAsync(text);
+        }
+    }
+
+    private void updateTwitchInputVisibility() {
+        if (twitchInputStack != null) {
+            twitchInputStack.setVisible(twitchEnabled);
+        }
+        if (twitchStatusIcon != null) {
+            twitchStatusIcon.setVisible(twitchEnabled);
+        }
+        if (twitchInputContainer != null) {
+            twitchInputContainer.setVisible(true);
+        }
+        if (twitchInputCell != null) {
+            if (twitchEnabled) {
+                twitchInputCell.height(52f).padBottom(14f);
+            } else {
+                twitchInputCell.height(28f).padBottom(10f);
+            }
+            if (panel != null) {
+                panel.invalidate();
+            }
+        }
+        if (!twitchEnabled) {
+            game.getTwitchChatService().disconnect();
+            updateTwitchStatusIcon(TwitchChatService.ConnectionStatus.DISCONNECTED);
+        } else {
+            Preferences prefs = game.getSettingsPreferences();
+            String savedChannel = prefs.getString("twitch_channel", "");
+            if (!savedChannel.isEmpty()) {
+                if (twitchField != null) {
+                    twitchField.setText(savedChannel);
+                }
+                lastCheckedTwitchChannel = savedChannel;
+                game.getTwitchChatService().connectAsync(savedChannel);
+            } else {
+                updateTwitchStatusIcon(game.getTwitchChatService().getStatus());
+            }
+        }
+    }
+
+    private void updateTwitchStatusIcon(TwitchChatService.ConnectionStatus status) {
+        if (twitchStatusIcon == null) return;
+        switch (status) {
+            case CONNECTED -> twitchStatusIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(UiShapes.statusConnected(24))));
+            case CONNECTING -> twitchStatusIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(UiShapes.statusConnecting(24))));
+            case ERROR, DISCONNECTED -> twitchStatusIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(UiShapes.statusError(24))));
+        }
+    }
+
+    private Texture loadTextureIfExists(String path) {
+        return Gdx.files.internal(path).exists() ? loadTexture(path) : null;
     }
 
     @Override
@@ -554,13 +900,23 @@ public class LobbyScreen extends BaseScreen {
         cancelButtonTexture.dispose();
         lobbyWindowTexture.dispose();
         gameOverlayWindowTexture.dispose();
-        if (inviteFriendsTexture != null) inviteFriendsTexture.dispose();
-        if (rolesOnTexture != null) rolesOnTexture.dispose();
-        if (rolesOffTexture != null) rolesOffTexture.dispose();
-        if (selectTexture != null) selectTexture.dispose();
-        //if (chatWidget != null) {
-        //    chatWidget.dispose();
-        //}
+        if (lobbyMessageTexture != null)
+            lobbyMessageTexture.dispose();
+        if (inviteFriendsTexture != null)
+            inviteFriendsTexture.dispose();
+        if (rolesOnTexture != null)
+            rolesOnTexture.dispose();
+        if (rolesOffTexture != null)
+            rolesOffTexture.dispose();
+        if (selectTexture != null)
+            selectTexture.dispose();
+        if (twitchTexture != null)
+            twitchTexture.dispose();
+        if (inputTexture != null)
+            inputTexture.dispose();
+        // if (chatWidget != null) {
+        // chatWidget.dispose();
+        // }
         stage.dispose();
     }
 }

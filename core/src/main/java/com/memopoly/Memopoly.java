@@ -25,6 +25,7 @@ import com.memopoly.steam.SteamManager;
 import com.memopoly.utils.AppLog;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.UiFonts;
+import com.memopoly.utils.UiShapes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +54,11 @@ public class Memopoly extends Game implements NetworkListener {
     private final List<ChatMessage> chatMessages = new ArrayList<>();
     private final java.util.Set<String> processedAchievements = new java.util.HashSet<>();
     private volatile boolean connecting = false;
+    private final com.memopoly.network.twitch.TwitchChatService twitchChatService = new com.memopoly.network.twitch.TwitchChatService();
+
+    public com.memopoly.network.twitch.TwitchChatService getTwitchChatService() {
+        return twitchChatService;
+    }
 
     @Override
     public void create() {
@@ -126,9 +132,22 @@ public class Memopoly extends Game implements NetworkListener {
         }
     }
 
+    private volatile RollDiceResponse pendingDiceRoll;
+
     @Override
     public void onDiceRolled(RollDiceResponse response) {
         AppLog.info("Network", response.playerId + " rolled " + response.total);
+        pendingDiceRoll = response;
+    }
+
+    /**
+     * Отдаёт и обнуляет отложенный результат броска (вызывается из
+     * GameScreen.render).
+     */
+    public RollDiceResponse consumePendingDiceRoll() {
+        RollDiceResponse r = pendingDiceRoll;
+        pendingDiceRoll = null;
+        return r;
     }
 
     @Override
@@ -265,6 +284,7 @@ public class Memopoly extends Game implements NetworkListener {
         latestGameState = null;
         chatMessages.clear();
         gameServer = new GameServer();
+        gameServer.setTwitchChatService(twitchChatService);
 
         // Создаём Steam-лобби и записываем IP/порт
         if (SteamManager.isAvailable()) {
@@ -508,7 +528,11 @@ public class Memopoly extends Game implements NetworkListener {
         if (gameClient != null) {
             gameClient.disconnect();
         }
+        if (twitchChatService != null) {
+            twitchChatService.disconnect();
+        }
         SteamManager.shutdown();
         super.dispose();
+        UiShapes.disposeAll();
     }
 }

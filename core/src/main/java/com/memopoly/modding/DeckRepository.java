@@ -12,7 +12,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Репозиторий колод: отвечает за сохранение, загрузку и управление пользовательскими колодами мемов (моддинг).
+ * Репозиторий колод: отвечает за сохранение, загрузку и управление
+ * пользовательскими колодами мемов (моддинг).
  */
 public class DeckRepository {
     private static final String STORAGE_PATH = "modding/decks.json";
@@ -48,6 +49,18 @@ public class DeckRepository {
         return storage.decks;
     }
 
+    public MemeDeck getDeckByName(String deckName) {
+        if (deckName == null)
+            return null;
+        Array<MemeDeck> decks = loadDecks();
+        for (MemeDeck d : decks) {
+            if (d != null && deckName.equalsIgnoreCase(d.name)) {
+                return d;
+            }
+        }
+        return null;
+    }
+
     public void saveDecks(Array<MemeDeck> decks) {
         FileHandle file = Gdx.files.local(STORAGE_PATH);
         file.parent().mkdirs();
@@ -74,6 +87,44 @@ public class DeckRepository {
         return deck;
     }
 
+    public void addImagesToDeck(String deckName, Array<String> imagePaths) {
+        if (deckName == null || imagePaths == null || imagePaths.size == 0)
+            return;
+        Array<MemeDeck> decks = loadDecks();
+        MemeDeck targetDeck = null;
+        for (MemeDeck d : decks) {
+            if (d != null && deckName.equalsIgnoreCase(d.name)) {
+                targetDeck = d;
+                break;
+            }
+        }
+        if (targetDeck == null)
+            return;
+
+        String deckDirName = sanitizeFileName(deckName);
+        if (targetDeck.memes.size > 0 && targetDeck.memes.first().imageUrl != null) {
+            String firstUrl = targetDeck.memes.first().imageUrl.replace('\\', '/');
+            if (firstUrl.contains(DECK_IMAGES_DIR + "/")) {
+                int startIdx = firstUrl.indexOf(DECK_IMAGES_DIR + "/") + (DECK_IMAGES_DIR + "/").length();
+                int endIdx = firstUrl.indexOf('/', startIdx);
+                if (endIdx > startIdx) {
+                    deckDirName = firstUrl.substring(startIdx, endIdx);
+                }
+            }
+        }
+
+        int imageIndex = targetDeck.memes.size;
+        for (String imagePath : imagePaths) {
+            Meme meme = new Meme();
+            meme.id = ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
+            meme.deckName = deckName;
+            meme.imageUrl = copyImageToLocalDeckFolder(imagePath, deckDirName, imageIndex++);
+            meme.description = "";
+            targetDeck.memes.add(meme);
+        }
+        saveDecks(decks);
+    }
+
     private String copyImageToLocalDeckFolder(String sourcePath, String deckDirName, int imageIndex) {
         try {
             FileHandle source = Gdx.files.absolute(sourcePath);
@@ -93,6 +144,7 @@ public class DeckRepository {
             return sourcePath;
         }
     }
+
     public void deleteDeck(String deckName) {
         if (deckName == null || deckName.isBlank()) {
             return;
@@ -126,6 +178,7 @@ public class DeckRepository {
             }
         }
     }
+
     private String sanitizeFileName(String raw) {
         if (raw == null || raw.isBlank()) {
             return "deck";

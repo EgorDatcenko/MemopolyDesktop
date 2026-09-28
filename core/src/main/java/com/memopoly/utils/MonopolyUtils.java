@@ -2,7 +2,9 @@ package com.memopoly.utils;
 
 import com.memopoly.game.model.BoardCell;
 import com.memopoly.game.model.BoardData;
+import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Player;
+import com.memopoly.game.model.Role;
 
 import java.util.HashSet;
 import java.util.List;
@@ -60,4 +62,71 @@ public final class MonopolyUtils {
         }
         return count;
     }
+
+    public static int getHousePrice(BoardCell cell, Role role) {
+        if (cell == null) return 0;
+        int base = Math.max(1, cell.price / 2);
+        return role == Role.MONOPOLIST ? Math.max(1, base * 85 / 100) : base;
+    }
+
+    public static int getHousePrice(BoardCell cell) {
+        return getHousePrice(cell, (Role) null);
+    }
+
+    public static boolean hasFullMonopoly(BoardCell cell, int ownerId, GameState state, List<BoardCell> board) {
+        if (cell == null || ownerId < 0 || !cell.isBuildableSituation() || state == null || board == null) {
+            return false;
+        }
+        List<BoardCell> groupCells = BoardData.getCellsInGroup(board, cell.group);
+        if (groupCells == null || groupCells.size() < 2) {
+            return false;
+        }
+        for (BoardCell groupCell : groupCells) {
+            if (state.cellOwners == null || state.cellOwners.getOrDefault(groupCell.id, -1) != ownerId) {
+                return false;
+            }
+            if (state.cellMortgaged != null && Boolean.TRUE.equals(state.cellMortgaged.get(groupCell.id))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int calculateRent(BoardCell cell, GameState state, List<BoardCell> board) {
+        if (cell == null) {
+            return 0;
+        }
+        int baseFee = cell.getEntranceFee();
+        if (baseFee == 0) {
+            return 0;
+        }
+        int ownerId = (state != null && state.cellOwners != null) ? state.cellOwners.getOrDefault(cell.id, -1) : -1;
+        int monopolyMultiplier = hasFullMonopoly(cell, ownerId, state, board) ? 2 : 1;
+        int houses = (state != null && state.cellHouses != null) ? state.cellHouses.getOrDefault(cell.id, 0) : 0;
+        return baseFee * monopolyMultiplier * (1 + houses);
+    }
+
+    public static int calculateRentForTier(BoardCell cell, int houses, boolean hasMonopoly) {
+        if (cell == null) {
+            return 0;
+        }
+        int baseFee = cell.getEntranceFee();
+        if (baseFee == 0) {
+            return 0;
+        }
+        int monopolyMultiplier = (houses > 0 || hasMonopoly) ? 2 : 1;
+        return baseFee * monopolyMultiplier * (1 + houses);
+    }
+
+    public static int getMortgageValue(BoardCell cell) {
+        return cell != null ? cell.price / 2 : 0;
+    }
+
+    public static int getUnmortgagePrice(BoardCell cell) {
+        if (cell == null) {
+            return 0;
+        }
+        return (int) ((cell.price / 2f) * 1.10f);
+    }
 }
+

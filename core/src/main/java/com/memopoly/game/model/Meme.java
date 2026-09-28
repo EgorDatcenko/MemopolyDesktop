@@ -1,7 +1,8 @@
 package com.memopoly.game.model;
 
 /**
- * Модель карты-мема: содержит ID мема, URL картинки, текстовое описание, название колоды и ID текущего владельца.
+ * Модель карты-мема: содержит ID мема, URL картинки, текстовое описание,
+ * название колоды и ID текущего владельца.
  */
 public class Meme {
     public int id;
@@ -9,9 +10,12 @@ public class Meme {
     public String description;
     public String deckName;
     public int ownerId;
-    public Meme(){}
+    public transient com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> animation;
 
-    public Meme(int id, String imageUrl, String description){
+    public Meme() {
+    }
+
+    public Meme(int id, String imageUrl, String description) {
         this();
         this.id = id;
         this.imageUrl = imageUrl;
@@ -19,7 +23,7 @@ public class Meme {
         this.deckName = "default";
     }
 
-    public Meme(int id, String imageUrl, String description, String deckName, int ownerId){
+    public Meme(int id, String imageUrl, String description, String deckName, int ownerId) {
         this(id, imageUrl, description);
         this.deckName = deckName;
         this.ownerId = ownerId;

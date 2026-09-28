@@ -1,7 +1,8 @@
 package com.memopoly.network.packets;
 
 /**
- * Пакет игрового действия: отправляется клиентом для выполнения какого-либо хода на сервере.
+ * Пакет игрового действия: отправляется клиентом для выполнения какого-либо
+ * хода на сервере.
  */
 public class GameActionRequest {
     public enum ActionType {
@@ -32,7 +33,13 @@ public class GameActionRequest {
         DEV_SET_TEST_MODE,
         DEV_NEXT_GROUP_CELL,
         DEV_SET_MONEY,
-        DEV_GRANT_MONOPOLY
+        DEV_GRANT_MONOPOLY,
+        DEV_SEND_TO_JAIL,
+        BANKRUPT_EVENT_TARGET,
+        APPEND_BATTLE_TOPIC,
+        DEV_START_BATTLE,
+        PAY_DEBT,
+        DECLARE_BANKRUPTCY
     }
 
     public ActionType type;

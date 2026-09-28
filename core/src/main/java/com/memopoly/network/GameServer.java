@@ -19,6 +19,7 @@ import com.memopoly.network.services.GameStatePublisher;
 import com.memopoly.modding.DeckRepository;
 import com.memopoly.network.packets.*;
 import com.memopoly.utils.AppLog;
+import com.memopoly.utils.MonopolyUtils;
 import com.memopoly.utils.RoomCodeGenerator;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import static com.memopoly.network.packets.GameActionRequest.ActionType.VOTE_MEM
  * валидность действий, обновляет GameState и рассылает его игрокам.
  */
 public class GameServer {
+    public static final int MAX_PLAYERS = 6;
     private static final int TCP_PORT = 54555;
     private static final String REJECT_NOT_YOUR_TURN = "NOT_YOUR_TURN";
     private static final String REJECT_INVALID_PHASE = "INVALID_PHASE";
@@ -44,7 +46,7 @@ public class GameServer {
     private static final String REJECT_AUCTION_OTHER_PLAYER_TURN = "AUCTION_OTHER_PLAYER_TURN";
     private static final int JAIL_CELL_ID = 30;
     private static final int BAN_CELL_ID = 10;
-    private static final int MAX_HOUSES_PER_CELL = 4;
+    private static final int MAX_HOUSES_PER_CELL = 5;
     private static final int JAIL_FINE = 50;
     private static final int MAX_JAIL_ATTEMPTS = 3;
 
@@ -73,6 +75,57 @@ public class GameServer {
     private String roomCode;
     private int hostConnectionId = -1;
     private final AtomicInteger dealtMemeIdCounter = new AtomicInteger(-1);
+    private final Map<Integer, ScheduledFuture<?>> disconnectTimers = new ConcurrentHashMap<>();
+    private volatile boolean isStopping = false;
+
+    private void cancelDisconnectTimer(int playerId) {
+        ScheduledFuture<?> timer = disconnectTimers.remove(playerId);
+        if (timer != null) {
+            timer.cancel(false);
+        }
+    }
+
+    private void handlePlayerDisconnectGrace(int connectionId) {
+        if (isStopping || timerExecutor.isShutdown() || timerExecutor.isTerminated()) {
+            removePlayer(connectionId);
+            broadcastGameStateUnsafe();
+            return;
+        }
+        Player p = gameState.getPlayerById(connectionId);
+        if (p == null || p.isBankrupt) {
+            removePlayer(connectionId);
+            broadcastGameStateUnsafe();
+            return;
+        }
+
+        p.isConnected = false;
+        String notice = p.name + " временно отключился. Ожидание: 45 сек...";
+        gameState.showNotification(notice);
+        gameState.lastActionLog = notice;
+        broadcastGameStateUnsafe();
+
+        cancelDisconnectTimer(connectionId);
+        if (!isStopping && !timerExecutor.isShutdown() && !timerExecutor.isTerminated()) {
+            try {
+                ScheduledFuture<?> timer = timerExecutor.schedule(() -> {
+                    synchronized (stateLock) {
+                        disconnectTimers.remove(connectionId);
+                        Player disconnected = gameState.getPlayerById(connectionId);
+                        if (disconnected != null && !disconnected.isConnected) {
+                            AppLog.info("Server", "Истекло время ожидания переподключения игрока " + disconnected.name);
+                            String timeoutNotice = disconnected.name + " не вернулся в игру (таймаут 45 сек). Техническое поражение.";
+                            gameState.showNotification(timeoutNotice);
+                            gameState.lastActionLog = timeoutNotice;
+                            removePlayer(disconnected.id);
+                            broadcastGameStateUnsafe();
+                        }
+                    }
+                }, 45, TimeUnit.SECONDS);
+                disconnectTimers.put(connectionId, timer);
+            } catch (RejectedExecutionException ignored) {
+            }
+        }
+    }
 
     public GameServer() {
         Log.set(Log.LEVEL_DEBUG);
@@ -156,6 +209,16 @@ public class GameServer {
         }
     }
 
+    public void setTwitchChatService(com.memopoly.network.twitch.TwitchChatService service) {
+        if (battleManager != null) {
+            battleManager.setTwitchChatService(service);
+        }
+    }
+
+    public BattleManager getBattleManager() {
+        return battleManager;
+    }
+
     private void registerPackets() {
         NetworkRegistry.register(server.getKryo());
     }
@@ -170,11 +233,24 @@ public class GameServer {
 
             @Override
             public void disconnected(Connection connection) {
+                if (isStopping) {
+                    return;
+                }
                 synchronized (stateLock) {
+                    if (isStopping) {
+                        return;
+                    }
                     AppLog.info("Server", "Игрок отключился: id=" + connection.getID() + ", remote="
                             + connection.getRemoteAddressTCP());
-                    removePlayer(connection.getID());
-                    broadcastGameStateUnsafe();
+                    if (gameState.currentPhase != GameState.GamePhase.WAITING
+                            && gameState.currentPhase != GameState.GamePhase.GAME_OVER
+                            && gameState.players != null && gameState.players.size() > 1) {
+                        handlePlayerDisconnectGrace(connection.getID());
+                    } else {
+                        cancelDisconnectTimer(connection.getID());
+                        removePlayer(connection.getID());
+                        broadcastGameStateUnsafe();
+                    }
                 }
             }
 
@@ -511,8 +587,7 @@ public class GameServer {
     }
 
     private int housePriceFor(BoardCell cell, Player player) {
-        int base = Math.max(1, cell.price / 2);
-        return roleOf(player.id) == Role.MONOPOLIST ? Math.max(1, base * 85 / 100) : base;
+        return MonopolyUtils.getHousePrice(cell, player != null ? roleOf(player.id) : null);
     }
 
     private void handleJoinRequest(Connection connection, JoinRoomRequest request) {
@@ -526,7 +601,50 @@ public class GameServer {
             return;
         }
 
+        // Проверяем, не переподключается ли отключившийся игрок
+        Player reconnectPlayer = null;
+        for (Player p : gameState.players) {
+            if (!p.isConnected) {
+                if ((request.steamId > 0 && p.steamId == request.steamId)
+                        || (p.name != null && p.name.equalsIgnoreCase(playerName.trim()))) {
+                    reconnectPlayer = p;
+                    break;
+                }
+            }
+        }
+
+        if (reconnectPlayer != null) {
+            int oldId = reconnectPlayer.id;
+            int newId = connection.getID();
+            cancelDisconnectTimer(oldId);
+            reconnectPlayer.isConnected = true;
+            if (oldId != newId) {
+                gameState.remapPlayerId(oldId, newId);
+                if (hostConnectionId == oldId) {
+                    hostConnectionId = newId;
+                }
+            }
+            JoinRoomResponse response = new JoinRoomResponse();
+            response.success = true;
+            response.playerId = newId;
+            sendTcpSafely(connection, response);
+            String notice = reconnectPlayer.name + " вернулся в игру!";
+            gameState.showNotification(notice);
+            gameState.lastActionLog = notice;
+            broadcastGameStateUnsafe();
+            return;
+        }
+
         if (gameState.getPlayerById(connection.getID()) != null) {
+            return;
+        }
+
+        if (gameState.players.size() >= MAX_PLAYERS) {
+            JoinRoomResponse reject = new JoinRoomResponse();
+            reject.success = false;
+            reject.playerId = -1;
+            sendTcpSafely(connection, reject);
+            AppLog.warn("Server", "Лобби заполнено (максимум " + MAX_PLAYERS + " игроков)");
             return;
         }
 
@@ -550,12 +668,13 @@ public class GameServer {
             return;
         }
 
-        if (gameState.players.size() < 2) {
-            AppLog.warn("Server", "Нельзя запустить игру: нужно минимум 2 игрока");
+        if (gameState.players.size() < 3 || gameState.players.size() > MAX_PLAYERS) {
+            AppLog.warn("Server", "Нельзя запустить игру: нужно от 3 до " + MAX_PLAYERS + " игроков");
             return;
         }
 
         gameState.selectedDeckName = request == null ? null : request.deckName;
+        gameState.botMemeEnabled = false;
 
         gameState.rolesEnabled = request != null && request.rolesEnabled;
         gameState.playerRoles = new HashMap<>();
@@ -584,7 +703,20 @@ public class GameServer {
     }
 
     private void handleRollDice(Connection connection) {
-        if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase != GameState.GamePhase.PLAYING) {
+        Player current = gameState.getCurrentPlayer();
+        int currentId = current != null ? current.id : -1;
+        System.out.println("[SERVER_DICE] 3. Packet received from player: " + connection.getID()
+                + ", currentTurnPlayer: " + currentId + ", phase: " + gameState.currentPhase);
+
+        if (!isCurrentPlayer(connection.getID()) || (gameState.currentPhase != GameState.GamePhase.PLAYING
+                && gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION)) {
+            System.out.println("[SERVER_DICE] REJECTED: isCurrentPlayer=" + isCurrentPlayer(connection.getID())
+                    + ", phase=" + gameState.currentPhase);
+            return;
+        }
+
+        if (gameState.hasRolledThisTurn) {
+            System.out.println("[SERVER_DICE] REJECTED: hasRolledThisTurn is true!");
             return;
         }
 
@@ -592,16 +724,19 @@ public class GameServer {
         int dice2 = ThreadLocalRandom.current().nextInt(1, 7);
         int total = dice1 + dice2;
 
-        Player current = gameState.getCurrentPlayer();
         if (current == null) {
             return;
         }
+
+        System.out
+                .println("[SERVER_DICE] 4. Broadcast roll result: " + dice1 + " + " + dice2 + " (total=" + total + ")");
 
         gameState.diceValue = total;
         gameState.hasRolledThisTurn = true;
         current.maxAffordable = getMaxAffordable(current);
 
-        // Handle jail logic: if player is in jail, roll dice to try to get out
+        boolean isDoubles = (dice1 == dice2);
+
         if (current.inJail) {
             handleJailDiceRoll(current, dice1, dice2, total);
 
@@ -617,15 +752,43 @@ public class GameServer {
             return;
         }
 
+        if (isDoubles) {
+            current.consecutiveDoubles++;
+            if (current.consecutiveDoubles >= 3) {
+                current.consecutiveDoubles = 0;
+                gameState.lastActionLog = current.name + " выбросил дубль 3 раза подряд и отправляется в Бан!";
+                notifyPlayers(current.name + " выбросил дубль 3 раза подряд и отправляется в Бан!");
+                sendToJail(current);
+
+                RollDiceResponse response = new RollDiceResponse();
+                response.playerId = connection.getID();
+                response.dice1 = dice1;
+                response.dice2 = dice2;
+                response.total = total;
+                response.newPosition = current.position;
+
+                sendAllTcpSafely(response);
+                broadcastGameStateUnsafe();
+                return;
+            }
+        } else {
+            current.consecutiveDoubles = 0;
+        }
+
         int oldPosition = current.position;
         current.position = (oldPosition + total) % board.size();
-        gameState.lastActionLog = current.name + " бросил кубики: " + total;
+        gameState.lastActionLog = current.name + " бросил кубики: " + total + (isDoubles ? " (Дубль!)" : "");
 
-        if (current.position < oldPosition) {
+        if (oldPosition + total >= board.size()) {
             int startBonus = roleOf(current.id) == Role.MEMOLOG ? 215 : 200;
             current.receive(startBonus);
             gameState.roleUsedThisRound.put(current.id, false);
-            gameState.lastActionLog = current.name + " прошёл Старт и получил " + startBonus + "!";
+            if (gameState.bankruptEventUsedRound != null) {
+                gameState.bankruptEventUsedRound.clear();
+            }
+            String startMsg = current.name + " прошёл(ла) Старт и получает " + startBonus + " монет!";
+            gameState.lastActionLog = startMsg;
+            notifyPlayers(startMsg);
 
             for (Player p : gameState.players) {
                 if (p.memeBankBalance > 0) {
@@ -647,6 +810,10 @@ public class GameServer {
             handleCellLanding(current, cell);
         }
 
+        if (isDoubles && !current.inJail) {
+            gameState.hasRolledThisTurn = false;
+        }
+
         RollDiceResponse response = new RollDiceResponse();
         response.playerId = connection.getID();
         response.dice1 = dice1;
@@ -656,6 +823,20 @@ public class GameServer {
 
         sendAllTcpSafely(response);
         broadcastGameStateUnsafe();
+    }
+
+    private void sendToJail(Player player) {
+        if (player == null)
+            return;
+        player.inJail = true;
+        player.jailTurns = 0;
+        player.jailRollAttempts = 0;
+        player.consecutiveDoubles = 0;
+        player.position = BAN_CELL_ID;
+        gameState.hasRolledThisTurn = true;
+        gameState.lastActionLog = player.name + " отправлен в Бан!";
+        notifyPlayers(player.name + " отправлен в Бан!");
+        gameState.nextPlayer();
     }
 
     private void handleCellLanding(Player current, BoardCell cell) {
@@ -669,8 +850,9 @@ public class GameServer {
             case REST:
                 if (cell.id == 20) {
                     current.shields = Math.min(2, current.shields + 1);
-                    gameState.lastActionLog = current.name + " получил 1 щит на парковке (всего: " + current.shields
-                            + ")";
+                    String shieldMsg = current.name + " получает щит на Бесплатной стоянке!";
+                    gameState.lastActionLog = shieldMsg;
+                    notifyPlayers(shieldMsg);
                 }
                 break;
             case JAIL:
@@ -686,26 +868,31 @@ public class GameServer {
                         break;
                     }
                 }
-                current.inJail = true;
-                current.jailTurns = 0;
-                // Ban is a relocation, not a normal landing: no cell effect or Start reward.
-                current.position = BAN_CELL_ID;
-                gameState.lastActionLog = current.name + " попал в тюрьму (Copyright Infringement) и отправлен в Ban";
+                sendToJail(current);
                 break;
             case TAX:
                 if (current.shields > 0) {
                     current.shields -= 1;
                     gameState.lastActionLog = current.name + " заблокировал налог щитом!";
                 } else {
-                    current.pay(100);
-                    gameState.lastActionLog = current.name + " заплатил налог 100";
-                    checkBankruptcy(current, true);
+                    int taxFee = 100;
+                    if (current.money < taxFee) {
+                        gameState.pendingDebtPlayerId = current.id;
+                        gameState.pendingDebtAmount = taxFee;
+                        gameState.pendingDebtRecipientId = -1;
+                        String taxMsg = "Игрок " + current.name + " задолжал налог " + taxFee;
+                        gameState.lastActionLog = taxMsg;
+                        notifyPlayers(taxMsg);
+                    } else {
+                        current.pay(taxFee);
+                        gameState.lastActionLog = current.name + " заплатил налог " + taxFee;
+                    }
                 }
                 break;
             case EVENT:
                 EventCard eventCard = EventDeck.drawRandom();
                 applyEventCard(current, eventCard);
-                notifyPlayers(current.name + ": " + eventCard.title + " — " + eventCard.description);
+                notifyPlayers(current.name + ": " + eventCard.title + " - " + eventCard.description);
                 break;
             case SITUATION:
                 int cellIndex = cell.id;
@@ -714,12 +901,31 @@ public class GameServer {
                 } else if (gameState.cellOwners.get(cellIndex) != current.id) {
                     boolean mortgaged = gameState.cellMortgaged.getOrDefault(cellIndex, false);
                     if (!mortgaged) {
-                        int fee = calculateRent(cell);
-                        current.pay(fee);
                         Player owner = gameState.getPlayerById(gameState.cellOwners.get(cellIndex));
-                        if (owner != null)
-                            owner.receive(fee);
-                        checkBankruptcy(current, true);
+                        if (current.skipNextRentCollection) {
+                            current.skipNextRentCollection = false;
+                            gameState.lastActionLog = current.name + " избежал оплаты доната (эффект карты)";
+                        } else {
+                            int fee = calculateRent(cell);
+                            String ownerName = (owner != null ? owner.name : "?");
+                            if (current.money < fee) {
+                                gameState.pendingDebtPlayerId = current.id;
+                                gameState.pendingDebtAmount = fee;
+                                gameState.pendingDebtRecipientId = (owner != null ? owner.id : -1);
+                                String rentMsg = "Игрок " + current.name + " задолжал " + fee + " игроку "
+                                        + ownerName + " за клетку " + cell.name;
+                                gameState.lastActionLog = rentMsg;
+                                notifyPlayers(rentMsg);
+                            } else {
+                                current.pay(fee);
+                                if (owner != null)
+                                    owner.receive(fee);
+                                String rentMsg = "Игрок " + current.name + " задонатил " + fee + " игроку "
+                                        + ownerName + ", попав на клетку " + cell.name;
+                                gameState.lastActionLog = rentMsg;
+                                notifyPlayers(rentMsg);
+                            }
+                        }
                     }
                 }
                 break;
@@ -749,24 +955,29 @@ public class GameServer {
             return;
 
         boolean isDoubles = (dice1 == dice2);
+        current.jailRollAttempts++;
+        current.jailTurns = current.jailRollAttempts;
 
         if (isDoubles) {
             // Got doubles! Get out of jail immediately and move
             current.inJail = false;
             current.jailTurns = 0;
+            current.jailRollAttempts = 0;
 
             // Move player after getting out of jail
             int oldPosition = current.position;
             current.position = (oldPosition + total) % board.size();
-            gameState.lastActionLog = current.name + " вышел из тюрьмы, бросив двойню! Движется на " + total
-                    + " клеток";
+            gameState.lastActionLog = current.name + " выбросил дубль (" + dice1 + ":" + dice2 + ") и выходит из Бана!";
+            notifyPlayers(current.name + " выбросил дубль и выходит из Бана!");
             gameState.recordAchievement(current.id, "JAILBREAK");
 
             // Check if passed Start
-            if (current.position < oldPosition) {
+            if (oldPosition + total >= board.size()) {
                 int startBonus = roleOf(current.id) == Role.MEMOLOG ? 215 : 200;
                 current.receive(startBonus);
-                gameState.lastActionLog += " и прошёл Старт, получив " + startBonus + "!";
+                String startMsg = current.name + " прошёл(ла) Старт и получает " + startBonus + " монет!";
+                gameState.lastActionLog += " | " + startMsg;
+                notifyPlayers(startMsg);
                 for (Player p : gameState.players) {
                     if (p.memeBankBalance > 0) {
                         int percent = roleOf(p.id) == Role.SMM ? 20 : 10;
@@ -785,28 +996,30 @@ public class GameServer {
             handleCellLanding(current, cell);
         } else {
             // No doubles
-            current.jailTurns++;
-            gameState.lastActionLog = current.name + " бросил " + total + " в тюрьме (попытка " + current.jailTurns
-                    + "/3)";
+            if (current.jailRollAttempts >= MAX_JAIL_ATTEMPTS) {
+                // After 3 failed attempts, auto pay 50 coins and move
+                current.money -= JAIL_FINE;
+                current.inJail = false;
+                current.jailTurns = 0;
+                current.jailRollAttempts = 0;
+                gameState.lastActionLog = current.name + " выходит из Бана, заплатив " + JAIL_FINE + " монет";
+                notifyPlayers(current.name + " выходит из Бана, заплатив " + JAIL_FINE + " монет");
 
-            if (current.jailTurns >= MAX_JAIL_ATTEMPTS) {
-                // After 3 failed attempts, must pay fine or stay in jail
-                if (current.money >= JAIL_FINE) {
-                    current.pay(JAIL_FINE);
-                    current.inJail = false;
-                    current.jailTurns = 0;
-                    gameState.lastActionLog = current.name + " заплатил штраф " + JAIL_FINE + " и вышел из тюрьмы";
-                    notifyPlayers(current.name + " заплатил " + JAIL_FINE + " за выход из тюрьмы");
-                } else {
-                    // Can't afford fine - must stay in jail until doubles or pay later
-                    current.inJail = true;
-                    gameState.lastActionLog = current.name + " не может позволить себе штраф и остаётся в тюрьме";
-                    notifyPlayers(
-                            current.name + " не хватает " + (JAIL_FINE - current.money) + " для выхода из тюрьмы");
+                int oldPosition = current.position;
+                current.position = (oldPosition + total) % board.size();
+
+                if (current.position < oldPosition) {
+                    int startBonus = roleOf(current.id) == Role.MEMOLOG ? 215 : 200;
+                    current.receive(startBonus);
                 }
+
+                BoardCell cell = board.get(current.position);
+                handleCellLanding(current, cell);
             } else {
                 // Still have attempts remaining
-                gameState.lastActionLog = current.name + " остаётся в тюрьме (" + current.jailTurns + "/3 попыток)";
+                current.inJail = true;
+                gameState.lastActionLog = current.name + " остаётся в Бане (попытка " + current.jailRollAttempts
+                        + "/3)";
             }
         }
     }
@@ -824,14 +1037,6 @@ public class GameServer {
 
         /* ---- DEV‑блок ---- */
         if (request.actionType.name().startsWith("DEV_")) {
-            if (!gameState.testMode) {
-                rejectAction(connection, actingPlayer,
-                        request.actionType,
-                        "TEST_MODE_OFF",
-                        "Dev‑commands only allowed when testMode is ON");
-                return;
-            }
-
             // Только хост может переключать режим
             if (request.actionType == GameActionRequest.ActionType.DEV_SET_TEST_MODE) {
                 if (connection.getID() != hostConnectionId) {
@@ -843,6 +1048,14 @@ public class GameServer {
                 }
                 gameState.testMode = request.amount != 0;
                 broadcastGameStateUnsafe();
+                return;
+            }
+
+            if (!gameState.testMode) {
+                rejectAction(connection, actingPlayer,
+                        request.actionType,
+                        "TEST_MODE_OFF",
+                        "Dev‑commands only allowed when testMode is ON");
                 return;
             }
 
@@ -881,9 +1094,42 @@ public class GameServer {
                         gameState.players.get(connection.getID()).money += request.amount;
                     }
                     case DEV_GRANT_MONOPOLY -> {
-                        for (int cid : devRoute.getGroupCells()) {
-                            gameState.cellOwners.put(cid, connection.getID());
+                        Map<BoardCell.Group, List<BoardCell>> groupMap = new LinkedHashMap<>();
+                        for (BoardCell c : board) {
+                            if (c.isBuildableSituation()) {
+                                groupMap.computeIfAbsent(c.group, k -> new ArrayList<>()).add(c);
+                            }
                         }
+                        List<BoardCell> targetGroup = null;
+                        for (List<BoardCell> cells : groupMap.values()) {
+                            boolean ownsAll = cells.stream()
+                                    .allMatch(c -> gameState.cellOwners.getOrDefault(c.id, -1) == actingPlayer.id);
+                            if (!ownsAll) {
+                                targetGroup = cells;
+                                break;
+                            }
+                        }
+                        if (targetGroup == null && !groupMap.isEmpty()) {
+                            targetGroup = groupMap.values().iterator().next();
+                        }
+                        if (targetGroup != null) {
+                            for (BoardCell c : targetGroup) {
+                                gameState.cellOwners.put(c.id, actingPlayer.id);
+                                if (!actingPlayer.ownedCells.contains(c.id)) {
+                                    actingPlayer.ownedCells.add(c.id);
+                                }
+                            }
+                            gameState.lastActionLog = actingPlayer.name + " (DEV) получил монополию группы "
+                                    + targetGroup.get(0).group;
+                        }
+                    }
+                    case DEV_SEND_TO_JAIL -> {
+                        sendToJail(actingPlayer);
+                    }
+                    case DEV_START_BATTLE -> {
+                        int cellIndex = actingPlayer.position;
+                        battleManager.startSetup(actingPlayer.id, cellIndex);
+                        gameState.lastActionLog = actingPlayer.name + " (DEV) запустил Мем-Баттл";
                     }
                     default -> rejectAction(connection, actingPlayer,
                             request.actionType,
@@ -985,25 +1231,58 @@ public class GameServer {
                 }
                 if (!actingPlayer.inJail) {
                     rejectAction(connection, actingPlayer, request.actionType, "INVALID_JAIL_STATE",
-                            "игрок не находится в тюрьме");
+                            "игрок не находится в бане");
                     return;
                 }
-                if (actingPlayer.money < JAIL_FINE) {
-                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS",
-                            "недостаточно монет для штрафа " + JAIL_FINE);
-                    return;
-                }
-                actingPlayer.pay(JAIL_FINE);
+                actingPlayer.money -= JAIL_FINE;
                 actingPlayer.inJail = false;
                 actingPlayer.jailTurns = 0;
-                gameState.hasRolledThisTurn = true;
-                gameState.lastActionLog = actingPlayer.name + " заплатил " + JAIL_FINE + " и вышел из тюрьмы";
-                notifyPlayers(actingPlayer.name + " заплатил " + JAIL_FINE + " за выход из тюрьмы");
+                actingPlayer.jailRollAttempts = 0;
+                gameState.hasRolledThisTurn = false;
+                gameState.lastActionLog = actingPlayer.name + " заплатил " + JAIL_FINE + " монет и вышел из Бана";
+                notifyPlayers(actingPlayer.name + " выходит из Бана, заплатив " + JAIL_FINE + " монет");
+                break;
+            case PAY_DEBT:
+                if (gameState.pendingDebtPlayerId != actingPlayer.id) {
+                    rejectAction(connection, actingPlayer, request.actionType, "NO_DEBT",
+                            "У вас нет активной задолженности");
+                    return;
+                }
+                int debtToPay = gameState.pendingDebtAmount;
+                if (actingPlayer.money < debtToPay) {
+                    rejectAction(connection, actingPlayer, request.actionType, "INSUFFICIENT_FUNDS",
+                            "Недостаточно монет для оплаты задолженности");
+                    return;
+                }
+                actingPlayer.pay(debtToPay);
+                if (gameState.pendingDebtRecipientId >= 0) {
+                    Player recipient = gameState.getPlayerById(gameState.pendingDebtRecipientId);
+                    if (recipient != null) {
+                        recipient.receive(debtToPay);
+                    }
+                }
+                String debtPaidMsg = actingPlayer.name + " оплатил(а) задолженность " + debtToPay + " монет!";
+                gameState.lastActionLog = debtPaidMsg;
+                notifyPlayers(debtPaidMsg);
+                gameState.pendingDebtPlayerId = -1;
+                gameState.pendingDebtAmount = 0;
+                gameState.pendingDebtRecipientId = -1;
+                broadcastGameStateUnsafe();
+                break;
+            case DECLARE_BANKRUPTCY:
+                if (gameState.pendingDebtPlayerId == actingPlayer.id) {
+                    declareBankruptcy(actingPlayer);
+                }
                 break;
             case END_TURN:
                 if (!isCurrentPlayer(connection.getID())) {
                     rejectAction(connection, actingPlayer, request.actionType, REJECT_NOT_YOUR_TURN,
                             "завершить ход может только текущий игрок");
+                    return;
+                }
+                if (gameState.pendingDebtPlayerId == actingPlayer.id) {
+                    rejectAction(connection, actingPlayer, request.actionType, "DEBT_UNPAID",
+                            "Необходимо погасить задолженность перед завершением хода");
                     return;
                 }
                 if (gameState.moderatorChoicePending && gameState.moderatorPlayerId == actingPlayer.id) {
@@ -1106,46 +1385,92 @@ public class GameServer {
             }
             case VOTE_MEME:
                 if (gameState.battlePhase == GameState.BattlePhase.VOTING
-                        && gameState.containsMeme(request.targetId)
-                        && !gameState.battleVoters.contains(actingPlayer.id)
-                        && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) {
-                    int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
-                    gameState.votes.put(request.targetId, currentVotes + 1);
-                    gameState.battleVoters.add(actingPlayer.id);
-                    gameState.lastActionLog = actingPlayer.name + " проголосовал в мем-баттле";
-                    broadcastGameStateUnsafe();
-                    battleManager.checkVotingPhaseCompletion();
+                        && gameState.containsMeme(request.targetId)) {
+                    boolean isJury = gameState.juryIds != null && gameState.juryIds.contains(actingPlayer.id);
+                    if (isJury) {
+                        if (gameState.juryVotes == null)
+                            gameState.juryVotes = new HashMap<>();
+                        if (gameState.juryVoteCount == null)
+                            gameState.juryVoteCount = new HashMap<>();
+                        gameState.juryVotes.put(actingPlayer.id, request.targetId);
+                        int count = gameState.juryVoteCount.getOrDefault(actingPlayer.id, 0) + 1;
+                        gameState.juryVoteCount.put(actingPlayer.id, count);
+                        if (gameState.battleVoters != null && !gameState.battleVoters.contains(actingPlayer.id)) {
+                            gameState.battleVoters.add(actingPlayer.id);
+                        }
+                        gameState.lastActionLog = actingPlayer.name + " (Жюри) проголосовал в мем-баттле";
+                        broadcastGameStateUnsafe();
+                        battleManager.checkVotingPhaseCompletion();
+                    } else if (!gameState.battleVoters.contains(actingPlayer.id)
+                            && !gameState.isMemeOwnedBy(request.targetId, actingPlayer.id)) {
+                        int currentVotes = gameState.votes.getOrDefault(request.targetId, 0);
+                        gameState.votes.put(request.targetId, currentVotes + 1);
+                        gameState.battleVoters.add(actingPlayer.id);
+                        gameState.lastActionLog = actingPlayer.name + " проголосовал в мем-баттле";
+                        broadcastGameStateUnsafe();
+                        battleManager.checkVotingPhaseCompletion();
+                    }
                 }
                 break;
+
+            case BANKRUPT_EVENT_TARGET: {
+                if (gameState.juryIds != null && gameState.juryIds.contains(actingPlayer.id)) {
+                    boolean used = gameState.bankruptEventUsedRound.getOrDefault(actingPlayer.id, false);
+                    if (!used && gameState.currentPhase == GameState.GamePhase.PLAYING
+                            && !gameState.isInBattle && !gameState.isInAuction) {
+                        Player target = gameState.getPlayerById(request.targetId);
+                        if (target != null && !target.isBankrupt) {
+                            EventCard eventCard = EventDeck.drawRandom();
+                            applyEventCard(target, eventCard);
+                            gameState.bankruptEventUsedRound.put(actingPlayer.id, true);
+                            gameState.lastActionLog = "Таинственное событие обрушилось на " + target.name + ".";
+                            notifyPlayers("Таинственное событие обрушилось на " + target.name + ".");
+                            broadcastGameStateUnsafe();
+                        }
+                    }
+                }
+                break;
+            }
+
+            case APPEND_BATTLE_TOPIC: {
+                if (gameState.battlePhase == GameState.BattlePhase.COLLECTING_MEMES
+                        && actingPlayer.id == gameState.themeContinuatorId
+                        && !gameState.themeContinuationUsed) {
+                    if (request.data != null && !request.data.trim().isEmpty()) {
+                        String appendText = request.data.trim();
+                        if (appendText.length() > 60)
+                            appendText = appendText.substring(0, 60);
+                        String curTopic = gameState.battleTopic == null ? "" : gameState.battleTopic;
+                        gameState.battleTopic = curTopic.isEmpty() ? appendText : curTopic + " … " + appendText;
+                        gameState.themeContinuationUsed = true;
+                        gameState.lastActionLog = actingPlayer.name + " дописал(а) тему.";
+                        broadcastGameStateUnsafe();
+                    }
+                }
+                break;
+            }
             case STEAL_COINS: {
                 if (roleOf(actingPlayer.id) != Role.SCAMMER)
                     break;
-                if (!isCurrentPlayer(connection.getID()) || gameState.currentPhase != GameState.GamePhase.PLAYING)
+                if (!isCurrentPlayer(connection.getID())
+                        || (gameState.currentPhase != GameState.GamePhase.PLAYING
+                                && gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION))
                     break;
                 if (gameState.roleUsedThisRound.getOrDefault(actingPlayer.id, false))
                     break;
 
                 Player target = null;
-                if (request.targetId > 0) {
-                    Player candidate = gameState.getPlayerById(request.targetId);
-                    if (candidate != null && candidate.id != actingPlayer.id && !candidate.isBankrupt
-                            && candidate.money > actingPlayer.money) {
-                        target = candidate;
-                    }
-                }
-                if (target == null) {
-                    for (Player p : gameState.players) {
-                        if (p.id != actingPlayer.id && !p.isBankrupt && p.money > actingPlayer.money) {
-                            if (target == null || p.money > target.money) {
-                                target = p;
-                            }
+                for (Player p : gameState.players) {
+                    if (p.id != actingPlayer.id && !p.isBankrupt && p.money > 0) {
+                        if (target == null || p.money > target.money) {
+                            target = p;
                         }
                     }
                 }
 
                 if (target == null) {
                     rejectAction(connection, actingPlayer, request.actionType, "NO_SUITABLE_TARGET",
-                            "Нет подходящей цели для кражи (цель должна быть богаче вас)");
+                            "Нет подходящей цели для кражи");
                     break;
                 }
 
@@ -1161,6 +1486,7 @@ public class GameServer {
                     gameState.roleUsedThisRound.put(actingPlayer.id, true);
                     gameState.lastActionLog = actingPlayer.name + " украл " + amount + " монет у " + target.name + "!";
                 }
+                broadcastGameStateUnsafe();
                 break;
             }
             case PLUS_TWO: {
@@ -1250,32 +1576,37 @@ public class GameServer {
     private void startBattleTimer() {
         if (battleTimerFuture != null)
             return;
+        if (isStopping || timerExecutor.isShutdown() || timerExecutor.isTerminated())
+            return;
         lastBattlePhase = gameState.battlePhase;
-        gameState.battleTimerSeconds = 30;
-        battleTimerFuture = timerExecutor.scheduleAtFixedRate(() -> {
-            synchronized (stateLock) {
-                if (!gameState.isInBattle) {
-                    stopBattleTimer();
-                    return;
-                }
-                if (lastBattlePhase != gameState.battlePhase) {
-                    lastBattlePhase = gameState.battlePhase;
-                    gameState.battleTimerSeconds = 30;
-                } else {
-                    gameState.battleTimerSeconds--;
-                }
-                if (gameState.battleTimerSeconds <= 0) {
-                    if (gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP) {
+        // BATTLE_SETUP даёт 60 секунд, остальные фазы управляются BattleManager
+        gameState.battleTimerSeconds = 60;
+        try {
+            battleTimerFuture = timerExecutor.scheduleAtFixedRate(() -> {
+                synchronized (stateLock) {
+                    if (!gameState.isInBattle) {
+                        stopBattleTimer();
+                        return;
+                    }
+                    if (lastBattlePhase != gameState.battlePhase) {
+                        // При смене фазы BattleManager сам устанавливает таймер;
+                        // здесь просто обновляем отслеживаемую фазу, не трогаем счётчик
+                        lastBattlePhase = gameState.battlePhase;
+                    } else {
+                        gameState.battleTimerSeconds--;
+                    }
+                    if (gameState.battleTimerSeconds <= 0
+                            && gameState.battlePhase == GameState.BattlePhase.BATTLE_SETUP) {
                         battleManager.cancelSetup(gameState.battleOwnerId);
                         gameState.lastActionLog = "Мем-баттл отменён: организатор не выбрал ставку вовремя";
                         gameState.showNotification("Мем-баттл отменён по таймауту");
-                    } else {
-                        gameState.battleTimerSeconds = 30;
                     }
+                    broadcastGameStateUnsafe();
                 }
-                broadcastGameStateUnsafe();
-            }
-        }, 1, 1, TimeUnit.SECONDS);
+            }, 1, 1, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException ignored) {
+            battleTimerFuture = null;
+        }
     }
 
     private void stopBattleTimer() {
@@ -1441,7 +1772,7 @@ public class GameServer {
             return;
         }
         if (gameState.cellHouses.getOrDefault(cellId, 0) > 0) {
-            gameState.lastActionLog = current.name + " не может заложить клетку с филиалами";
+            gameState.lastActionLog = current.name + " не может заложить клетку с постами";
             return;
         }
 
@@ -1461,7 +1792,7 @@ public class GameServer {
         }
 
         BoardCell targetCell = board.get(cellId);
-        int buyBackCost = targetCell.price / 2;
+        int buyBackCost = MonopolyUtils.getUnmortgagePrice(targetCell);
         if (current.money < buyBackCost) {
             return;
         }
@@ -1566,8 +1897,41 @@ public class GameServer {
     }
 
     private boolean checkBankruptcy(Player player, boolean advanceTurn) {
-        if (!player.isBankrupt) {
+        // Игрок не может быть банкротом пока у него неотрицательный баланс
+        if (player.money >= 0) {
             return false;
+        }
+
+        // Проверяем, может ли игрок покрыть долг продажей активов
+        int liquidValue = getMaxAffordable(player); // money + стоимость залога незаложенных клеток
+        if (liquidValue >= 0) {
+            // Есть активы — переходим в режим урегулирования, не банкротим
+            gameState.currentPhase = GameState.GamePhase.PLAYER_ACTION;
+            gameState.lastActionLog = player.name + " в долгу (" + player.money
+                    + "). Заложи клетки или продай посты для урегулирования.";
+            return false;
+        }
+
+        // Банкротство подтверждено: активов не хватает
+        player.isBankrupt = true;
+
+        // Register as jury member (spectator who can influence battles)
+        long activePlayers = gameState.players.stream().filter(p -> !p.isBankrupt).count();
+        if (activePlayers > 1) {
+            if (gameState.juryIds == null)
+                gameState.juryIds = new java.util.HashSet<>();
+            if (gameState.juryOrder == null)
+                gameState.juryOrder = new ArrayList<>();
+            if (!gameState.juryIds.contains(player.id)) {
+                gameState.juryIds.add(player.id);
+            }
+            if (!gameState.juryOrder.contains(player.id)) {
+                gameState.juryOrder.add(player.id);
+                // initialize themeContinuatorId to first jury member if not set
+                if (gameState.themeContinuatorId <= 0) {
+                    gameState.themeContinuatorId = player.id;
+                }
+            }
         }
 
         for (int cellIndex : player.ownedCells) {
@@ -1585,7 +1949,64 @@ public class GameServer {
         return true;
     }
 
+    private void declareBankruptcy(Player player) {
+        if (player == null || player.isBankrupt) return;
+        player.isBankrupt = true;
+
+        if (gameState.pendingDebtRecipientId >= 0) {
+            Player recipient = gameState.getPlayerById(gameState.pendingDebtRecipientId);
+            if (recipient != null && player.money > 0) {
+                recipient.receive(player.money);
+            }
+        }
+        player.money = 0;
+
+        long activePlayers = gameState.players.stream().filter(p -> !p.isBankrupt).count();
+        if (activePlayers > 1) {
+            if (gameState.juryIds == null)
+                gameState.juryIds = new java.util.HashSet<>();
+            if (gameState.juryOrder == null)
+                gameState.juryOrder = new ArrayList<>();
+            if (!gameState.juryIds.contains(player.id)) {
+                gameState.juryIds.add(player.id);
+            }
+            if (!gameState.juryOrder.contains(player.id)) {
+                gameState.juryOrder.add(player.id);
+                if (gameState.themeContinuatorId <= 0) {
+                    gameState.themeContinuatorId = player.id;
+                }
+            }
+        }
+
+        for (int cellIndex : player.ownedCells) {
+            gameState.cellOwners.remove(cellIndex);
+            gameState.cellMortgaged.remove(cellIndex);
+            gameState.cellHouses.remove(cellIndex);
+        }
+        player.ownedCells.clear();
+
+        gameState.pendingDebtPlayerId = -1;
+        gameState.pendingDebtAmount = 0;
+        gameState.pendingDebtRecipientId = -1;
+
+        String bankruptMsg = player.name + " объявил(а) банкротство!";
+        gameState.lastActionLog = bankruptMsg;
+        notifyPlayers(bankruptMsg);
+
+        if (gameState.isGameOver()) {
+            gameState.currentPhase = GameState.GamePhase.GAME_OVER;
+        } else {
+            gameState.nextPlayer();
+        }
+        broadcastGameStateUnsafe();
+    }
+
     private void removePlayer(int playerId) {
+        if (gameState.pendingDebtPlayerId == playerId) {
+            gameState.pendingDebtPlayerId = -1;
+            gameState.pendingDebtAmount = 0;
+            gameState.pendingDebtRecipientId = -1;
+        }
         gameState.removePlayer(playerId);
         if (hostConnectionId == playerId) {
             hostConnectionId = gameState.players.isEmpty() ? -1 : gameState.players.get(0).id;
@@ -1621,13 +2042,7 @@ public class GameServer {
      * by one plus the number of branches on the landed cell.
      */
     private int calculateRent(BoardCell cell) {
-        int baseFee = cell.getEntranceFee();
-        if (baseFee == 0) {
-            return 0;
-        }
-        int monopolyMultiplier = hasFullMonopoly(cell, gameState.cellOwners.get(cell.id)) ? 2 : 1;
-        int houses = gameState.cellHouses.getOrDefault(cell.id, 0);
-        return baseFee * monopolyMultiplier * (1 + houses);
+        return MonopolyUtils.calculateRent(cell, gameState, board);
     }
 
     private void handleBuyHouse(Connection connection, Player player, int cellId) {
@@ -1643,17 +2058,21 @@ public class GameServer {
 
         if (houses >= MAX_HOUSES_PER_CELL) {
             rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "HOUSE_LIMIT",
-                    "на клетке уже максимум филиалов");
+                    "на клетке уже максимум постов (построен Тренд)");
+            return;
         } else if (houses != minimumHouses) {
             rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "UNEVEN_BUILDING",
-                    "филиалы нужно строить равномерно по группе");
+                    "посты нужно строить равномерно по группе");
+            return;
         } else if (player.money < buildPrice) {
+            AppLog.warn("Server", "Игрок " + player.name + " не может купить пост: не хватает монет (" + player.money + " < " + buildPrice + ")");
             rejectAction(connection, player, GameActionRequest.ActionType.BUY_HOUSE, "INSUFFICIENT_FUNDS",
-                    "недостаточно монет для филиала");
+                    "недостаточно монет для покупки поста");
+            return;
         } else {
             player.pay(buildPrice);
             gameState.cellHouses.put(cellId, houses + 1);
-            gameState.lastActionLog = player.name + " построил филиал на " + cell.name;
+            gameState.lastActionLog = player.name + (houses + 1 == 5 ? " построил Тренд на " : " построил пост на ") + cell.name;
             gameState.recordAchievement(player.id, "FIRST_HOUSE");
             if (houses + 1 >= 4) {
                 gameState.recordAchievement(player.id, "BUILDER");
@@ -1673,25 +2092,26 @@ public class GameServer {
 
         if (houses <= 0) {
             rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "NO_HOUSES",
-                    "на клетке нет филиалов для продажи");
+                    "на клетке нет постов для продажи");
         } else if (houses != maximumHouses) {
             rejectAction(connection, player, GameActionRequest.ActionType.SELL_HOUSE, "UNEVEN_SELLING",
-                    "филиалы нужно продавать равномерно по группе");
+                    "посты нужно продавать равномерно по группе");
         } else {
             gameState.cellHouses.put(cellId, houses - 1);
             player.receive(housePriceFor(cell, player) / 2);
-            gameState.lastActionLog = player.name + " продал филиал на " + cell.name;
+            gameState.lastActionLog = player.name + (houses == 5 ? " продал Тренд на " : " продал пост на ") + cell.name;
         }
     }
 
     private boolean canManageHouses(Connection connection, Player player, int cellId) {
         if (!isCurrentPlayer(connection.getID())) {
-            rejectAction(connection, player, null, REJECT_NOT_YOUR_TURN, "управлять филиалами можно только в свой ход");
+            rejectAction(connection, player, null, REJECT_NOT_YOUR_TURN, "управлять постами можно только в свой ход");
             return false;
         }
-        if (gameState.currentPhase != GameState.GamePhase.PLAYING) {
+        if (gameState.currentPhase != GameState.GamePhase.PLAYING
+                && gameState.currentPhase != GameState.GamePhase.PLAYER_ACTION) {
             rejectAction(connection, player, null, REJECT_INVALID_PHASE,
-                    "управление филиалами доступно только во время хода");
+                    "управление постами доступно только во время хода");
             return false;
         }
         if (cellId < 0 || cellId >= board.size()) {
@@ -1765,6 +2185,25 @@ public class GameServer {
     }
 
     private void broadcastGameStateUnsafe() {
+        if (gameState != null && gameState.currentPhase != GameState.GamePhase.GAME_OVER && gameState.players != null
+                && gameState.players.size() > 1) {
+            int activeCount = 0;
+            Player winnerCandidate = null;
+            for (Player p : gameState.players) {
+                if (!p.isBankrupt) {
+                    activeCount++;
+                    winnerCandidate = p;
+                }
+            }
+            if (activeCount == 1 && winnerCandidate != null) {
+                gameState.winnerId = winnerCandidate.id;
+                gameState.isGameOver = true;
+                gameState.currentPhase = GameState.GamePhase.GAME_OVER;
+                gameState.lastActionLog = "Игра окончена! Победил " + winnerCandidate.name + "!";
+                stopBattleTimer();
+                cancelAuctionTimer();
+            }
+        }
         gameStatePublisher.broadcastState();
     }
 
@@ -1819,10 +2258,22 @@ public class GameServer {
     }
 
     public void stop() {
+        isStopping = true;
+        for (ScheduledFuture<?> timer : disconnectTimers.values()) {
+            if (timer != null)
+                timer.cancel(false);
+        }
+        disconnectTimers.clear();
         cancelAuctionTimer();
         stopBattleTimer();
-        timerExecutor.shutdownNow();
-        server.stop();
+        try {
+            timerExecutor.shutdownNow();
+        } catch (Exception ignored) {
+        }
+        try {
+            server.stop();
+        } catch (Exception ignored) {
+        }
     }
 
     private void notifyPlayers(String text) {
@@ -1841,15 +2292,29 @@ public class GameServer {
                 player.receive(card.amount);
                 break;
             case PAY_MONEY:
-                player.pay(card.amount);
-                checkBankruptcy(player, true);
+                int payDue = card.amount;
+                if (player.money < payDue) {
+                    gameState.pendingDebtPlayerId = player.id;
+                    gameState.pendingDebtAmount = payDue;
+                    gameState.pendingDebtRecipientId = -1;
+                } else {
+                    player.pay(payDue);
+                }
                 break;
             case RECEIVE_PER_OWNED_CELL:
                 player.receive(player.ownedCells.size() * card.amount);
                 break;
             case PAY_PER_OWNED_CELL:
-                player.pay(player.ownedCells.size() * card.amount);
-                checkBankruptcy(player, true);
+                int cellDue = player.ownedCells.size() * card.amount;
+                if (cellDue > 0) {
+                    if (player.money < cellDue) {
+                        gameState.pendingDebtPlayerId = player.id;
+                        gameState.pendingDebtAmount = cellDue;
+                        gameState.pendingDebtRecipientId = -1;
+                    } else {
+                        player.pay(cellDue);
+                    }
+                }
                 break;
             case SKIP_NEXT_RENT_COLLECTION:
                 player.receive(card.amount);

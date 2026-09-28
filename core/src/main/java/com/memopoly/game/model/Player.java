@@ -3,7 +3,8 @@ package com.memopoly.game.model;
 import java.util.ArrayList;
 
 /**
- * Состояние игрока: хранит баланс денег, позицию на поле, статус банкротства, карты мемов в руке, купленные клетки и баланс в банке мемов.
+ * Состояние игрока: хранит баланс денег, позицию на поле, статус банкротства,
+ * карты мемов в руке, купленные клетки и баланс в банке мемов.
  */
 public class Player {
     public int id;
@@ -19,18 +20,21 @@ public class Player {
     public boolean skipNextRentCollection;
     public boolean inJail;
     public int jailTurns;
+    public int jailRollAttempts = 0;
+    public int consecutiveDoubles = 0;
     public int successfulTrades = 0;
     public int battleWins = 0;
     public long steamId;
     public int shields = 1;
+    public boolean isConnected = true;
     public java.util.Set<Integer> tradedWith = new java.util.HashSet<>();
 
-    public Player(){
+    public Player() {
         this.handMemes = new ArrayList<>();
         this.ownedCells = new ArrayList<>();
     }
 
-    public Player(int id, String name){
+    public Player(int id, String name) {
         this();
         this.id = id;
         this.name = name;
@@ -42,34 +46,28 @@ public class Player {
         this.skipNextRentCollection = false;
         this.inJail = false;
         this.jailTurns = 0;
+        this.jailRollAttempts = 0;
         this.shields = 1;
     }
 
-    public boolean canAfford(int amount){
+    public boolean canAfford(int amount) {
         return maxAffordable >= amount;
     }
 
     public void pay(int amount) {
-        if (maxAffordable < amount) {
-            isBankrupt = true;
-            money = 0;
-            return;
-        }
-        money -= amount;
-        if (money < 0) {
-            money = 0;
-        }
+        this.money -= amount;
     }
 
-    public boolean containsMeme(int targetId){
-        for(Meme i : handMemes){
-            if(i.id == targetId){
+    public boolean containsMeme(int targetId) {
+        for (Meme i : handMemes) {
+            if (i.id == targetId) {
                 return true;
             }
         }
         return false;
     }
-    public void receive(int amount){
+
+    public void receive(int amount) {
         money += amount;
     }
 }

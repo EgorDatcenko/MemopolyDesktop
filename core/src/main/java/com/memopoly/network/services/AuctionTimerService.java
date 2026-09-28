@@ -1,5 +1,6 @@
 package com.memopoly.network.services;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +18,13 @@ public class AuctionTimerService {
 
     public void start(Runnable tickAction) {
         cancel();
-        task = executor.scheduleAtFixedRate(tickAction, 1, 1, TimeUnit.SECONDS);
+        if (executor != null && !executor.isShutdown() && !executor.isTerminated()) {
+            try {
+                task = executor.scheduleAtFixedRate(tickAction, 1, 1, TimeUnit.SECONDS);
+            } catch (RejectedExecutionException ignored) {
+                task = null;
+            }
+        }
     }
 
     public void cancel() {

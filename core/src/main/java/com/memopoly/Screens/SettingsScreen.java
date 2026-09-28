@@ -12,6 +12,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
@@ -20,7 +22,6 @@ import com.kotcrab.vis.ui.widget.VisSlider;
 import com.memopoly.Memopoly;
 import com.memopoly.utils.LanguageManager;
 import com.memopoly.utils.TexturePathResolver;
-import com.badlogic.gdx.utils.Array;
 /**
  * Экран настроек: содержит регуляторы громкости музыки/эффектов и переключатель полноэкранного режима.
  */
@@ -93,8 +94,9 @@ public class SettingsScreen extends BaseScreen {
         musicLabel.setColor(TEXT_DARK);
         sfxLabel.setColor(TEXT_DARK);
         musicValueLabel.setColor(TEXT_DARK);
-        sfxValueLabel.setColor(TEXT_DARK);
         statusLabel.setColor(new Color(TEXT_DARK.r, TEXT_DARK.g, TEXT_DARK.b, 0.7f));
+        statusLabel.setWrap(true);
+        statusLabel.setAlignment(Align.center);
 
         musicSlider.addListener(new ChangeListener() {
             @Override
@@ -145,7 +147,7 @@ public class SettingsScreen extends BaseScreen {
         panel.add(sfxRow).row();
 
         panel.add(fullscreenCheckBox).left().row();
-        panel.add(statusLabel).width(620f).left().padTop(4f).row();
+        panel.add(statusLabel).width(440f).center().padTop(4f).row();
 
         Table buttonRow = new Table();
         buttonRow.add(applyButton).width(190f).height(80f).padRight(14f);

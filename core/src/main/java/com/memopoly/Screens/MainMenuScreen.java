@@ -310,9 +310,16 @@ public class MainMenuScreen extends BaseScreen {
 
     private Table createDeckCard(MemeDeck deck, Array<Texture> previewTextures, Dialog dialog) {
         Table card = new Table();
+        card.pad(8f);
+
+        VisLabel nameLabel = new VisLabel(deck.name == null ? t("unnamed") : deck.name);
+        nameLabel.setWrap(true);
+        nameLabel.setAlignment(Align.center);
+        nameLabel.setColor(Color.valueOf("000A3E"));
+        card.add(nameLabel).width(180f).center().padBottom(6f).row();
 
         Table frame = new Table();
-        frame.pad(8f);
+        frame.pad(4f);
         FileHandle previewFile = resolveDeckImage(deck.getPreviewImagePath());
         if (previewFile != null && previewFile.exists()) {
             Texture previewTexture = new Texture(previewFile);
@@ -320,35 +327,69 @@ public class MainMenuScreen extends BaseScreen {
             Image image = new Image(previewTexture);
             image.setScaling(Scaling.fit);
             frame.add(image).expand().fill();
+        } else {
+            VisLabel noPreview = new VisLabel(t("no_preview"));
+            noPreview.setColor(Color.valueOf("000A3E"));
+            frame.add(noPreview).center();
         }
-
-        // Превью + кнопка удаления в правом верхнем углу
-        Stack previewStack = new Stack();
-        previewStack.add(frame);
+        card.add(frame).width(180f).height(115f).center().padBottom(8f).row();
 
         boolean isRegular = deck.name != null && deck.name.equalsIgnoreCase("REGULAR");
+        Table btnRow = new Table();
+        btnRow.center();
+
         if (!isRegular) {
-            ImageButton deleteButton = createImageButton(cancelButtonTexture);
-            deleteButton.addListener(new ChangeListener() {
+            ImageButton addBtn = createImageButton(
+                    loadImagesButtonTexture != null ? loadImagesButtonTexture : createDeckButtonTexture);
+            addBtn.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    new Thread(() -> {
+                        try {
+                            JFileChooser chooser = new JFileChooser();
+                            chooser.setMultiSelectionEnabled(true);
+                            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                            chooser.setDialogTitle(t("upload_images"));
+                            chooser.setFileFilter(new FileNameExtensionFilter(
+                                    "Images (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
+                                    "png", "jpg", "jpeg", "gif", "bmp", "webp"));
+                            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                File[] files = chooser.getSelectedFiles();
+                                if (files != null && files.length > 0) {
+                                    Array<String> paths = new Array<>();
+                                    for (File f : files)
+                                        paths.add(f.getAbsolutePath());
+                                    deckRepository.addImagesToDeck(deck.name, paths);
+                                    Gdx.app.postRunnable(() -> {
+                                        dialog.hide();
+                                        showDecksDialog();
+                                    });
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
+            });
+
+            ImageButton deleteBtn = createImageButton(
+                    closeDialogButtonTexture != null ? closeDialogButtonTexture : cancelButtonTexture);
+            deleteBtn.getImage().setScaling(Scaling.fit);
+            deleteBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
                     deckRepository.deleteDeck(deck.name);
-                    dialog.hide(); // задиспозит превью-текстуры через override hide()
-                    showDecksDialog(); // пересобрать список
+                    dialog.hide();
+                    showDecksDialog();
                 }
             });
-            Table deleteOverlay = new Table();
-            deleteOverlay.top().right().padRight(5f);
-            deleteOverlay.add(deleteButton).size(40f, 40f);
-            previewStack.add(deleteOverlay);
-        }
-        card.add(previewStack).width(200f).height(150f).row();
 
-        VisLabel nameLabel = new VisLabel(deck.name == null ? t("unnamed") : deck.name);
-        nameLabel.setWrap(true);
-        nameLabel.setAlignment(Align.center);
-        nameLabel.setColor(Color.valueOf("000A3E"));
-        card.add(nameLabel).width(200f).center().padTop(8f);
+            btnRow.add(addBtn).size(130f, 44f).padRight(6f);
+            btnRow.add(deleteBtn).size(44f, 44f);
+        }
+
+        card.add(btnRow).width(180f).center();
         return card;
     }
 
@@ -850,6 +891,8 @@ public class MainMenuScreen extends BaseScreen {
             case "files_count" -> ru ? "Файлов" : "Files";
             case "preview_hint" -> ru ? "Превью первого изображения" : "PREVIEW FIRST IMAGE";
             case "upload_images" -> ru ? "Загрузить изображения" : "Upload images";
+            case "upload_more" -> ru ? "Догрузить" : "Add images";
+            case "delete" -> ru ? "Удалить" : "Delete";
             case "upload_images_failed" -> ru ? "Не удалось открыть выбор изображений" : "Failed to open image chooser";
             case "name" -> ru ? "Название" : "Name";
             case "save" -> ru ? "Сохранить" : "Save";

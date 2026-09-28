@@ -5,9 +5,12 @@ import com.memopoly.game.model.GameState;
 import com.memopoly.game.model.Meme;
 import com.memopoly.game.model.Player;
 import com.memopoly.network.packets.BattleResponsePacket;
+import com.memopoly.network.twitch.TwitchChatService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,11 +32,17 @@ public class BattleManager {
     private final ScheduledExecutorService timerExecutor;
     private final Object stateLock;
     private ScheduledFuture<?> currentTimerTask;
+    private volatile boolean phaseTransitionInProgress = false;
 
     private int battleBank;
     private int battleOwnerId;
     private int battleCellIndex;
     private ArrayList<Integer> battleInvited;
+    private TwitchChatService twitchChatService;
+
+    public void setTwitchChatService(TwitchChatService service) {
+        this.twitchChatService = service;
+    }
 
     public BattleManager(GameState gameState, List<BoardCell> board, Runnable onBroadcast,
             ScheduledExecutorService timerExecutor, Object stateLock) {
@@ -117,6 +126,7 @@ public class BattleManager {
     }
 
     public void startBattle(int organizerId, int cellIndex) {
+        phaseTransitionInProgress = false;
         gameState.currentPhase = GameState.GamePhase.MEME_BATTLE;
         gameState.isInBattle = true;
         battleOwnerId = organizerId;
@@ -173,38 +183,63 @@ public class BattleManager {
     }
 
     private void checkInvitePhaseCompletion() {
+        // State Guard: отсекает «хвостовые» тики если фаза уже переключилась
+        if (gameState.battlePhase != INVITE)
+            return;
+        if (phaseTransitionInProgress)
+            return;
         if (battleInvited.isEmpty() || gameState.battleTimerSeconds <= 0) {
-            cancelCurrentTimer();
-            if (gameState.battleParticipants.size() < 2) {
-                skipBattle("Мем-баттл отменён: недостаточно участников");
-                return;
+            phaseTransitionInProgress = true;
+            try {
+                cancelCurrentTimer();
+                // Все, кто не ответил, считаются отказавшимися
+                battleInvited.clear();
+                gameState.battleInvited = battleInvited;
+                if (gameState.battleParticipants.size() < 2) {
+                    skipBattle("Мем-баттл отменён: недостаточно участников");
+                    return;
+                }
+                startCollecting();
+            } finally {
+                phaseTransitionInProgress = false;
             }
-            startCollecting();
         } else {
             onBroadcast.run();
         }
     }
 
     public void startCollecting() {
+        phaseTransitionInProgress = false;
         gameState.battlePhase = COLLECTING_MEMES;
-        gameState.battleTimerSeconds = 60;
+        gameState.battleTimerSeconds = 30;
+        if (gameState.juryOrder != null && !gameState.juryOrder.isEmpty()) {
+            int nextIdx = (gameState.juryOrder.indexOf(gameState.themeContinuatorId) + 1) % gameState.juryOrder.size();
+            gameState.themeContinuatorId = gameState.juryOrder.get(nextIdx);
+        } else {
+            gameState.themeContinuatorId = -1;
+        }
+        gameState.themeContinuationUsed = false;
         onBroadcast.run();
         startPhaseTimer(this::checkCollectingPhaseCompletion);
     }
 
     public void checkCollectingPhaseCompletion() {
-        if (gameState.battleMemes.size() >= gameState.battleParticipants.size() || gameState.battleTimerSeconds <= 0) {
-            cancelCurrentTimer();
-
-            if (gameState.battleTimerSeconds <= 0) {
+        // State Guard: отсекает «хвостовые» тики если фаза уже переключилась
+        if (gameState.battlePhase != COLLECTING_MEMES)
+            return;
+        if (phaseTransitionInProgress)
+            return;
+        if (gameState.battleMemes.size() >= gameState.battleParticipants.size()
+                || gameState.battleTimerSeconds <= 0) {
+            phaseTransitionInProgress = true;
+            try {
+                cancelCurrentTimer();
+                // При таймауте принудительно выдаём мемы не успевшим
                 autoSubmitMissingMemes();
+                startVoting();
+            } finally {
+                phaseTransitionInProgress = false;
             }
-
-            if (gameState.battleParticipants.size() == 2 && gameState.battleMemes.size() == 2) {
-                injectBotMeme();
-            }
-
-            startVoting();
         } else {
             onBroadcast.run();
         }
@@ -232,16 +267,8 @@ public class BattleManager {
         }
     }
 
-    private void injectBotMeme() {
-        if (gameState.memeDeckDrawPile.isEmpty()) {
-            return;
-        }
-        Meme botMeme = gameState.memeDeckDrawPile.remove(0);
-        botMeme.ownerId = -999;
-        gameState.battleMemes.add(botMeme);
-    }
-
     public void startVoting() {
+        phaseTransitionInProgress = false;
         if (gameState.battleMemes.size() < 2) {
             skipBattle("Мем-баттл отменён: выбрано меньше двух мемов");
             return;
@@ -250,14 +277,28 @@ public class BattleManager {
         gameState.battleParticipants = collectSubmittedParticipants();
         gameState.battlePhase = VOTING;
         gameState.battleTimerSeconds = 30;
+        if (twitchChatService != null && twitchChatService.isConnected()) {
+            twitchChatService.startVotingSession();
+        }
         onBroadcast.run();
         startPhaseTimer(this::checkVotingPhaseCompletion);
     }
 
     public void checkVotingPhaseCompletion() {
-        if (gameState.battleVoters.size() >= gameState.players.size() || gameState.battleTimerSeconds <= 0) {
-            cancelCurrentTimer();
-            countVotes();
+        // State Guard: отсекает «хвостовые» тики если фаза уже переключилась
+        if (gameState.battlePhase != VOTING)
+            return;
+        if (phaseTransitionInProgress)
+            return;
+        if (gameState.battleVoters.size() >= gameState.players.size()
+                || gameState.battleTimerSeconds <= 0) {
+            phaseTransitionInProgress = true;
+            try {
+                cancelCurrentTimer();
+                countVotes();
+            } finally {
+                phaseTransitionInProgress = false;
+            }
         } else {
             onBroadcast.run();
         }
@@ -265,16 +306,22 @@ public class BattleManager {
 
     private void startPhaseTimer(Runnable completionCheck) {
         cancelCurrentTimer();
-        currentTimerTask = timerExecutor.scheduleAtFixedRate(() -> {
-            synchronized (stateLock) {
-                if (!gameState.isInBattle) {
-                    cancelCurrentTimer();
-                    return;
-                }
-                gameState.battleTimerSeconds--;
-                completionCheck.run();
+        if (timerExecutor != null && !timerExecutor.isShutdown() && !timerExecutor.isTerminated()) {
+            try {
+                currentTimerTask = timerExecutor.scheduleAtFixedRate(() -> {
+                    synchronized (stateLock) {
+                        if (!gameState.isInBattle) {
+                            cancelCurrentTimer();
+                            return;
+                        }
+                        gameState.battleTimerSeconds--;
+                        completionCheck.run();
+                    }
+                }, 1, 1, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.RejectedExecutionException ignored) {
+                currentTimerTask = null;
             }
-        }, 1, 1, TimeUnit.SECONDS);
+        }
     }
 
     private void cancelCurrentTimer() {
@@ -329,56 +376,33 @@ public class BattleManager {
     }
 
     public void countVotes() {
-        // Evaluate bot logic for 2-player battles first
-        if (gameState.battleParticipants.size() == 2) {
-            Meme botMeme = null;
-            for (Meme m : gameState.battleMemes) {
-                if (m.ownerId == -999) {
-                    botMeme = m;
-                    break;
-                }
+        if (gameState.twitchVotes == null) {
+            gameState.twitchVotes = new HashMap<>();
+        }
+        gameState.twitchVotes.clear();
+
+        if (twitchChatService != null && twitchChatService.isConnected() && gameState.battleMemes != null) {
+            int memeCount = gameState.battleMemes.size();
+            for (int i = 0; i < memeCount; i++) {
+                int slot = i + 1;
+                int slotVotes = twitchChatService.getVotesForSlot(slot);
+                gameState.twitchVotes.put(gameState.battleMemes.get(i).id, slotVotes);
             }
-            if (botMeme != null) {
-                int botVotes = gameState.votes.getOrDefault(botMeme.id, 0);
-                if (botVotes > 0) {
-                    if (botVotes >= 2) {
-                        // Both voted for bot. Bot wins. They draw with 0 winnings.
-                        handleDraw(Collections.singletonList(botMeme.id));
-                        return;
-                    }
-                    // Bot has exactly 1 vote. The other human voted for.
-                    // Who voted for the bot? The human with 1 vote!
-                    Meme humanWithVote = null;
-                    Meme humanWithZero = null;
-                    for (Meme m : gameState.battleMemes) {
-                        if (m.ownerId != -999) {
-                            if (gameState.votes.getOrDefault(m.id, 0) > 0) {
-                                humanWithVote = m;
-                            } else {
-                                humanWithZero = m;
-                            }
-                        }
-                    }
-                    if (humanWithVote != null && humanWithZero != null) {
-                        // humanWithVote voted for Bot. So humanWithZero wins!
-                        handleWinner(humanWithZero.id);
-                        return;
-                    } else if (humanWithVote == null && humanWithZero != null) {
-                        // Only 1 person voted (the one in battleVoters). They voted for Bot.
-                        // So the other person wins. But wait, how do we know who is who?
-                        if (!gameState.battleVoters.isEmpty()) {
-                            int voter = gameState.battleVoters.get(0);
-                            for (Meme m : gameState.battleMemes) {
-                                if (m.ownerId != -999 && m.ownerId != voter) {
-                                    handleWinner(m.id);
-                                    return;
-                                }
-                            }
-                        }
-                    }
+            int majoritySlot = twitchChatService.getMajoritySlot(memeCount);
+            if (majoritySlot >= 1 && majoritySlot <= memeCount) {
+                Meme bonusMeme = gameState.battleMemes.get(majoritySlot - 1);
+                gameState.votes.put(bonusMeme.id, gameState.votes.getOrDefault(bonusMeme.id, 0) + 1);
+            }
+        }
+
+        if (gameState.juryVoteCount != null) {
+            for (Map.Entry<Integer, Integer> entry : gameState.juryVoteCount.entrySet()) {
+                if (entry.getValue() >= 2) {
+                    gameState.recordAchievement(entry.getKey(), "CRITIC");
                 }
             }
         }
+
 
         int max = 0;
         for (int votes : gameState.votes.values()) {
@@ -401,8 +425,49 @@ public class BattleManager {
 
         if (winners.size() == 1) {
             handleWinner(winners.get(0));
+        } else if (winners.size() > 1 && gameState.juryVotes != null && !gameState.juryVotes.isEmpty()) {
+            Map<Integer, Integer> juryCounts = new HashMap<>();
+            for (int tiedMemeId : winners) {
+                int count = 0;
+                for (int juryVoteMemeId : gameState.juryVotes.values()) {
+                    if (juryVoteMemeId == tiedMemeId)
+                        count++;
+                }
+                juryCounts.put(tiedMemeId, count);
+            }
+
+            int maxJury = -1;
+            for (int count : juryCounts.values()) {
+                if (count > maxJury)
+                    maxJury = count;
+            }
+
+            ArrayList<Integer> juryWinners = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry : juryCounts.entrySet()) {
+                if (entry.getValue() == maxJury) {
+                    juryWinners.add(entry.getKey());
+                }
+            }
+
+            if (juryWinners.size() == 1) {
+                int winnerMemeId = juryWinners.get(0);
+                for (Map.Entry<Integer, Integer> jv : gameState.juryVotes.entrySet()) {
+                    if (jv.getValue() == winnerMemeId) {
+                        gameState.recordAchievement(jv.getKey(), "KINGMAKER");
+                    }
+                }
+                handleWinner(winnerMemeId);
+            } else {
+                Collections.shuffle(juryWinners);
+                int winnerMemeId = juryWinners.get(0);
+                gameState.lastActionLog = "Победитель определён жребием";
+                handleWinner(winnerMemeId);
+            }
         } else {
-            handleDraw(winners);
+            Collections.shuffle(winners);
+            int winnerMemeId = winners.get(0);
+            gameState.lastActionLog = "Победитель определён жребием";
+            handleWinner(winnerMemeId);
         }
     }
 
@@ -417,8 +482,6 @@ public class BattleManager {
 
         // who submitted a meme (as compensation/bonus), including the winner!
         for (Meme meme : gameState.battleMemes) {
-            if (meme.ownerId == -999)
-                continue;
             Player player = gameState.getPlayerById(meme.ownerId);
             if (player != null) {
                 int votesForMeme = gameState.votes.getOrDefault(meme.id, 0);
@@ -428,17 +491,21 @@ public class BattleManager {
             }
         }
 
-        if (winnerMeme != null && winnerMeme.ownerId != -999) {
+        if (winnerMeme != null) {
             Player winner = gameState.getPlayerById(winnerMeme.ownerId);
-            winner.money += battleBank;
-            winner.battleWins++;
-            if (winner.battleWins >= 3) {
-                gameState.recordAchievement(winner.id, "MEME_LORD");
+            if (winner != null) {
+                winner.money += battleBank;
+                winner.battleWins++;
+                if (winner.battleWins >= 3) {
+                    gameState.recordAchievement(winner.id, "MEME_LORD");
+                }
+                gameState.lastActionLog = winner.name + " победил и забирает " + battleBank + " монет!";
             }
-            gameState.lastActionLog = winner.name + " победил в мем-баттле и получил " + battleBank + " монет!";
-        } else {
-            gameState.lastActionLog = "Победил мем бота. Банк сгорает!";
         }
+
+        gameState.battleWinnerMemeId = memeId;
+        gameState.battleWinnerPlayerId = (winnerMeme != null) ? winnerMeme.ownerId : -1;
+        gameState.battlePrizeAmount = battleBank;
 
         gameState.battlePhase = RESULTS;
         onBroadcast.run();
@@ -448,25 +515,22 @@ public class BattleManager {
     public void handleDraw(List<Integer> tiedMemeIds) {
         ArrayList<Integer> tiedOwnerIds = new ArrayList<>();
         for (Meme meme : gameState.battleMemes) {
-            if (tiedMemeIds.contains(meme.id) && meme.ownerId != -999) {
+            if (tiedMemeIds.contains(meme.id)) {
                 if (!tiedOwnerIds.contains(meme.ownerId)) {
                     tiedOwnerIds.add(meme.ownerId);
                 }
             }
 
-            if (meme.ownerId != -999) {
-                Player player = gameState.getPlayerById(meme.ownerId);
-                if (player != null) {
-                    int votesForMeme = gameState.votes.getOrDefault(meme.id, 0);
-                    if (votesForMeme > 0) {
-                        player.receive(votesForMeme * 10);
-                    }
+            Player player = gameState.getPlayerById(meme.ownerId);
+            if (player != null) {
+                int votesForMeme = gameState.votes.getOrDefault(meme.id, 0);
+                if (votesForMeme > 0) {
+                    player.receive(votesForMeme * 10);
                 }
             }
         }
 
         if (tiedOwnerIds.isEmpty()) {
-            gameState.lastActionLog = "Мем-баттл завершился вничью с ботом. Никто не получает банк!";
             gameState.battlePhase = RESULTS;
             onBroadcast.run();
             scheduleEndBattle();
@@ -483,6 +547,10 @@ public class BattleManager {
                 player.money += share;
             }
         }
+        gameState.battleWinnerMemeId = (tiedMemeIds != null && !tiedMemeIds.isEmpty()) ? tiedMemeIds.get(0) : -1;
+        gameState.battleWinnerPlayerId = -1;
+        gameState.battlePrizeAmount = battleBank;
+
         gameState.battlePhase = RESULTS;
         gameState.lastActionLog = "Мем-баттл завершился вничью! Банк разделён.";
         onBroadcast.run();
@@ -490,15 +558,20 @@ public class BattleManager {
     }
 
     private void scheduleEndBattle() {
-        timerExecutor.schedule(() -> {
-            synchronized (stateLock) {
-                if (gameState.battlePhase != RESULTS) {
-                    return;
-                }
-                gameState.endMemeBattle();
-                gameState.nextPlayer();
-                onBroadcast.run();
+        if (timerExecutor != null && !timerExecutor.isShutdown() && !timerExecutor.isTerminated()) {
+            try {
+                timerExecutor.schedule(() -> {
+                    synchronized (stateLock) {
+                        if (gameState.battlePhase != RESULTS) {
+                            return;
+                        }
+                        gameState.endMemeBattle();
+                        gameState.nextPlayer();
+                        onBroadcast.run();
+                    }
+                }, 4, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.RejectedExecutionException ignored) {
             }
-        }, 4, TimeUnit.SECONDS);
+        }
     }
 }

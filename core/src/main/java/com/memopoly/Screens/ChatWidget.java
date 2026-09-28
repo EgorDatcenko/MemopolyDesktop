@@ -35,7 +35,7 @@ public class ChatWidget extends Table {
     private static final Color TEXT_COLOR = Color.valueOf("000A3E");
     private static final Color SYSTEM_COLOR = Color.BLACK;
     private static final float MESSAGES_TOP_PADDING = 25f;
-    private static final float MESSAGE_FONT_SCALE = 0.72f;
+    private static final float MESSAGE_FONT_SCALE = 0.70f;
     private static final float INPUT_ROW_LEFT_PADDING = 8f;
     private static final float INPUT_ROW_TOP_PADDING = 0f;
     private static final float INPUT_ROW_BOTTOM_PADDING = 8f;
@@ -53,6 +53,7 @@ public class ChatWidget extends Table {
     private final float contentWidth;
     private int renderedMessages = -1;
     private BitmapFont inputFont;
+    private String lastSystemMessage = "";
 
     public ChatWidget(Memopoly game) {
         this(game, INPUT_FIELD_WIDTH + ENTER_BUTTON_WIDTH + INPUT_ROW_LEFT_PADDING + 14f);
@@ -93,7 +94,7 @@ public class ChatWidget extends Table {
             }
         });
 
-        add(scrollPane).colspan(2).grow().row();
+        add(scrollPane).colspan(2).grow().padTop(12f).row();
         float sendButtonWidth = Math.min(ENTER_BUTTON_WIDTH, Math.max(54f, this.contentWidth * 0.22f));
         float fieldWidth = Math.max(120f, this.contentWidth - sendButtonWidth - INPUT_ROW_LEFT_PADDING - 14f);
 
@@ -113,6 +114,30 @@ public class ChatWidget extends Table {
                 .left();
     }
 
+    private static final com.memopoly.game.model.Role[] NO_ROLE_FALLBACK_ORDER = {
+            com.memopoly.game.model.Role.MODERATOR,
+            com.memopoly.game.model.Role.MONOPOLIST,
+            com.memopoly.game.model.Role.DOGE,
+            com.memopoly.game.model.Role.MEMOLOG
+    };
+
+    private Color getPlayerRoleColor(int playerId) {
+        com.memopoly.game.model.GameState state = game.getLatestGameState();
+        if (state == null) return TEXT_COLOR;
+        com.memopoly.game.model.Player p = state.getPlayerById(playerId);
+        com.memopoly.game.model.Role role = null;
+        if (state.playerRoles != null) {
+            role = com.memopoly.game.model.Role.of(state.playerRoles.get(playerId));
+        }
+        if (role == null && state.players != null && p != null) {
+            int idx = state.players.indexOf(p);
+            if (idx >= 0 && idx < NO_ROLE_FALLBACK_ORDER.length) {
+                role = NO_ROLE_FALLBACK_ORDER[idx];
+            }
+        }
+        return role != null ? com.memopoly.utils.RoleInfo.color(role) : TEXT_COLOR;
+    }
+
     public void refresh() {
         List<ChatMessage> messages = game.getChatMessages();
         if (messages.size() == renderedMessages) {
@@ -121,26 +146,148 @@ public class ChatWidget extends Table {
         renderedMessages = messages.size();
         messagesTable.clearChildren();
         int start = Math.max(0, messages.size() - 40);
+        float maxW = Math.max(160f, contentWidth - 18f);
         for (int i = start; i < messages.size(); i++) {
             ChatMessage message = messages.get(i);
-            VisLabel label = new VisLabel(format(message));
-            label.setFontScale(MESSAGE_FONT_SCALE);
-            label.setWrap(true);
-            label.setColor(message.isSystem ? SYSTEM_COLOR : TEXT_COLOR);
-            messagesTable.add(label).width(Math.max(160f, contentWidth - 18f)).left().pad(3f, 5f, 3f, 5f).row();
+            if (message.isSystem) {
+                String sysText = message.message == null ? "" : message.message;
+                String turnRu = "Сейчас ходит:";
+                String turnEn = "Now playing:";
+                if (sysText.startsWith(turnRu) || sysText.startsWith(turnEn)) {
+                    String prefix = sysText.startsWith(turnRu) ? turnRu : turnEn;
+                    String pName = sysText.substring(prefix.length()).trim();
+                    Color rColor = TEXT_COLOR;
+                    com.memopoly.game.model.GameState st = game.getLatestGameState();
+                    if (st != null && st.players != null) {
+                        for (com.memopoly.game.model.Player pl : st.players) {
+                            if (pl.name.equalsIgnoreCase(pName)) {
+                                rColor = getPlayerRoleColor(pl.id);
+                                break;
+                            }
+                        }
+                    }
+                    Table turnTable = new Table();
+                    turnTable.top().left();
+                    VisLabel prefixLabel = new VisLabel(prefix + " ");
+                    prefixLabel.setColor(TEXT_COLOR);
+                    prefixLabel.setFontScale(MESSAGE_FONT_SCALE);
+                    VisLabel nameLabel = new VisLabel(pName);
+                    nameLabel.setColor(rColor);
+                    nameLabel.setFontScale(MESSAGE_FONT_SCALE);
+                    float prefW = prefixLabel.getPrefWidth();
+                    float nameW = nameLabel.getPrefWidth();
+                    if (prefW + nameW > maxW * 0.95f) {
+                        turnTable.add(prefixLabel).left().row();
+                        nameLabel.setWrap(true);
+                        turnTable.add(nameLabel).width(maxW).left();
+                    } else {
+                        turnTable.add(prefixLabel).left();
+                        turnTable.add(nameLabel).left();
+                    }
+                    messagesTable.add(turnTable).width(maxW).left().pad(3f, 5f, 3f, 5f).row();
+                } else {
+                    VisLabel label = new VisLabel(sysText);
+                    label.setFontScale(MESSAGE_FONT_SCALE);
+                    label.setWrap(true);
+                    label.setColor(SYSTEM_COLOR);
+                    messagesTable.add(label).width(maxW).left().pad(3f, 5f, 3f, 5f).row();
+                }
+            } else {
+                String name = message.playerName == null || message.playerName.isBlank() ? t("chat_default_name") : message.playerName;
+                String text = message.message == null ? "" : message.message;
+
+                Table msgTable = new Table();
+                msgTable.top().left();
+
+                VisLabel nameLbl = new VisLabel(name + ": ");
+                nameLbl.setColor(getPlayerRoleColor(message.playerId));
+                nameLbl.setFontScale(MESSAGE_FONT_SCALE);
+
+                VisLabel textLbl = new VisLabel(text);
+                textLbl.setColor(TEXT_COLOR);
+                textLbl.setFontScale(MESSAGE_FONT_SCALE);
+                textLbl.setWrap(true);
+
+                float nameW = nameLbl.getPrefWidth();
+                if (nameW > maxW * 0.55f) {
+                    msgTable.add(nameLbl).left().row();
+                    msgTable.add(textLbl).width(maxW).left();
+                } else {
+                    msgTable.add(nameLbl).top().left();
+                    msgTable.add(textLbl).width(maxW - nameW).top().left();
+                }
+
+                messagesTable.add(msgTable).width(maxW).left().pad(3f, 5f, 3f, 5f).row();
+            }
         }
         scrollPane.layout();
         scrollPane.setScrollPercentY(1f);
     }
 
-    public void showSystemMessage(String text) {
-        VisLabel label = new VisLabel(text);
-        label.setFontScale(MESSAGE_FONT_SCALE);
-        label.setWrap(true);
-        label.setColor(SYSTEM_COLOR);
-        messagesTable.add(label).width(Math.max(160f, contentWidth - 18f)).left().pad(3f, 5f, 3f, 5f).row();
+    public void showTurnMessage(String prefix, String playerName, Color roleColor) {
+        float maxW = Math.max(160f, contentWidth - 18f);
+        Table turnTable = new Table();
+        turnTable.top().left();
+
+        String prefStr = prefix.endsWith(" ") ? prefix : (prefix + " ");
+        VisLabel prefixLabel = new VisLabel(prefStr);
+        prefixLabel.setColor(TEXT_COLOR);
+        prefixLabel.setFontScale(MESSAGE_FONT_SCALE);
+
+        VisLabel nameLabel = new VisLabel(playerName);
+        nameLabel.setColor(roleColor != null ? roleColor : TEXT_COLOR);
+        nameLabel.setFontScale(MESSAGE_FONT_SCALE);
+
+        float prefW = prefixLabel.getPrefWidth();
+        float nameW = nameLabel.getPrefWidth();
+        if (prefW + nameW > maxW * 0.95f) {
+            turnTable.add(prefixLabel).left().row();
+            nameLabel.setWrap(true);
+            turnTable.add(nameLabel).width(maxW).left();
+        } else {
+            turnTable.add(prefixLabel).left();
+            turnTable.add(nameLabel).left();
+        }
+
+        messagesTable.add(turnTable).width(maxW).left().pad(3f, 5f, 3f, 5f).row();
         scrollPane.layout();
         scrollPane.setScrollPercentY(1f);
+    }
+
+    public void showSystemMessage(String text) {
+        if (text == null || text.isBlank()) return;
+        String clean = text.trim();
+        if (clean.equals(lastSystemMessage)) {
+            return;
+        }
+        lastSystemMessage = clean;
+
+        String turnRu = "Сейчас ходит:";
+        String turnEn = "Now playing:";
+        if (clean.startsWith(turnRu) || clean.startsWith(turnEn)) {
+            String prefix = clean.startsWith(turnRu) ? turnRu : turnEn;
+            String pName = clean.substring(prefix.length()).trim();
+            Color rColor = TEXT_COLOR;
+            com.memopoly.game.model.GameState st = game.getLatestGameState();
+            if (st != null && st.players != null) {
+                for (com.memopoly.game.model.Player pl : st.players) {
+                    if (pl.name.equalsIgnoreCase(pName)) {
+                        rColor = getPlayerRoleColor(pl.id);
+                        break;
+                    }
+                }
+            }
+            showTurnMessage(prefix, pName, rColor);
+            return;
+        }
+        ChatMessage msg = new ChatMessage();
+        msg.playerId = 0;
+        msg.playerName = "System";
+        msg.message = clean;
+        msg.isSystem = true;
+        msg.timestamp = System.currentTimeMillis();
+        game.onChatMessage(msg);
+        refresh();
     }
 
     private String format(ChatMessage message) {

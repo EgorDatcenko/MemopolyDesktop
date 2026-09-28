@@ -3,6 +3,7 @@ package com.memopoly.Screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
 import com.memopoly.Memopoly;
@@ -25,6 +26,7 @@ public class LoadingScreen extends BaseScreen {
     private ShapeRenderer shapeRenderer;
     private Texture backgroundTexture;
     private Texture loadTexture;
+    private NinePatch loadNinePatch;
     private float elapsed;
     private boolean switched;
 
@@ -44,6 +46,11 @@ public class LoadingScreen extends BaseScreen {
         shapeRenderer = new ShapeRenderer();
         backgroundTexture = loadTexture(BACKGROUND_TEXTURE_PATH);
         loadTexture = loadTexture(LOAD_TEXTURE_PATH);
+        if (loadTexture != null) {
+            loadNinePatch = new NinePatch(loadTexture, 30, 30, 10, 10);
+            float scale = 40f / (float) loadTexture.getHeight();
+            loadNinePatch.scale(scale, scale);
+        }
         elapsed = 0f;
         switched = false;
     }
@@ -93,14 +100,18 @@ public class LoadingScreen extends BaseScreen {
 
         game.getBatch().setProjectionMatrix(screenProjection);
         game.getBatch().begin();
-        game.getBatch().draw(loadTexture, x, y, barWidth, barHeight);
+        if (loadNinePatch != null) {
+            loadNinePatch.draw(game.getBatch(), x, y, barWidth, barHeight);
+        } else if (loadTexture != null) {
+            game.getBatch().draw(loadTexture, x, y, barWidth, barHeight);
+        }
         game.getBatch().end();
 
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
     private Texture loadTexture(String path) {
         Texture texture = new Texture(path);
-        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
 

@@ -899,5 +899,166 @@ decks: [
 			}
 		]
 	}
+	{
+		name: GIFS
+		memes: [
+			{
+				id: 1507913880
+				imageUrl: modding/decks/GIFS_4434/meme_0.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 247967354
+				imageUrl: modding/decks/GIFS_4434/meme_1.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1003620296
+				imageUrl: modding/decks/GIFS_4434/meme_2.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 2112662809
+				imageUrl: modding/decks/GIFS_4434/meme_3.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1894454384
+				imageUrl: modding/decks/GIFS_4434/meme_4.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 417408424
+				imageUrl: modding/decks/GIFS_4434/meme_5.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 2055133102
+				imageUrl: modding/decks/GIFS_4434/meme_6.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1070000556
+				imageUrl: modding/decks/GIFS_4434/meme_7.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 2111098419
+				imageUrl: modding/decks/GIFS_4434/meme_8.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 289023855
+				imageUrl: modding/decks/GIFS_4434/meme_9.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 319612918
+				imageUrl: modding/decks/GIFS_4434/meme_10.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1804702201
+				imageUrl: modding/decks/GIFS_4434/meme_11.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1115247196
+				imageUrl: modding/decks/GIFS_4434/meme_12.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 397371611
+				imageUrl: modding/decks/GIFS_4434/meme_13.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 574780388
+				imageUrl: modding/decks/GIFS_4434/meme_14.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1392265461
+				imageUrl: modding/decks/GIFS_4434/meme_15.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 607732865
+				imageUrl: modding/decks/GIFS_4434/meme_16.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1374269072
+				imageUrl: modding/decks/GIFS_4434/meme_17.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 451379735
+				imageUrl: modding/decks/GIFS_4434/meme_18.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1843296690
+				imageUrl: modding/decks/GIFS_4434/meme_19.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 725451
+				imageUrl: modding/decks/GIFS_4434/meme_20.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 665787505
+				imageUrl: modding/decks/GIFS_4434/meme_21.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 1892892494
+				imageUrl: modding/decks/GIFS_4434/meme_22.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 208650212
+				imageUrl: modding/decks/GIFS_4434/meme_23.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 793051269
+				imageUrl: modding/decks/GIFS_4434/meme_24.gif
+				description: ""
+				deckName: GIFS
+			}
+			{
+				id: 408522286
+				imageUrl: modding/decks/GIFS_4434/meme_25.gif
+				description: ""
+				deckName: GIFS
+			}
+		]
+	}
 ]
 }
